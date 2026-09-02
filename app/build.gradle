@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keystorePath = System.getenv('AMC_KEYSTORE_PATH')
+def storePasswordValue = System.getenv('AMC_STORE_PASSWORD')
+def keyAliasValue = System.getenv('AMC_KEY_ALIAS')
+def keyPasswordValue = System.getenv('AMC_KEY_PASSWORD')
+
+android {
+    namespace 'com.amc.construcciones'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.amc.construcciones'
+        minSdk 29
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePath) {
+                storeFile file(keystorePath)
+                storePassword storePasswordValue
+                keyAlias keyAliasValue
+                keyPassword keyPasswordValue
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

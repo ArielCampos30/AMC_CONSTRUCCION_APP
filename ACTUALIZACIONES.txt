@@ -1,0 +1,18 @@
+CÓMO ACTUALIZAR AMC PRESUPUESTOS EN EL FUTURO
+
+Sí, la app se puede seguir mejorando después de estar instalada.
+
+Para una nueva versión:
+- se modifica el proyecto;
+- se aumenta versionCode y versionName;
+- GitHub vuelve a compilar el APK con LA MISMA firma privada;
+- instalás el APK nuevo encima del anterior.
+
+Al actualizar encima, Android conserva los datos locales de la app:
+- presupuestos guardados;
+- precios modificados;
+- trabajos propios creados en "Mis trabajos";
+- configuración.
+
+NO desinstales la app antes de actualizar, porque una desinstalación puede borrar los datos locales.
+Usá siempre Respaldo antes de una actualización importante o cambio de teléfono.

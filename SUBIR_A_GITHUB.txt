@@ -1,0 +1,26 @@
+PASOS PARA SUBIR ESTE PROYECTO A GITHUB
+
+Repositorio:
+ArielCampos30/AMC_CONSTRUCCION_APP
+
+1. Descomprimí el ZIP del proyecto en la computadora.
+2. Entrá al repositorio AMC_CONSTRUCCION_APP en GitHub.
+3. Usá Add file > Upload files.
+4. Subí EL CONTENIDO de esta carpeta (app, .github, README.md, build.gradle, etc.).
+   No subas el ZIP adentro del repositorio.
+5. Abajo escribí un mensaje como: "Primera versión Android AMC".
+6. Tocá Commit changes.
+
+IMPORTANTE SOBRE LA FIRMA
+Antes de instalar el APK oficial, configurá los 4 Secrets de GitHub Actions usando el paquete privado de firma que te entregué aparte.
+No subas el archivo .jks ni el TXT privado al repositorio.
+
+Después:
+1. Abrí la pestaña Actions del repositorio.
+2. Elegí "Compilar APK AMC".
+3. Run workflow > Run workflow.
+4. Esperá que termine en verde.
+5. Entrá en la ejecución y descargá el artefacto "AMC-Presupuestos-APK-v1.0.0".
+6. Dentro estará AMC_Presupuestos_v1.0.0.apk.
+
+No uses como instalación definitiva el APK de "Compilar APK de prueba", porque la firma debug puede cambiar entre compilaciones.
