@@ -1,0 +1,76 @@
+name: Compilar APK AMC
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build-release-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Android API 35
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Verificar firma privada
+        env:
+          AMC_KEYSTORE_B64: ${{ secrets.AMC_KEYSTORE_B64 }}
+          AMC_STORE_PASSWORD: ${{ secrets.AMC_STORE_PASSWORD }}
+          AMC_KEY_ALIAS: ${{ secrets.AMC_KEY_ALIAS }}
+          AMC_KEY_PASSWORD: ${{ secrets.AMC_KEY_PASSWORD }}
+        run: |
+          test -n "$AMC_KEYSTORE_B64" || (echo "Falta el secret AMC_KEYSTORE_B64" && exit 1)
+          test -n "$AMC_STORE_PASSWORD" || (echo "Falta el secret AMC_STORE_PASSWORD" && exit 1)
+          test -n "$AMC_KEY_ALIAS" || (echo "Falta el secret AMC_KEY_ALIAS" && exit 1)
+          test -n "$AMC_KEY_PASSWORD" || (echo "Falta el secret AMC_KEY_PASSWORD" && exit 1)
+
+      - name: Recuperar clave de firma
+        env:
+          AMC_KEYSTORE_B64: ${{ secrets.AMC_KEYSTORE_B64 }}
+        run: |
+          echo "$AMC_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/amc-release.jks"
+
+      - name: Compilar APK firmado
+        env:
+          AMC_KEYSTORE_PATH: ${{ runner.temp }}/amc-release.jks
+          AMC_STORE_PASSWORD: ${{ secrets.AMC_STORE_PASSWORD }}
+          AMC_KEY_ALIAS: ${{ secrets.AMC_KEY_ALIAS }}
+          AMC_KEY_PASSWORD: ${{ secrets.AMC_KEY_PASSWORD }}
+        run: gradle --no-daemon :app:assembleRelease
+
+      - name: Renombrar APK
+        run: cp app/build/outputs/apk/release/app-release.apk AMC_Presupuestos_v1.0.0.apk
+
+      - name: Guardar APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: AMC-Presupuestos-APK-v1.0.0
+          path: AMC_Presupuestos_v1.0.0.apk
+          if-no-files-found: error
+          retention-days: 30
