@@ -1,0 +1,48 @@
+name: APK AMC unificada de prueba
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AMC_SERVER_URL: ${{ vars.AMC_SERVER_URL }}
+      AMC_FIREBASE_APP_ID: ${{ vars.AMC_FIREBASE_APP_ID }}
+      AMC_FIREBASE_API_KEY: ${{ vars.AMC_FIREBASE_API_KEY }}
+      AMC_FIREBASE_SENDER_ID: ${{ vars.AMC_FIREBASE_SENDER_ID }}
+      AMC_FIREBASE_PROJECT_ID: ${{ vars.AMC_FIREBASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - uses: android-actions/setup-android@v3
+      - name: Instalar componentes SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Compilar APK de prueba
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Preparar archivo
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk AMC-prueba.apk
+          sha256sum AMC-prueba.apk > AMC-prueba.sha256
+          if [ -z "$AMC_SERVER_URL" ]; then
+            echo 'APK compilada sin servidor: muestra la pantalla de preparacion; no permite operar con clientes hasta configurar HTTPS.' > ESTADO-APK.txt
+          else
+            echo 'APK de prueba conectada al servidor configurado. Validar en Android antes de distribuir.' > ESTADO-APK.txt
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AMC-APK-prueba
+          path: |
+            AMC-prueba.apk
+            AMC-prueba.sha256
+            ESTADO-APK.txt
+          retention-days: 14

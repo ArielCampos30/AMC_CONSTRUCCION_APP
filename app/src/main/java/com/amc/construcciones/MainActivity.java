@@ -16,6 +16,11 @@ import android.widget.Toast;
 import android.util.Base64;
 
 import java.io.OutputStream;
+import com.amc.connected.Online;
+import com.amc.connected.ConnectionActivity;
+import org.json.JSONObject;
+import android.widget.LinearLayout;
+import android.widget.Button;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -24,7 +29,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         webView = new WebView(this);
-        setContentView(webView);
+        LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setFitsSystemWindows(true);Button online=new Button(this);online.setText("Solicitudes y publicaciones online");online.setOnClickListener(v->startActivity(new Intent(this,ConnectionActivity.class)));layout.addView(online);layout.addView(webView,new LinearLayout.LayoutParams(-1,0,1));setContentView(layout);
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -35,10 +40,12 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient(){@Override public boolean shouldOverrideUrlLoading(WebView view,android.webkit.WebResourceRequest req){return !("file".equals(req.getUrl().getScheme()) && "/android_asset/index.html".equals(req.getUrl().getPath()));}});
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+        webView.addJavascriptInterface(new ConnectedBridge(), "AMCOnline");
         webView.loadUrl("file:///android_asset/index.html");
+        if(getIntent().hasExtra("url"))startActivity(new Intent(this,ConnectionActivity.class).putExtra("amc_path","/#avisos"));
     }
 
     @Override
@@ -47,6 +54,15 @@ public class MainActivity extends Activity {
         else super.onBackPressed();
     }
 
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);if(webView!=null)webView.reload();}
+    public class ConnectedBridge {
+        @JavascriptInterface public String selectedRequest(){return getIntent().getStringExtra("amc_request");}
+        @JavascriptInterface public void open(){runOnUiThread(()->startActivity(new Intent(MainActivity.this,ConnectionActivity.class)));}
+        @JavascriptInterface public void request(String method,String path,String body,String csrf,String callback){
+            if(body.length()>8000000||callback.length()>100)return;
+            new Thread(()->{String result;boolean ok;try{result=Online.request(method,path,body,csrf);ok=true;}catch(Exception e){result=e.getMessage();ok=false;}final String js="window.amcOnlineResponse("+JSONObject.quote(callback)+","+ok+","+JSONObject.quote(result)+")";runOnUiThread(()->webView.evaluateJavascript(js,null));}).start();
+        }
+    }
     public class AndroidBridge {
         @JavascriptInterface
         public void savePdf(String base64Data, String fileName, boolean share) {
@@ -78,3 +94,4 @@ public class MainActivity extends Activity {
         }
     }
 }
+
