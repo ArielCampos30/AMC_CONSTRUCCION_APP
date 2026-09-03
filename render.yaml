@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: amc
+    runtime: node
+    plan: free
+    branch: amc-servidor-supabase
+    rootDir: web-amc
+    buildCommand: npm install --omit=dev
+    startCommand: node server.mjs
+    healthCheckPath: /healthz
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: NODE_ENV
+        value: production
+      - key: AMC_DATABASE_URL
+        sync: false
+      - key: AMC_ADMIN_EMAIL
+        sync: false
+      - key: AMC_ADMIN_PASSWORD
+        sync: false

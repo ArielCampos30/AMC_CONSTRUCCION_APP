@@ -1,0 +1,17 @@
+:root{--green:#09675f;--ink:#163e3a;--mint:#ddf5ef;--bg:#f3faf8;--line:#cfe5df;--yellow:#70dfc6;--muted:#55736d}
+body{background:var(--bg);color:var(--ink)}
+.welcome,.hero{background:#074d47}.welcome-copy{background:linear-gradient(125deg,#09675f,#063e39)}
+.welcome-photo.brand-only{background:radial-gradient(ellipse at top,#15897a,#063e39)}
+.welcome .eyebrow,.welcome p{color:#c3eee4}.welcome h1 em{color:#83ead1}
+.welcome-primary{background:#83ead1;color:#073f37}.welcome-secondary{color:#e4fff7}
+.amc-intro{background:radial-gradient(ellipse at 50% 35%,#178979,#063e39 68%)}
+.intro-mark span{color:#c3eee4}.intro-line{background:#83ead1}
+.connection,.pill-nav a,.avatar,.admin-invite{background:#ddf5ef;color:#185c50;border-color:#b9ded2}
+.quick-access span,.eyebrow{color:#367267}.quick-access p,p{color:#4c6e65}
+.welcome-caption p,.hero p{color:#d0eee5}.quote{border-left-color:#31a98f}
+.unread-dot{background:#09675f;color:white}.brand small{color:#09675f}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-color:#148471}
+.primary,.inline-action{background:#09675f;color:white}.outline{border-color:#8abdb0;color:#145c4f}
+.sidebar nav button.active,.chips button.selected{background:#09675f;color:white}
+.balance{background:#ddf5ef}.tag,.status{background:#ddf5ef;color:#175c4f}
+/* Availability and urgent warnings retain their semantic colors. */
