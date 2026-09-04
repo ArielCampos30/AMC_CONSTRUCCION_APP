@@ -20,3 +20,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 :root{--green:#09675f;--ink:#163e3a;--mint:#ddf5ef;--bg:#f3faf8;--line:#cfe5df;--yellow:#70dfc6;--muted:#55736d}
 
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}.hub-grid .panel{margin:0}.hub-row{display:flex;flex-direction:column;gap:10px;padding:16px 0;border-bottom:1px solid #d6e7e3;text-decoration:none;color:inherit}.hub-row:last-child{border:0}[id^=hub-]{scroll-margin-top:85px}.hub-row .status{align-self:flex-start}
