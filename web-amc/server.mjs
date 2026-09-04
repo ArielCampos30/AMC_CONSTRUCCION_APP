@@ -1,3 +1,4 @@
+import {staticResponse} from './static-response.mjs';
 import {PostgresDatabase} from './postgres-db.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
@@ -65,6 +66,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  async function handle(req,res){
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('X-Frame-Options','SAMEORIGIN');
   const url=new URL(req.url,origin),p=url.pathname,method=req.method;
+  if(['GET','HEAD'].includes(method)&&(p==='/'||/\.(?:js|css|png|jpg|webp|svg|webmanifest|html|txt|xml)$/.test(p))&&!p.startsWith('/api/')&&!p.startsWith('/media/')){const file=path.resolve(ROOT,'public','.'+(p==='/'?'/index.html':p));if(!file.startsWith(path.join(ROOT,'public')+path.sep))return send(res,404,{error:'No encontrado.'});try{return staticResponse(req,res,file);}catch{return send(res,404,{error:'No encontrado.'});}}
   const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('amc_session='))?.slice(12);
   const session=cookie?db.prepare('SELECT * FROM sessions WHERE token=? AND expires>?').get(sha(cookie),Date.now()):null;
   const user=session?db.prepare('SELECT * FROM users WHERE id=? AND active=1').get(session.userId):null;
@@ -151,3 +153,4 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  if(process.env.RENDER&&!process.env.AMC_DATABASE_URL){console.error('Render requiere AMC_DATABASE_URL: no se permite guardar en disco temporal.');process.exit(1);}
  const app=createApp({demo,origin,dbPath:process.env.AMC_DB_PATH||path.join(ROOT,'data',demo?'demo.sqlite':'amc.sqlite')});app.server.listen(port,demo?'127.0.0.1':'0.0.0.0',()=>console.log('AMC conectado: '+origin+(demo?' · prueba local, cuentas de ejemplo':' ')));
 }
+
