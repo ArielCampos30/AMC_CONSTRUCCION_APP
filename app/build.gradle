@@ -15,8 +15,8 @@ android {
         applicationId 'com.amc.construcciones'
         minSdk 29
         targetSdk 35
-        versionCode 7
-        versionName '1.5.1'
+        versionCode 8
+        versionName '1.6.0'
         ['AMC_SERVER_URL','AMC_FIREBASE_APP_ID','AMC_FIREBASE_API_KEY','AMC_FIREBASE_SENDER_ID','AMC_FIREBASE_PROJECT_ID'].each { key -> buildConfigField 'String', key, groovy.json.JsonOutput.toJson(System.getenv(key) ?: '') }
         buildConfigField 'boolean', 'AMC_OWNER_APP', 'false'
     }
@@ -53,3 +53,4 @@ android {
 
 
 dependencies { implementation 'com.google.firebase:firebase-messaging:24.1.1' }
+
