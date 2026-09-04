@@ -10,9 +10,9 @@ export const chatViewport={
   resize=new ResizeObserver(bottom);resize.observe(log);requestAnimationFrame(()=>{bottom();if(opening)log.scrollIntoView({block:'center'});});
  }
 };
-let urls=[];
+const previewUrls=new WeakMap();
 export function previewChatPhotos(input){
- urls.forEach(URL.revokeObjectURL);urls=[];input.parentElement.querySelector('.chat-photo-preview')?.remove();
+ (previewUrls.get(input)||[]).forEach(URL.revokeObjectURL);const urls=[];previewUrls.set(input,urls);input.parentElement.querySelector('.chat-photo-preview')?.remove();
  const preview=document.createElement('div');preview.className='chat-photo-preview';preview.setAttribute('aria-live','polite');
  const files=[...input.files];if(files.length>4){preview.textContent='Elegí hasta cuatro fotos por mensaje.';input.value='';}else files.forEach((file,index)=>{const item=document.createElement('span'),img=document.createElement('img'),remove=document.createElement('button');img.src=URL.createObjectURL(file);urls.push(img.src);img.alt='Foto adjunta '+(index+1);remove.type='button';remove.textContent='Quitar';remove.onclick=()=>{const transfer=new DataTransfer();files.filter((_,i)=>i!==index).forEach(f=>transfer.items.add(f));input.files=transfer.files;previewChatPhotos(input);};item.append(img,remove);preview.append(item);});
  input.parentElement.append(preview);
