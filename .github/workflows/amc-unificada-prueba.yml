@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      AMC_SERVER_URL: https://amc-o0xb.onrender.com
-      AMC_FIREBASE_APP_ID: ${{ vars.AMC_FIREBASE_APP_ID }}
-      AMC_FIREBASE_API_KEY: ${{ vars.AMC_FIREBASE_API_KEY }}
-      AMC_FIREBASE_SENDER_ID: ${{ vars.AMC_FIREBASE_SENDER_ID }}
-      AMC_FIREBASE_PROJECT_ID: ${{ vars.AMC_FIREBASE_PROJECT_ID }}
+      AMC_SERVER_URL: "https://amc-o0xb.onrender.com"
+      AMC_FIREBASE_APP_ID: "1:569349512122:android:6ba43c936a144e6ab49b83"
+      AMC_FIREBASE_API_KEY: "AIzaSyAOLRPHIbqVnnazQ7GJ-qH3RP0Y4748dDQ"
+      AMC_FIREBASE_SENDER_ID: "569349512122"
+      AMC_FIREBASE_PROJECT_ID: "amc-construcciones"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
