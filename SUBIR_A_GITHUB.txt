@@ -24,3 +24,4 @@ Después:
 6. Dentro estará AMC_Presupuestos_v1.0.0.apk.
 
 No uses como instalación definitiva el APK de "Compilar APK de prueba", porque la firma debug puede cambiar entre compilaciones.
+

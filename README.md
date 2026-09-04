@@ -1,29 +1,9 @@
-# AMC Construcciones y Arreglos — App Android
+# AMC Android unificada 1.2.0
 
-Aplicación Android para presupuestos de AMC Construcciones y Arreglos.
+Proyecto Android editable. La actividad inicial es ConnectionActivity: abre la portada web AMC, permite iniciar sesión como cliente o administrador y mantiene AMC Presupuestos dentro del mismo panel. Usar las instrucciones del README.md de la carpeta superior para configurar servidor HTTPS y Firebase.
 
-## Funciones
-- Presupuestos con varios trabajos acumulados.
-- Comparación y recomendación entre cobro por m²/unidad y por jornal.
-- Tarifario base editable.
-- **Mis trabajos:** crear, editar y eliminar tareas propias con rubro, unidad y precio.
-- Costos internos separados del presupuesto del cliente.
-- Guardado de presupuestos en el teléfono.
-- PDF profesional con logo AMC.
-- Guardar PDF en Descargas/AMC Presupuestos.
-- Compartir PDF por WhatsApp, Gmail u otras apps.
-- Respaldo e importación de datos.
+Compilar con JDK 17, Android SDK 35 y Gradle 8.11.1. Para debug: gradle assembleDebug. El entorno de esta entrega no dispone de JDK/SDK: no se incluye APK compilada ni se ha verificado Android real.
 
-## Android
-- `applicationId`: `com.amc.construcciones`
-- Versión inicial: `1.0.0`
-- Android mínimo: 10 (API 29)
-- Target: Android 15 (API 35)
+No desinstalar la app anterior: hacer respaldo de sus datos y conservar la clave de firma de release para actualizar. El código local anterior permanece en el proyecto sin ser el punto de entrada. Tarifarios y borradores locales requieren exportación/importación para pasar al origen web; los documentos enviados se guardan en el servidor.
 
-## Actualizaciones
-Para actualizar la aplicación sin perder datos hay que mantener:
-1. el mismo `applicationId`;
-2. la misma clave de firma;
-3. instalar el APK nuevo encima del anterior, sin desinstalar.
-
-Antes de cada actualización importante conviene exportar un respaldo desde la app.
+Las acciones de GitHub están incluidas como archivos editables; no se ejecutaron ni se publicó ningún cambio en tu repositorio.
