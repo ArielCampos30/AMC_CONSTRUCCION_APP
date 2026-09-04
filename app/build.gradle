@@ -15,8 +15,8 @@ android {
         applicationId 'com.amc.construcciones'
         minSdk 29
         targetSdk 35
-        versionCode 9
-        versionName '1.0.0'
+        versionCode 10
+        versionName '1.0.1'
         ['AMC_SERVER_URL','AMC_FIREBASE_APP_ID','AMC_FIREBASE_API_KEY','AMC_FIREBASE_SENDER_ID','AMC_FIREBASE_PROJECT_ID'].each { key -> buildConfigField 'String', key, groovy.json.JsonOutput.toJson(System.getenv(key) ?: '') }
         buildConfigField 'boolean', 'AMC_OWNER_APP', 'false'
     }

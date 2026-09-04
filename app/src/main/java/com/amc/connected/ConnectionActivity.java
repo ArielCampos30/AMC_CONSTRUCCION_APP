@@ -59,7 +59,7 @@ public class ConnectionActivity extends Activity {
  }
  @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==20&&results.length>0&&results[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)getToken();}
  @Override public void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(request==11){Uri captured=cameraPhoto;cameraPhoto=null;if(photos!=null){photos.onReceiveValue(result==RESULT_OK&&captured!=null?new Uri[]{captured}:null);photos=null;}if(result!=RESULT_OK&&captured!=null)getContentResolver().delete(captured,null,null);return;}if(request==10&&photos!=null){photos.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result,data));photos=null;}}
- @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
+ @Override public void onBackPressed(){if(web==null){super.onBackPressed();return;}web.evaluateJavascript("window.AMCBackHandler ? String(window.AMCBackHandler()) : 'false'",result->{if(!"\"true\"".equals(result)){if(web.canGoBack())web.goBack();else ConnectionActivity.super.onBackPressed();}});}
  @Override protected void onDestroy(){if(photos!=null)photos.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("AMCNative");web.removeJavascriptInterface("AndroidBridge");web.destroy();}super.onDestroy();}
 }
 
