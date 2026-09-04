@@ -40,6 +40,20 @@ public class ConnectionActivity extends Activity {
  }
  private void getToken(){if(!PushService.initialize(this)){Toast.makeText(this,"Falta configurar Firebase para las notificaciones Android.",Toast.LENGTH_LONG).show();return;}FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token->{Online.registerToken(token);if(web!=null)web.evaluateJavascript("window.amcNativeToken && window.amcNativeToken("+JSONObject.quote(token)+")",null);}).addOnFailureListener(e->Toast.makeText(this,"No se pudo registrar el dispositivo. Intentá de nuevo.",Toast.LENGTH_LONG).show());}
  public class NativeBridge{
+ @JavascriptInterface public String saveBackup(String json){
+  android.net.Uri uri=null;
+  try{
+   if(json==null||json.length()>10000000)throw new Exception("Respaldo demasiado grande");
+   JSONObject backup=new JSONObject(json);if(!backup.has("db")||!backup.has("draft"))throw new Exception("Respaldo inválido");
+   String name="AMC-respaldo-"+System.currentTimeMillis()+".json";
+   ContentValues values=new ContentValues();values.put(android.provider.MediaStore.Downloads.DISPLAY_NAME,name);values.put(android.provider.MediaStore.Downloads.MIME_TYPE,"application/json");values.put(android.provider.MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/AMC Presupuestos");values.put(android.provider.MediaStore.Downloads.IS_PENDING,1);
+   uri=getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI,values);if(uri==null)throw new Exception("No se pudo crear el archivo");
+   try(java.io.OutputStream out=getContentResolver().openOutputStream(uri)){if(out==null)throw new Exception("No se pudo abrir el archivo");out.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));}
+   ContentValues complete=new ContentValues();complete.put(android.provider.MediaStore.Downloads.IS_PENDING,0);getContentResolver().update(uri,complete,null,null);
+   return new JSONObject().put("ok",true).put("path","Descargas/AMC Presupuestos/"+name).toString();
+  }catch(Exception e){if(uri!=null)getContentResolver().delete(uri,null,null);return "{\"ok\":false,\"error\":\"No se pudo guardar el respaldo. Revisá el espacio disponible y reintentá.\"}";}
+ }
+
  @JavascriptInterface public void requestNotifications(){runOnUiThread(()->{if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},20);else getToken();});}
  @JavascriptInterface public void clearNotifications(){runOnUiThread(()->{getSystemService(NotificationManager.class).cancelAll();if(PushService.initialize(ConnectionActivity.this))FirebaseMessaging.getInstance().deleteToken();});}
  }
@@ -48,3 +62,4 @@ public class ConnectionActivity extends Activity {
  @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
  @Override protected void onDestroy(){if(photos!=null)photos.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("AMCNative");web.removeJavascriptInterface("AndroidBridge");web.destroy();}super.onDestroy();}
 }
+
