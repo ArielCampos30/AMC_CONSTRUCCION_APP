@@ -190,7 +190,7 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
               <h2>Trabajos agregados</h2>
               <div class="small muted">Podés ir sumando revoque, cerámico, arreglos varios, etc. y borrar cualquier error.</div>
             </div>
-            <div class="actions"><button class="btn soft compact" type="button" onclick="document.querySelector('[data-view=add]').click()">+ Agregar</button></div>
+            <div class="actions"><button class="btn soft compact" type="button" onclick="document.querySelector('[data-view=add]').click()">+ Agregar trabajo</button></div>
           </div>
           <div id="quote-items"></div>
         </div>
@@ -536,7 +536,7 @@ function nav(name){
   if(!window.amcBackNavigation&&history.state?.amcView!==name)history.pushState({amcView:name},'', '#'+name);
   $$('.view').forEach(v => v.classList.remove('active'));
   $('#view-' + name).classList.add('active');
-  $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  $document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.view === name));
   if (name === 'saved') renderSaved();
   if (name === 'tariff') renderTariff();
   if (name === 'jobs') renderCustomJobs();
@@ -544,7 +544,7 @@ function nav(name){
   if (name === 'print') renderPrintSheet(draft);
   document.querySelector('#view-'+name).scrollIntoView({block:'start',behavior:'smooth'});
 }
-$('.tab').forEach(b => b.addEventListener('click', () => nav(b.dataset.view)));
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => nav(b.dataset.view)));
 window.addEventListener('popstate',e=>{window.amcBackNavigation=true;nav(e.state?.amcView||'quote');window.amcBackNavigation=false;});
 
 function setDraftFromForm(){
