@@ -1,0 +1,32 @@
+:root{--brand:#0f3f74;--brand2:#1d63b3;--soft:#edf4fc}
+.app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.dashboard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dashboard-grid .kpi{background:#fff}.dashboard-grid .v{overflow-wrap:anywhere}
+.quick-actions,.mobile-bottom-nav{display:flex;gap:8px}
+.status-badge{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:850}
+.status-borrador{background:#e8edf3;color:#334155}.status-enviado{background:#e3efff;color:#15509a}
+.status-aceptado{background:#e6f6ec;color:#166534}.status-rechazado{background:#fff0ef;color:#b42318}.status-vencido{background:#fff4d6;color:#8a5b00}
+.client-suggestions{position:absolute;z-index:30;width:100%;max-height:230px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px #17324d22}
+.client-suggestions button{display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left;padding:11px}
+.client-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.client-card{min-width:0}
+.saved-toolbar,.bulk-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+.snapshot-list{display:grid;gap:8px}.snapshot-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);padding:10px;border-radius:10px}
+.toast-stack{position:fixed;right:14px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:10000;display:grid;gap:8px;max-width:min(360px,calc(100vw - 28px))}
+.amc-toast{background:#102f4e;color:#fff;padding:12px 15px;border-radius:12px;box-shadow:0 10px 30px #0003}.amc-toast.error{background:#8f221a}
+.amc-modal{width:min(92vw,480px);border:0;border-radius:16px;padding:20px}.amc-modal::backdrop{background:#07192b99}.amc-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.mobile-bottom-nav{display:none}
+.mobile-only{display:none}
+@media(max-width:760px){
+ body{overflow-x:hidden}.app{padding:8px 8px calc(92px + env(safe-area-inset-bottom));max-width:100%}
+ .header{padding-inline:4px}.brand h1{font-size:16px}.tabs{display:none}
+ .card{padding:12px;border-radius:13px}.dashboard-grid{grid-template-columns:1fr 1fr}.client-grid{grid-template-columns:1fr}
+ .saved-toolbar,.bulk-grid{grid-template-columns:1fr}.quick-actions{display:grid;grid-template-columns:1fr 1fr}.quick-actions .btn{width:100%;min-width:0}
+ .quote-item,.saved-card{overflow:hidden}.saved-top{display:grid;grid-template-columns:minmax(0,1fr) auto}.saved-card .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+ .saved-card .actions .btn{width:100%;min-width:0;padding-inline:8px}
+ .table-wrap{border:0;overflow:visible;min-width:0;max-width:100%}#view-tariff table,#view-tariff table tbody{display:block;width:100%!important;min-width:0!important;max-width:100%!important}#view-tariff table thead{display:none}#view-tariff table tr{display:grid;width:100%;min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}#view-tariff table td{display:block;border:0;padding:5px;min-width:0;overflow-wrap:anywhere}#view-tariff table td:nth-child(2),#view-tariff table td:nth-child(4){grid-column:1/-1}.price-input{width:100%;min-width:0}
+ .mobile-bottom-nav{position:fixed;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));left:0;right:0;bottom:0;z-index:90;background:#fff;border-top:1px solid var(--line);padding:7px 5px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -5px 18px #102f4e1c}
+ .mobile-bottom-nav button{min-width:0;border:0;background:transparent;color:#38536d;padding:5px 2px;font-size:10px;line-height:1.15}.mobile-bottom-nav button strong{display:block;font-size:20px;color:var(--brand);margin-bottom:2px}.mobile-bottom-nav button.active{color:var(--brand);font-weight:850}
+ .mobile-only{display:block}.actions{max-width:100%}.btn{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+}
+@media(max-width:370px){.dashboard-grid{grid-template-columns:1fr}.quick-actions{grid-template-columns:1fr}.mobile-bottom-nav button{font-size:9px}.mobile-bottom-nav button strong{font-size:18px}}
+
