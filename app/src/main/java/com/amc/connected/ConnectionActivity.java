@@ -11,7 +11,7 @@ import com.amc.construcciones.BuildConfig;
 
 public class ConnectionActivity extends Activity {
  private WebView web;private ValueCallback<Uri[]> photos;
- @Override public void onCreate(Bundle state){super.onCreate(state);if(!Online.configured()){TextView notice=new TextView(this);notice.setText("AMC conectado\n\nFalta configurar la dirección segura del servidor. Esta build todavía no está lista para clientes.");notice.setPadding(35,60,35,30);setContentView(notice);return;}PushService.initialize(this);web=new WebView(this);LinearLayout root=new LinearLayout(this);root.setFitsSystemWindows(true);root.addView(web,new LinearLayout.LayoutParams(-1,-1));setContentView(root);WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);web.addJavascriptInterface(new NativeBridge(),"AMCNative");web.addJavascriptInterface(new PdfBridge(),"AndroidBridge");
+ @Override public void onCreate(Bundle state){super.onCreate(state);if(!Online.configured()){TextView notice=new TextView(this);notice.setText("AMC conectado\n\nFalta configurar la dirección segura del servidor. Esta build todavía no está lista para clientes.");notice.setPadding(35,60,35,30);setContentView(notice);return;}PushService.initialize(this);web=new WebView(this);LinearLayout root=new LinearLayout(this);root.setFitsSystemWindows(true);root.addView(web,new LinearLayout.LayoutParams(-1,-1));setContentView(root);WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setMediaPlaybackRequiresUserGesture(false);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);web.addJavascriptInterface(new NativeBridge(),"AMCNative");web.addJavascriptInterface(new PdfBridge(),"AndroidBridge");
  web.setWebViewClient(new WebViewClient(){@Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest req){Uri u=req.getUrl(),base=Uri.parse(Online.base());if(!"https".equals(u.getScheme())||!base.getAuthority().equals(u.getAuthority()))return true;return false;}
  @Override public void onPageFinished(WebView view,String url){CookieManager.getInstance().flush();}
  });
@@ -62,4 +62,5 @@ public class ConnectionActivity extends Activity {
  @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
  @Override protected void onDestroy(){if(photos!=null)photos.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("AMCNative");web.removeJavascriptInterface("AndroidBridge");web.destroy();}super.onDestroy();}
 }
+
 
