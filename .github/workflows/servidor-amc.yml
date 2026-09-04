@@ -29,7 +29,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm install
+      - run: npm install --ignore-scripts
+      - name: Auditoría de dependencias
+        run: npm audit --omit=dev
+      - name: Registrar versiones verificadas
+        if: always()
+        run: node -e "console.log('AMC_LOCK_BEGIN'); console.log(require('fs').readFileSync('package-lock.json','utf8')); console.log('AMC_LOCK_END');"
       - name: Pruebas locales SQLite
         run: npm test
       - name: Pruebas PostgreSQL reales
