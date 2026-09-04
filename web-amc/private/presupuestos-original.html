@@ -542,7 +542,7 @@ function nav(name){
   if (name === 'jobs') renderCustomJobs();
   if (name === 'settings') renderSettings();
   if (name === 'print') renderPrintSheet(draft);
-  document.querySelector('#view-'+name).scrollIntoView({block:'start',behavior:'smooth'});
+  const target=document.querySelector(name==='add'?'#task-search':'#view-'+name);target.style.scrollMarginTop='85px';target.scrollIntoView({block:'start',behavior:'smooth'});
 }
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => nav(b.dataset.view)));
 window.addEventListener('popstate',e=>{window.amcBackNavigation=true;nav(e.state?.amcView||'quote');window.amcBackNavigation=false;});
