@@ -1,5 +1,5 @@
 // Operations share the existing authorization, storage and transaction boundary.
-export function featureRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha}){
+export function featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha}){
  const key=(value,prefix,user)=>{if(!/^[a-zA-Z0-9_-]{8,100}$/.test(value||''))fail(400,'Falta una referencia válida de la operación.');return prefix+sha(user+':'+value);};
  const old=(kind,k)=>{const row=db.prepare('SELECT body FROM docs WHERE kind=? AND id=?').get(kind,k);return row?JSON.parse(row.body):null;};
  const paid=w=>w.payments.reduce((n,p)=>n+p.amount,0);
@@ -9,9 +9,9 @@ export function featureRoutes({db,all,get,put,transaction,own,requireAdmin,safeF
    requireAdmin(user);const client=db.prepare("SELECT * FROM users WHERE id=? AND role='client'").get(b.userId);if(!client||!text(b.service)||!text(b.description,4000))fail(400,'Elegí un cliente y describí el trabajo.');const requestId=key(b.idempotencyKey,'manual-',user.id),previous=old('request',requestId);if(previous){send(res,200,previous);return true;}const r=put('request',client.id,{id:requestId,userId:client.id,type:'presupuesto',name:client.name,phone:client.phone,town:client.town,service:text(b.service),description:text(b.description,4000),photos:[],status:'En contacto',date:now(),createdBy:user.id});send(res,201,r);return true;
   }
   if(method==='POST'&&(match=p.match(/^\/api\/requests\/([^/]+)\/messages$/))){
-   const r=own(user,get('request',match[1]));const messageId=key(b.idempotencyKey,'msg-',user.id);if(old('message',messageId)){send(res,200,old('message',messageId));return true;}
+   const r=chatOwn(user,get('request',match[1]));const messageId=key(b.idempotencyKey,'msg-',user.id);if(old('message',messageId)){send(res,200,old('message',messageId));return true;}
    const message=text(b.text,4000),files=Array.isArray(b.photos)?b.photos:[];if(files.length>4||(!message&&!files.length))fail(400,'Escribí un mensaje o adjuntá hasta cuatro fotos.');const photos=files.map(k=>safeFile(user,k,'image/'));
-   const result=transaction(()=>{const result=put('message',r.userId,{id:messageId,userId:r.userId,requestId:r.id,senderId:user.id,senderName:user.name,senderRole:user.role,text:message,photos,date:now()});if(user.role==='admin')notify(r.userId,'AMC te escribió','Hay un mensaje en tu pedido.','/#mensajes');else notifyAdmins('Nuevo mensaje de cliente',user.name+' escribió sobre '+r.service);return result;});send(res,201,result);return true;
+   const result=transaction(()=>{const result=put('message',r.userId,{id:messageId,userId:r.userId,requestId:r.id,senderId:user.id,senderName:user.name,senderRole:user.role,text:message,photos,date:now()});if(user.role!=='client')notify(r.userId,'AMC te escribió','Hay un mensaje en tu pedido.','/#mensajes');if(user.role!=='admin')notifyAdmins('Nuevo mensaje',user.name+' escribió sobre '+r.service,'/#mensajes');for(const employeeId of new Set(all('assignment').filter(t=>t.requestId===r.id&&!['Cancelada','Finalizada'].includes(t.status)).map(t=>t.employeeId)))if(employeeId!==user.id)notify(employeeId,'Nuevo mensaje del trabajo',r.service,'/#mensajes');return result;});send(res,201,result);return true;
   }
   if(method==='POST'&&(match=p.match(/^\/api\/quotes\/([^/]+)\/view$/))){const q=own(user,get('quote',match[1]));if(user.role!=='client')fail(403,'Sólo el cliente registra la lectura.');for(const n of all('notice',user.id).filter(n=>!n.read&&n.url?.endsWith('#presupuestos')))put('notice',user.id,{...n,read:true});if(!q.seenAt)transaction(()=>{put('quote',q.userId,{...q,seenAt:now()});notifyAdmins('Presupuesto visto',user.name+' abrió '+q.number);});send(res,200,{ok:true});return true;}
   if(method==='POST'&&(match=p.match(/^\/api\/requests\/([^/]+)\/appointment$/))){
@@ -31,4 +31,3 @@ export function featureRoutes({db,all,get,put,transaction,own,requireAdmin,safeF
   return false;
  };
 }
-
