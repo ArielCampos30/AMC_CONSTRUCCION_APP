@@ -13,7 +13,7 @@ export function featureRoutes({db,all,get,put,transaction,own,requireAdmin,safeF
    const message=text(b.text,4000),files=Array.isArray(b.photos)?b.photos:[];if(files.length>4||(!message&&!files.length))fail(400,'Escribí un mensaje o adjuntá hasta cuatro fotos.');const photos=files.map(k=>safeFile(user,k,'image/'));
    const result=transaction(()=>{const result=put('message',r.userId,{id:messageId,userId:r.userId,requestId:r.id,senderId:user.id,senderName:user.name,senderRole:user.role,text:message,photos,date:now()});if(user.role==='admin')notify(r.userId,'AMC te escribió','Hay un mensaje en tu pedido.','/#mensajes');else notifyAdmins('Nuevo mensaje de cliente',user.name+' escribió sobre '+r.service);return result;});send(res,201,result);return true;
   }
-  if(method==='POST'&&(match=p.match(/^\/api\/quotes\/([^/]+)\/view$/))){const q=own(user,get('quote',match[1]));if(user.role!=='client')fail(403,'Sólo el cliente registra la lectura.');if(!q.seenAt)transaction(()=>{put('quote',q.userId,{...q,seenAt:now()});notifyAdmins('Presupuesto visto',user.name+' abrió '+q.number);});send(res,200,{ok:true});return true;}
+  if(method==='POST'&&(match=p.match(/^\/api\/quotes\/([^/]+)\/view$/))){const q=own(user,get('quote',match[1]));if(user.role!=='client')fail(403,'Sólo el cliente registra la lectura.');for(const n of all('notice',user.id).filter(n=>!n.read&&n.url?.endsWith('#presupuestos')))put('notice',user.id,{...n,read:true});if(!q.seenAt)transaction(()=>{put('quote',q.userId,{...q,seenAt:now()});notifyAdmins('Presupuesto visto',user.name+' abrió '+q.number);});send(res,200,{ok:true});return true;}
   if(method==='POST'&&(match=p.match(/^\/api\/requests\/([^/]+)\/appointment$/))){
    requireAdmin(user);const r=get('request',match[1]);const duration=Number(b.duration);if(!validDate(b.day)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time||'')||![30,60,90,120,180,240].includes(duration)||!text(b.address,500))fail(400,'Completá fecha, hora, duración y dirección.');
    const start=new Date(b.day+'T'+b.time+':00-03:00').getTime(),end=start+duration*60000;if(start<Date.now())fail(400,'La visita debe programarse para una fecha futura.');const visitId='visit-'+r.id;
@@ -31,3 +31,4 @@ export function featureRoutes({db,all,get,put,transaction,own,requireAdmin,safeF
   return false;
  };
 }
+

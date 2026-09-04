@@ -12,5 +12,19 @@ test('employee permissions, assignment isolation, urgent acknowledgement, revoca
  await admin.call('/api/assignments/'+t.id+'/edit',{...assignment,employeeId:other.id});assert.equal((await e.call('/api/state')).assignments.length,0);const reassigned=(await e2.call('/api/state')).assignments[0];assert.equal(reassigned.reports.length,0);assert.equal(reassigned.history,undefined);await e2.call(photo.url,undefined,404);await e.call('/api/assignments/'+t.id+'/report',{...report,idempotencyKey:'report-002'},404);
  await admin.call('/api/employees/'+other.id+'/access',{active:false});assert.equal((await e2.call('/api/state')).user,null);await e2.call('/api/login',{...account,email:'other@amc.test'},401);await admin.call('/api/assignments',{...assignment,employeeId:other.id,idempotencyKey:'task-key-002'},400);await admin.call('/api/employees/'+other.id+'/access',{active:true});assert.equal((await e2.call('/api/state')).user,null);await e2.call('/api/login',{...account,email:'other@amc.test'});await admin.call('/api/employees/'+other.id+'/password',{password:'New-Employee-2026!'});assert.equal((await e2.call('/api/state')).user,null);await e2.call('/api/login',{...account,email:'other@amc.test'},401);await e2.call('/api/login',{email:'other@amc.test',password:'New-Employee-2026!'});
  const invoice=await admin.call('/api/upload',{mime:'application/pdf',base64:Buffer.from('%PDF-1.4\ninvoice').toString('base64')},201);const payload={requestId:req.id,day:'2026-01-01',vendor:'Corralón de prueba',reference:'F-001',amount:50000,detail:'10 bolsas de cemento para la obra.',fileId:invoice.id,idempotencyKey:'purchase-001'};const purchase=await admin.call('/api/purchases',payload,201);await admin.call('/api/purchases',payload);assert.equal((await a.call('/api/state')).purchases.length,0);await a.call(invoice.url,undefined,404);await e2.call(invoice.url,undefined,404);await a.call('/api/purchases/'+purchase.id+'/send',{},403);const oldCount=(await a.call('/api/state')).notices.length;await admin.call('/api/purchases/'+purchase.id+'/send',{});await admin.call('/api/purchases/'+purchase.id+'/send',{});const shared=await a.call('/api/state');assert.equal(shared.purchases.length,1);assert.equal(shared.notices.length,oldCount+1);assert.equal(shared.works.length,0);await a.call(invoice.url);await b.call(invoice.url,undefined,404);assert.equal((await b.call('/api/state')).purchases.length,0);assert.equal((await e2.call('/api/state')).purchases.length,0);
+
+ const ownerState=await admin.call('/api/state');
+ await admin.call('/api/employees/'+ownerState.user.id+'/role',{role:'employee'},400);
+ await admin.call('/api/employees/'+ownerState.user.id+'/access',{active:false},400);
+ await a.call('/api/employees/'+employee.id+'/role',{role:'admin'},403);
+ await admin.call('/api/employees/'+employee.id+'/role',{role:'admin'});
+ assert.equal((await e.call('/api/state')).user,null);
+ await e.call('/api/login',account);assert.equal((await e.call('/api/state')).user.role,'admin');
+ await admin.call('/api/employees/'+employee.id+'/role',{role:'employee'});
+ assert.equal((await e.call('/api/state')).user,null);
+ const sheet=await admin.call('/api/assignments/'+req.id+'/visit-sheet',{idempotencyKey:'admin-sheet-001',day:'2026-01-01',scope:'Pintura interior',measurements:'20 m2',materials:'Pintura',access:'Por la mañana',photos:[]},201);
+ assert.ok((await admin.call('/api/state')).visitSheets.some(x=>x.id===sheet.id));
+ assert.equal((await a.call('/api/state')).visitSheets.length,0);
  }finally{await new Promise(r=>app.server.close(r));}
 });
+
