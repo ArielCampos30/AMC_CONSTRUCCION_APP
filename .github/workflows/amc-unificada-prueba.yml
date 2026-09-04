@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      AMC_SERVER_URL: ${{ vars.AMC_SERVER_URL }}
+      AMC_SERVER_URL: https://amc-o0xb.onrender.com
       AMC_FIREBASE_APP_ID: ${{ vars.AMC_FIREBASE_APP_ID }}
       AMC_FIREBASE_API_KEY: ${{ vars.AMC_FIREBASE_API_KEY }}
       AMC_FIREBASE_SENDER_ID: ${{ vars.AMC_FIREBASE_SENDER_ID }}
