@@ -1,0 +1,1271 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09675f">
+<title>AMC Construcciones y Arreglos</title>
+<link rel="icon" href="logo.png" type="image/png">
+<style>
+:root{
+  --bg:#f3f5f8; --card:#ffffff; --text:#111827; --muted:#6b7280; --line:#d8dee8;
+  --brand:#09675f; --brand2:#1d63b3; --soft:#edf4fc; --ok:#166534; --okbg:#eaf7ef;
+  --warn:#9a6700; --warnbg:#fff6db; --danger:#b42318; --dangerbg:#fff0ef;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+img{max-width:100%;display:block}
+.app{max-width:1220px;margin:0 auto;padding:12px 12px 80px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0 12px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{width:56px;height:56px;border-radius:14px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.brand h1{margin:0;font-size:19px}
+.brand p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:11px 14px;min-height:44px;border-radius:10px;font-weight:750}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.soft{background:var(--soft);border-color:#cfe0ef;color:var(--brand)}
+.btn.danger{background:var(--dangerbg);border-color:#f5c5c1;color:var(--danger)}
+.tabs{display:flex;gap:8px;overflow:auto;padding:2px 0 12px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 14px;border-radius:999px;font-weight:700}
+.tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.view{display:none}.view.active{display:block}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h2,.card h3{margin:0}
+.small{font-size:12px}.muted{color:var(--muted)}
+label{display:block;font-size:13px;font-weight:700;color:#344054}
+input,select,textarea{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;outline:none;margin-top:5px}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--brand2);box-shadow:0 0 0 3px rgba(29,99,179,.12)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fields3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.hr{border-top:1px solid var(--line);margin:14px 0}
+.notice{border-radius:12px;padding:12px;background:var(--soft);color:#234e76;font-size:13px}
+.searchBox{position:relative}
+.search-results{border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:320px;background:#fff;margin-top:8px}
+.search-item{padding:11px 12px;border-bottom:1px solid var(--line)}
+.search-item:last-child{border-bottom:none}
+.search-item .title{font-weight:800}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:var(--soft);color:var(--brand);font-size:11px;font-weight:800}
+.badge.ok{background:var(--okbg);color:var(--ok)} .badge.warn{background:var(--warnbg);color:var(--warn)}
+.scores{font-size:11px;color:var(--muted)}
+.option-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.option{border:1px solid var(--line);border-radius:14px;padding:14px}
+.option.recommended{border-color:#9ad0a5;background:#fbfffc}
+.option .total{font-size:25px;font-weight:900;margin:8px 0 6px}
+.option .desc{font-size:13px;color:var(--muted)}
+.task-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#f8fafc;border:1px solid var(--line);font-size:12px;margin:4px 6px 0 0}
+.task-list{display:flex;flex-wrap:wrap}
+.quote-item{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:10px}
+.quote-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.quote-title{font-weight:800}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi .v{font-size:20px;font-weight:900}
+.client-sheet{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px}
+.client-sheet .brandline{display:flex;align-items:center;gap:12px}
+.client-sheet .brandline img{width:68px;height:68px;border-radius:14px;object-fit:cover}
+.client-sheet .big{font-size:26px;font-weight:900;margin-top:14px}
+.client-sheet ul{padding-left:22px}
+.client-sheet li{margin:6px 0}
+.saved-card{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:10px}
+.saved-top{display:flex;justify-content:space-between;gap:8px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:820px}
+th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;vertical-align:top}
+th{background:#f8fafc;position:sticky;top:0}
+.price-input{width:120px;min-height:36px;margin:0;padding:7px 8px}
+.hidden{display:none!important}
+.right{text-align:right}
+footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
+@media(max-width:860px){.grid,.grid2,.option-grid,.totals{grid-template-columns:1fr}.fields3{grid-template-columns:1fr 1fr}.header{align-items:flex-start;flex-wrap:wrap}}
+@media(max-width:560px){.fields,.fields3{grid-template-columns:1fr}.app{padding:10px 10px 70px}.brand img{width:50px;height:50px}.brand p{display:none}.btn{flex:1 1 auto}}
+@media print{
+  body{background:#fff}
+  .no-print,.tabs,.header,footer{display:none!important}
+  .view{display:none!important}
+  #view-print{display:block!important}
+  #print-sheet{padding:0}
+  .client-sheet{border:0;box-shadow:none;padding:0}
+}
+
+.btn.compact{flex:0 0 auto!important;width:auto!important;min-height:38px;padding:8px 11px;font-size:13px}
+.save-status{font-size:12px;color:var(--muted);margin-top:7px}
+.pdf-note{font-size:11px;color:var(--muted);margin-top:8px}
+@media(max-width:560px){
+  .actions .btn.compact{flex:0 0 auto!important;width:auto!important}
+}
+
+
+/* V4 mobile layout fixes */
+@media(max-width:700px){
+  .quote-head{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .quote-head > div{
+    min-width:0;
+    width:100%;
+  }
+  .quote-head .actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+  .quote-head .actions .btn,
+  .quote-head .actions .btn.compact{
+    flex:0 0 auto!important;
+    width:auto!important;
+    max-width:100%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  #view-quote .quote-head .actions .btn.compact{
+    min-height:40px;
+    padding:8px 12px;
+    font-size:13px;
+  }
+}
+
+
+.custom-list{display:grid;gap:10px;margin-top:12px}
+.custom-card{border:1px solid var(--line);border-radius:14px;padding:13px;background:#fff}
+.custom-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.form-help{font-size:12px;color:var(--muted);margin-top:5px}
+.price-tag{font-size:18px;font-weight:900;color:var(--brand)}
+@media(max-width:560px){.custom-card-top{flex-direction:column}.custom-card-top .actions{width:100%}}
+
+</style>
+<link rel="stylesheet" href="/aqua.css"><style>:root{--brand:#09675f;--brand2:#128978;--soft:#e0f6ef;--bg:#f3faf8;--text:#163e3a;--line:#cfe5df}</style><link rel="stylesheet" href="estimator-v1.css"></head>
+<body>
+<main class="app">
+  <header class="header no-print">
+    <div class="brand">
+      <img id="logoA" alt="Logo AMC">
+      <div>
+        <h1>AMC Construcciones y Arreglos</h1>
+        <p>Presupuestos por m² / unidad o por jornal · con PDF y guardado</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="new-quote" class="btn primary" type="button">+ Nuevo presupuesto</button>
+    </div>
+  </header>
+
+  <nav class="tabs no-print">
+    <button class="tab active" data-view="quote">Presupuesto</button>
+    <button class="tab" data-view="add">Agregar trabajo</button>
+    <button class="tab" data-view="saved">Guardados</button>
+    <button class="tab" data-view="tariff">Tarifario</button>
+    <button class="tab" data-view="jobs">Mis trabajos</button>
+    <button class="tab" data-view="settings">Configuración</button>
+  </nav>
+
+  <section id="view-quote" class="view active">
+    <div class="grid">
+      <div>
+        <div class="card" id="quote-meta">
+          <h2>Datos del presupuesto</h2>
+          <p class="small muted">El borrador se guarda automáticamente en este dispositivo.</p>
+          <div class="fields">
+            <label>Número<input id="q-number"></label>
+            <label>Fecha<input id="q-date" type="date"></label>
+            <label>Cliente<input id="q-client" placeholder="Nombre del cliente"></label>
+            <label>Teléfono<input id="q-phone" placeholder="Opcional"></label>
+            <label>Localidad<input id="q-location" placeholder="Ej. Valle Hermoso"></label>
+            <label>Materiales incluidos<select id="q-materials"><option>No</option><option>Sí</option><option>Parcialmente</option></select></label>
+            <label>Forma de pago<input id="q-payment"></label>
+            <label>Validez (días)<input id="q-validity" type="number" min="1"></label>
+          </div>
+          <label style="margin-top:10px">Observaciones para el cliente<textarea id="q-notes" placeholder="Opcional"></textarea></label>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div class="quote-head">
+            <div>
+              <h2>Trabajos agregados</h2>
+              <div class="small muted">Podés ir sumando revoque, cerámico, arreglos varios, etc. y borrar cualquier error.</div>
+            </div>
+            <div class="actions"><button class="btn soft compact" type="button" onclick="document.querySelector('[data-view=add]').click()">+ Agregar trabajo</button></div>
+          </div>
+          <div id="quote-items"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Resumen interno</h2>
+          <div class="totals" style="margin-top:12px">
+            <div class="kpi"><div class="small muted">Total cliente</div><div class="v" id="sum-sale">$0</div></div>
+            <div class="kpi"><div class="small muted">Costo interno</div><div class="v" id="sum-cost">$0</div></div>
+            <div class="kpi"><div class="small muted">Margen bruto</div><div class="v" id="sum-margin">$0</div></div>
+          </div>
+          <div class="actions" style="margin-top:14px">
+            <button id="save-quote" class="btn primary" type="button">Guardar presupuesto</button>
+            <button id="open-print" class="btn" type="button">Vista cliente</button>
+          </div>
+          <div id="save-status" class="save-status">Borrador guardado automáticamente.</div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>Vista rápida del cliente</h3>
+          <div id="client-preview" style="margin-top:12px"></div>
+          <div class="actions no-print" style="margin-top:12px">
+            <button id="download-pdf" class="btn primary" type="button">Descargar PDF</button>
+            <button id="share-pdf" class="btn soft" type="button">Compartir PDF</button>
+            <button id="print-btn" class="btn" type="button">Imprimir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-add" class="view">
+    <div class="grid">
+      <div class="card">
+        <h2>1. Buscar o escribir el trabajo</h2>
+        <p class="small muted">Buscá con palabras simples o parciales: “cerámico”, “grueso”, “fino”, “durlock”, “pintura”, “pilar”, etc. Al elegir una opción, la lista se cierra sola.</p>
+        <label>Buscar en el tarifario
+          <input id="task-search" placeholder="Ej. revoque, cerámico, durlock, pintura...">
+        </label>
+        <div id="task-results" class="search-results"></div>
+        <div class="actions" style="margin-top:10px">
+          <button id="manual-task" class="btn" type="button">Usar como tarea manual</button>
+          <button id="clear-task" class="btn" type="button">Limpiar</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="fields">
+          <label>Trabajo interno<input id="task-name" placeholder="Nombre del trabajo"></label>
+          <label>Descripción que verá el cliente<input id="client-desc" placeholder="Cómo querés mostrarlo en el presupuesto"></label>
+          <label>Unidad<input id="task-unit" value="m²"></label>
+          <label>Cantidad<input id="qty" type="number" min="0" step="0.01" value="1"></label>
+          <label>Precio por m²/unidad<input id="task-price" type="number" min="0" value="0"></label>
+          <label>Operarios<input id="workers" type="number" min="1" value="1"></label>
+        </div>
+        <div id="task-source" class="small muted" style="margin-top:8px">Elegí una tarifa o cargá el trabajo manualmente.</div>
+
+        <div class="hr"></div>
+        <h3>2. Datos para comparar m² vs. jornal</h3>
+        <div class="fields3" style="margin-top:10px">
+          <label>¿Se mide claramente?<select id="measurable"><option value="yes">Sí</option><option value="no">No</option></select></label>
+          <label>Incertidumbre<select id="uncertainty"><option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option></select></label>
+          <label>¿Mezcla varias tareas?<select id="mixed"><option value="no">No</option><option value="yes">Sí</option></select></label>
+          <label>Días si cobrás por m²<input id="m2-days" type="number" min="1" value="1"></label>
+          <label>Horas estimadas si fuera jornal<input id="hours" type="number" min="0.25" step="0.25" value="8"></label>
+          <label>Movilidad total<input id="travel" type="number" min="0" value="12000"></label>
+          <label>Herramientas / consumibles<input id="tools" type="number" min="0" value="0"></label>
+          <label>Materiales cobrados<input id="materials" type="number" min="0" value="0"></label>
+          <label>Otros / contingencia<input id="other" type="number" min="0" value="0"></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>3. Comparación automática</h2>
+        <p class="small muted">La app calcula los dos métodos y te deja elegir cualquiera.</p>
+        <div class="option-grid" style="margin-top:12px">
+          <div id="opt-m2" class="option">
+            <span class="badge">Por m² / unidad</span>
+            <div class="total" id="m2-total">$0</div>
+            <div class="desc" id="m2-desc"></div>
+            <div class="small muted" style="margin-top:6px" id="m2-margin"></div>
+            <button id="choose-m2" class="btn primary" style="width:100%;margin-top:12px" type="button">Agregar esta opción al presupuesto</button>
+          </div>
+          <div id="opt-j" class="option">
+            <span class="badge">Por jornal</span>
+            <div class="total" id="j-total">$0</div>
+            <div class="desc" id="j-desc"></div>
+            <div class="small muted" style="margin-top:6px" id="j-margin"></div>
+            <button id="choose-jornal" class="btn primary" style="width:100%;margin-top:12px" type="button">Agregar esta opción al presupuesto</button>
+          </div>
+        </div>
+        <div id="rec-box" class="notice" style="margin-top:12px"><strong>Recomendación:</strong> <span id="rec-text"></span></div>
+        <div class="notice" style="margin-top:12px">
+          Regla del jornal: hasta 2 h = salida mínima; 2 a 4 h = media jornada; 5 a 8 h = jornada completa; más de 8 h = más jornadas.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-saved" class="view">
+    <div class="card">
+      <div class="quote-head">
+        <div>
+          <h2>Presupuestos guardados</h2>
+          <div class="small muted">Abrí uno guardado, duplicalo, eliminálo o generá el PDF otra vez.</div>
+        </div>
+        <div><input id="saved-search" placeholder="Buscar por cliente o número" style="margin:0;max-width:280px"></div>
+      </div>
+      <div id="saved-list"></div>
+    </div>
+  </section>
+
+  <section id="view-tariff" class="view">
+    <div class="card">
+      <div class="quote-head">
+        <div>
+          <h2>Tarifario base</h2>
+          <div class="small muted">Podés editar tu “Precio AC” y queda guardado en este teléfono.</div>
+        </div>
+        <span id="tariff-count" class="badge"></span>
+      </div>
+      <div class="fields" style="margin-top:12px">
+        <label>Buscar<input id="tariff-search"></label>
+        <label>Rubro<select id="tariff-cat"></select></label>
+      </div>
+      <div class="table-wrap" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Rubro</th><th>Tarea</th><th>Unidad</th><th>Mercado ref.</th><th>Precio AC editable</th></tr></thead>
+          <tbody id="tariff-body"></tbody>
+        </table>
+      </div>
+      <div class="actions" style="margin-top:12px">
+        <button id="reset-prices" class="btn danger" type="button">Restaurar precios originales</button>
+      </div>
+    </div>
+  </section>
+
+  
+  <section id="view-jobs" class="view">
+    <div class="grid">
+      <div class="card">
+        <h2>Agregar o editar un trabajo</h2>
+        <p class="small muted">Creá tus propios trabajos con el nombre y precio que usás en AMC. Después aparecen automáticamente en el buscador y en el tarifario.</p>
+        <input id="job-edit-id" type="hidden">
+        <div class="fields" style="margin-top:12px">
+          <label>Rubro<input id="job-rubro" placeholder="Ej. Albañilería, Pisos, Techos"></label>
+          <label>Nombre del trabajo<input id="job-name" placeholder="Ej. Revoque fino exterior"></label>
+          <label>Unidad<select id="job-unit"><option>m²</option><option>ml</option><option>unidad</option><option>día</option><option>hora</option><option>servicio</option><option>obra</option><option>punto</option><option>salida</option></select></label>
+          <label>Precio AMC<input id="job-price" type="number" min="0" placeholder="0"></label>
+        </div>
+        <label style="margin-top:10px">Observación interna<textarea id="job-note" placeholder="Ej. Solo mano de obra, materiales aparte"></textarea></label>
+        <div class="actions" style="margin-top:12px">
+          <button id="job-save" class="btn primary" type="button">Guardar trabajo</button>
+          <button id="job-cancel" class="btn hidden" type="button">Cancelar edición</button>
+        </div>
+        <div class="notice" style="margin-top:12px"><strong>Precios futuros:</strong> si dentro de 6 meses cambia el valor, entrás acá, tocás Editar y cambiás el precio. No hace falta instalar una versión nueva de la app.</div>
+      </div>
+      <div class="card">
+        <div class="quote-head"><div><h2>Mi listado de trabajos</h2><div class="small muted">Trabajos creados por vos. Podés editarlos o eliminarlos.</div></div><input id="jobs-search" placeholder="Buscar" style="max-width:250px;margin:0"></div>
+        <div id="custom-jobs-list" class="custom-list"></div>
+      </div>
+    </div>
+  </section>
+
+<section id="view-settings" class="view">
+    <div class="grid">
+      <div class="card">
+        <div class="brand" style="margin-bottom:10px"><img id="logoB" alt="Logo AMC"><div><h2>Configuración</h2><div class="small muted">Datos de la empresa y reglas de cobro.</div></div></div>
+        <div class="fields">
+          <label>Nombre empresa<input id="set-company"></label>
+          <label>Teléfono<input id="set-phone"></label>
+          <label>Localidad base<input id="set-location"></label>
+          <label>Validez por defecto<input id="set-validity" type="number" min="1"></label>
+          <label>Anticipo sugerido %<input id="set-advance" type="number" min="0"></label>
+          <label>Jornal del empleado (costo)<input id="set-employeeDay" type="number" min="0"></label>
+          <label>Movilidad por defecto<input id="set-travelDefault" type="number" min="0"></label>
+          <label>Salida hasta 2 h<input id="set-shortDay" type="number" min="0"></label>
+          <label>Media jornada<input id="set-halfDay" type="number" min="0"></label>
+          <label>Jornada completa<input id="set-fullDay" type="number" min="0"></label>
+          <label>Forma de pago<input id="set-payment"></label>
+        </div>
+        <label style="margin-top:10px">Condiciones del presupuesto<textarea id="set-conditions"></textarea></label>
+        <div class="actions" style="margin-top:12px"><button id="save-settings" class="btn primary" type="button">Guardar configuración</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Respaldo</h2>
+        <p class="small muted">Los datos se guardan en este dispositivo. Exportá un respaldo de vez en cuando.</p>
+        <div class="actions">
+          <button id="backup-export" class="btn primary" type="button">Descargar respaldo</button>
+          <label class="btn" style="display:inline-flex;align-items:center">Importar respaldo<input id="backup-import" type="file" accept=".json,application/json" style="display:none"></label>
+        </div>
+        <div class="notice" style="margin-top:14px">
+          El PDF del cliente muestra el logo, los trabajos incluidos y el total final.
+          No muestra tu jornal del empleado, combustible, herramientas, costo interno ni margen.
+        </div>
+        <div class="notice" style="margin-top:10px">
+          <strong>Guardado:</strong> ahora la app guarda en dos lugares del navegador (almacenamiento local + base interna IndexedDB) y al generar/compartir un PDF también guarda automáticamente el presupuesto. En Android, la versión instalada como PWA sigue siendo la opción más segura para conservar datos.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-print" class="view">
+    <div class="card no-print">
+      <div class="actions">
+        <button class="btn" type="button" onclick="document.querySelector('[data-view=quote]').click()">← Volver</button>
+        <button id="download-pdf-2" class="btn primary" type="button">Descargar PDF</button>
+        <button class="btn" type="button" onclick="window.print()">Imprimir</button>
+      </div>
+    </div>
+    <div id="print-sheet" style="margin-top:12px"></div>
+  </section>
+
+  <footer id="app-version"></footer>
+</main>
+<script>
+const BASE_TARIFF = [{"rubro": "Jornales y estructura", "tarea": "UOCRA Oficial Zona A - básico", "unidad": "día", "mercadoMin": 50784.0, "mercadoMax": 50784.0, "precio": 50784.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "UOCRA / Metro Obra", "url": "https://www.metroobra.com/precios-de-mano-de-obra-de-construccion-uocra/", "obs": "Básico de convenio; NO es precio de venta al cliente."}, {"rubro": "Jornales y estructura", "tarea": "UOCRA Ayudante Zona A - básico", "unidad": "día", "mercadoMin": 43192.0, "mercadoMax": 43192.0, "precio": 43192.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "UOCRA / Metro Obra", "url": "https://www.metroobra.com/precios-de-mano-de-obra-de-construccion-uocra/", "obs": "Básico de convenio; NO es precio de venta al cliente."}, {"rubro": "Jornales y estructura", "tarea": "Construcción en seco - valor hora Zona A (Córdoba)", "unidad": "hora", "mercadoMin": 14400.0, "mercadoMax": 14400.0, "precio": 14400.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/actualizaciones/actualizacion-agosto-2026/", "obs": "Costo/hora de referencia para profesional de construcción en seco."}, {"rubro": "Jornales y estructura", "tarea": "Salida corta hasta 2 h - 1 operario", "unidad": "salida", "mercadoMin": 50000.0, "mercadoMax": 55000.0, "precio": 55000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/actualizaciones/actualizacion-agosto-2026/", "obs": "Derivado de la metodología de Servicio Express y Zona A."}, {"rubro": "Jornales y estructura", "tarea": "Media jornada hasta 4 h - 1 operario", "unidad": "media jornada", "mercadoMin": 85000.0, "mercadoMax": 95000.0, "precio": 90000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/actualizaciones/actualizacion-agosto-2026/", "obs": "Para trabajos no medibles por m²/unidad."}, {"rubro": "Jornales y estructura", "tarea": "Jornada comercial 8 h - 1 operario", "unidad": "día", "mercadoMin": 110000.0, "mercadoMax": 120000.0, "precio": 115000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/actualizaciones/actualizacion-agosto-2026/", "obs": "$14.400/h × 8 h ≈ $115.200."}, {"rubro": "Jornales y estructura", "tarea": "Jornal pagado a tu empleado", "unidad": "día", "mercadoMin": 30000.0, "mercadoMax": 30000.0, "precio": 30000.0, "tipo": "DATO INTERNO", "fecha": "01/09/2026", "fuente": "AC Construcción", "url": "", "obs": "Costo interno actual informado por vos; no es tarifa de mercado."}, {"rubro": "Movilidad", "tarea": "GNC Córdoba - referencia", "unidad": "m³", "mercadoMin": 799.0, "mercadoMax": 890.0, "precio": 850.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Combustibles.ar / NaftaRadar", "url": "https://combustibles.ar/precios/cordoba/producto/gnc", "obs": "Usar para revisar periódicamente el costo de movilidad."}, {"rubro": "Movilidad", "tarea": "Nafta súper Córdoba - referencia", "unidad": "litro", "mercadoMin": 2099.0, "mercadoMax": 2199.0, "precio": 2150.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Combustibles.ar / NaftaRadar", "url": "https://combustibles.ar/precios/cordoba/localidad/cordoba/producto/nafta-super", "obs": "Referencia provincial/Capital; Punilla puede variar."}, {"rubro": "Movilidad", "tarea": "Movilidad local AC Construcción", "unidad": "salida", "mercadoMin": 10000.0, "mercadoMax": 15000.0, "precio": 12000.0, "tipo": "DATO INTERNO", "fecha": "01/09/2026", "fuente": "AC Construcción", "url": "", "obs": "Incluye combustible + desgaste + tiempo. Editar según distancia."}, {"rubro": "Albañilería", "tarea": "Colocación de cerámica", "unidad": "m²", "mercadoMin": 9000.0, "mercadoMax": 16500.0, "precio": 25000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Colocación de porcelanato", "unidad": "m²", "mercadoMin": 21000.0, "mercadoMax": 28000.0, "precio": 32000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Colocación de baldosas", "unidad": "m²", "mercadoMin": 15500.0, "mercadoMax": 22000.0, "precio": 26000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Colocación de venecitas / mosaicos", "unidad": "m²", "mercadoMin": 12000.0, "mercadoMax": 20000.0, "precio": 25000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Microcemento alisado", "unidad": "m²", "mercadoMin": 10500.0, "mercadoMax": 21000.0, "precio": 24000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Carpeta y contrapiso", "unidad": "m²", "mercadoMin": 9700.0, "mercadoMax": 19000.0, "precio": 22000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Revoque completo", "unidad": "m²", "mercadoMin": 10000.0, "mercadoMax": 20000.0, "precio": 24000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Revoque fino", "unidad": "m²", "mercadoMin": 7400.0, "mercadoMax": 40000.0, "precio": 18000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Terminación fina. Materiales aparte. Nombre adaptado al uso local."}, {"rubro": "Albañilería", "tarea": "Pared de ladrillo hueco", "unidad": "ml", "mercadoMin": 8500.0, "mercadoMax": 12000.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Pared Durlock / drywall", "unidad": "m²", "mercadoMin": 14200.0, "mercadoMax": 28000.0, "precio": 30000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Reparación de paredes y grietas", "unidad": "m²", "mercadoMin": 6500.0, "mercadoMax": 15000.0, "precio": 20000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Placa antihumedad", "unidad": "m²", "mercadoMin": 10000.0, "mercadoMax": 17000.0, "precio": 20000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Encadenado", "unidad": "ml", "mercadoMin": 14000.0, "mercadoMax": 21000.0, "precio": 25000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Revestimiento base cemento", "unidad": "m²", "mercadoMin": 8200.0, "mercadoMax": 12500.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Impermeabilización de azotea (incluye membrana)", "unidad": "m²", "mercadoMin": 25000.0, "mercadoMax": 62000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Pintura de piscina", "unidad": "m²", "mercadoMin": 9000.0, "mercadoMax": 15000.0, "precio": 16000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Reforma completa de baño - solo mano de obra y demolición", "unidad": "obra", "mercadoMin": 950000.0, "mercadoMax": 2900000.0, "precio": 1800000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Bajada de cordón estándar", "unidad": "unidad", "mercadoMin": 17600.0, "mercadoMax": 27500.0, "precio": 30000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Albañilería", "tarea": "Jornal por reparaciones varias", "unidad": "día", "mercadoMin": 21000.0, "mercadoMax": 37000.0, "precio": 90000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/albanil", "obs": "Solo mano de obra salvo que la tarea indique lo contrario. AC puede cobrar más por estructura, garantía y salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura interior lisa", "unidad": "m²", "mercadoMin": 5500.0, "mercadoMax": 18000.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura de cielorraso", "unidad": "m²", "mercadoMin": 5000.0, "mercadoMax": 13000.0, "precio": 13000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Enduido plástico + pintura", "unidad": "m²", "mercadoMin": 7500.0, "mercadoMax": 17000.0, "precio": 17000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura exterior / frente", "unidad": "m²", "mercadoMin": 5600.0, "mercadoMax": 11500.0, "precio": 14000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura sintética / esmalte", "unidad": "m²", "mercadoMin": 6700.0, "mercadoMax": 19000.0, "precio": 19000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura epoxy", "unidad": "m²", "mercadoMin": 6700.0, "mercadoMax": 14500.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura de piscina", "unidad": "m²", "mercadoMin": 9000.0, "mercadoMax": 15000.0, "precio": 16000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura en altura", "unidad": "m²", "mercadoMin": 8700.0, "mercadoMax": 13500.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Impermeabilización de azotea - mano de obra", "unidad": "m²", "mercadoMin": 5600.0, "mercadoMax": 11200.0, "precio": 12000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Colocación de membrana - mano de obra", "unidad": "m²", "mercadoMin": 12000.0, "mercadoMax": 21000.0, "precio": 22000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Revestimiento plástico texturado", "unidad": "m²", "mercadoMin": 7400.0, "mercadoMax": 40000.0, "precio": 18000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Terminación exterior texturada. Se evita usar una marca comercial como nombre genérico."}, {"rubro": "Pintura", "tarea": "Revestimiento plástico", "unidad": "m²", "mercadoMin": 4300.0, "mercadoMax": 15000.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Revestimiento base cemento", "unidad": "m²", "mercadoMin": 8200.0, "mercadoMax": 12500.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Remoción de papel tapiz", "unidad": "m²", "mercadoMin": 10000.0, "mercadoMax": 14000.0, "precio": 15000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Reparación de paredes / sellado de grietas", "unidad": "m²", "mercadoMin": 6500.0, "mercadoMax": 15000.0, "precio": 18000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura monoambiente - solo mano de obra", "unidad": "obra", "mercadoMin": 65000.0, "mercadoMax": 140000.0, "precio": 140000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Pintura 2 ambientes + baño", "unidad": "obra", "mercadoMin": 105000.0, "mercadoMax": 230000.0, "precio": 230000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Colocación de papel tapiz", "unidad": "m²", "mercadoMin": 7800.0, "mercadoMax": 10000.0, "precio": 12000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Pintura", "tarea": "Jornada pintor - reparaciones varias", "unidad": "día", "mercadoMin": 26000.0, "mercadoMax": 33000.0, "precio": 90000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/pintor", "obs": "Solo mano de obra. En trabajos chicos aplicar salida mínima."}, {"rubro": "Plomería", "tarea": "Destapación simple (pileta o inodoro)", "unidad": "servicio", "mercadoMin": 36000.0, "mercadoMax": 52000.0, "precio": 55000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Destapación urgente / guardia", "unidad": "servicio", "mercadoMin": 50000.0, "mercadoMax": 95000.0, "precio": 95000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Destapación con máquina eléctrica", "unidad": "servicio", "mercadoMin": 45000.0, "mercadoMax": 80000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Desobstrucción de cañería principal", "unidad": "servicio", "mercadoMin": 60000.0, "mercadoMax": 130000.0, "precio": 130000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Cambio de canilla o manguera", "unidad": "unidad", "mercadoMin": 35000.0, "mercadoMax": 60000.0, "precio": 60000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Cambio de inodoro completo", "unidad": "unidad", "mercadoMin": 48000.0, "mercadoMax": 65000.0, "precio": 70000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Cambio de bidet", "unidad": "unidad", "mercadoMin": 30000.0, "mercadoMax": 52000.0, "precio": 55000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Cambio de pileta de cocina o baño", "unidad": "unidad", "mercadoMin": 28000.0, "mercadoMax": 62000.0, "precio": 65000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Instalación de mochila de inodoro", "unidad": "unidad", "mercadoMin": 22000.0, "mercadoMax": 42000.0, "precio": 50000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Sifón o trampa bajo pileta", "unidad": "unidad", "mercadoMin": 20000.0, "mercadoMax": 32000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Llave de paso o válvula de corte", "unidad": "unidad", "mercadoMin": 28000.0, "mercadoMax": 50000.0, "precio": 55000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Instalación de lavarropas", "unidad": "unidad", "mercadoMin": 22000.0, "mercadoMax": 42000.0, "precio": 50000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Instalación de lavavajillas", "unidad": "unidad", "mercadoMin": 22000.0, "mercadoMax": 38000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Instalación de termotanque eléctrico", "unidad": "unidad", "mercadoMin": 55000.0, "mercadoMax": 120000.0, "precio": 120000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Cambio de bomba presurizadora", "unidad": "unidad", "mercadoMin": 55000.0, "mercadoMax": 110000.0, "precio": 110000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Instalación de cabina de ducha", "unidad": "unidad", "mercadoMin": 50000.0, "mercadoMax": 75000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Instalación de mampara de baño", "unidad": "unidad", "mercadoMin": 38000.0, "mercadoMax": 98000.0, "precio": 95000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Reparación de pérdida en cañería", "unidad": "servicio", "mercadoMin": 35000.0, "mercadoMax": 80000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Plomería", "tarea": "Visita de diagnóstico plomería", "unidad": "visita", "mercadoMin": 17000.0, "mercadoMax": 25000.0, "precio": 30000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/plomero", "obs": "Solo mano de obra; materiales aparte."}, {"rubro": "Electricidad", "tarea": "Tomacorriente o interruptor", "unidad": "punto", "mercadoMin": 13000.0, "mercadoMax": 22000.0, "precio": 25000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Luminaria o plafón", "unidad": "unidad", "mercadoMin": 13000.0, "mercadoMax": 32000.0, "precio": 35000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Cambio de llave térmica o disyuntor", "unidad": "unidad", "mercadoMin": 24000.0, "mercadoMax": 42000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Instalación llave termomagnética", "unidad": "unidad", "mercadoMin": 25000.0, "mercadoMax": 40000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Toma eléctrica para aire acondicionado", "unidad": "punto", "mercadoMin": 43000.0, "mercadoMax": 78000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Ventilador de techo", "unidad": "unidad", "mercadoMin": 43000.0, "mercadoMax": 73000.0, "precio": 75000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Ventilador de techo con luz", "unidad": "unidad", "mercadoMin": 47000.0, "mercadoMax": 78000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Campana extractora", "unidad": "unidad", "mercadoMin": 46000.0, "mercadoMax": 100000.0, "precio": 100000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Cocina eléctrica", "unidad": "unidad", "mercadoMin": 35000.0, "mercadoMax": 66000.0, "precio": 70000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Horno eléctrico", "unidad": "unidad", "mercadoMin": 31000.0, "mercadoMax": 60000.0, "precio": 65000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Anafe eléctrico", "unidad": "unidad", "mercadoMin": 28000.0, "mercadoMax": 46000.0, "precio": 50000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Termotanque eléctrico - parte eléctrica", "unidad": "unidad", "mercadoMin": 53000.0, "mercadoMax": 138000.0, "precio": 130000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Calefactor eléctrico", "unidad": "unidad", "mercadoMin": 45000.0, "mercadoMax": 65000.0, "precio": 70000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Detector de humo", "unidad": "unidad", "mercadoMin": 34000.0, "mercadoMax": 76000.0, "precio": 75000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Timbre eléctrico", "unidad": "unidad", "mercadoMin": 38000.0, "mercadoMax": 170000.0, "precio": 90000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Pararrayos", "unidad": "unidad", "mercadoMin": 205000.0, "mercadoMax": 340000.0, "precio": 340000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Puesta a tierra / jabalina", "unidad": "unidad", "mercadoMin": 45000.0, "mercadoMax": 72000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Cableado completo monoambiente", "unidad": "obra", "mercadoMin": 100000.0, "mercadoMax": 250000.0, "precio": 250000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Trámite de conexión eléctrica", "unidad": "trámite", "mercadoMin": 90000.0, "mercadoMax": 133000.0, "precio": 130000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Certificado DCI", "unidad": "certificado", "mercadoMin": 120000.0, "mercadoMax": 240000.0, "precio": 240000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Diagnóstico cortocircuito y reparación", "unidad": "servicio", "mercadoMin": 35000.0, "mercadoMax": 77000.0, "precio": 80000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Electricidad", "tarea": "Visita de diagnóstico / presupuesto eléctrico", "unidad": "visita", "mercadoMin": 25000.0, "mercadoMax": 47000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/electricista", "obs": "Solo trabajos que correspondan a personal calificado/matriculado según normativa aplicable."}, {"rubro": "Gas (matriculado)", "tarea": "Visita de diagnóstico gas", "unidad": "visita", "mercadoMin": 30000.0, "mercadoMax": 58000.0, "precio": 60000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Diagnóstico calefón o termotanque", "unidad": "servicio", "mercadoMin": 22000.0, "mercadoMax": 37000.0, "precio": 45000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Diagnóstico calefactor", "unidad": "servicio", "mercadoMin": 42000.0, "mercadoMax": 67000.0, "precio": 70000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Diagnóstico cocina u horno", "unidad": "servicio", "mercadoMin": 37000.0, "mercadoMax": 77000.0, "precio": 75000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Prueba de hermeticidad", "unidad": "servicio", "mercadoMin": 64000.0, "mercadoMax": 123000.0, "precio": 125000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Habilitación / rehabilitación de gas", "unidad": "trámite", "mercadoMin": 240000.0, "mercadoMax": 360000.0, "precio": 360000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Reconexión de gas", "unidad": "servicio", "mercadoMin": 235000.0, "mercadoMax": 325000.0, "precio": 325000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Instalación de calefón a gas", "unidad": "unidad", "mercadoMin": 78000.0, "mercadoMax": 130000.0, "precio": 130000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Instalación de termotanque a gas", "unidad": "unidad", "mercadoMin": 75000.0, "mercadoMax": 115000.0, "precio": 120000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Instalación de caldera", "unidad": "unidad", "mercadoMin": 200000.0, "mercadoMax": 260000.0, "precio": 260000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Mantenimiento preventivo gas", "unidad": "servicio", "mercadoMin": 50000.0, "mercadoMax": 85000.0, "precio": 85000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Calefactor tiro balanceado", "unidad": "unidad", "mercadoMin": 88000.0, "mercadoMax": 132000.0, "precio": 135000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Calefactor tiro natural", "unidad": "unidad", "mercadoMin": 73000.0, "mercadoMax": 98000.0, "precio": 100000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Rejilla de ventilación gas", "unidad": "unidad", "mercadoMin": 38000.0, "mercadoMax": 100000.0, "precio": 100000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Cocina a gas", "unidad": "unidad", "mercadoMin": 90000.0, "mercadoMax": 132000.0, "precio": 135000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Horno a gas", "unidad": "unidad", "mercadoMin": 70000.0, "mercadoMax": 115000.0, "precio": 120000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Anafe a gas", "unidad": "unidad", "mercadoMin": 62000.0, "mercadoMax": 96000.0, "precio": 100000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Gas (matriculado)", "tarea": "Cocina industrial a gas", "unidad": "unidad", "mercadoMin": 130000.0, "mercadoMax": 200000.0, "precio": 200000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Clickie", "url": "https://clickie.com.ar/precios/gasista", "obs": "Debe realizarlo gasista matriculado."}, {"rubro": "Construcción en seco", "tarea": "Cielorraso placa yeso completo hasta 3,00 m - estructura + emplacado + masillado N4", "unidad": "m²", "mercadoMin": 23400.0, "mercadoMax": 26000.0, "precio": 28000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "CostoSimple informa que el emplacado representa aprox. 25% del tiempo del cielorraso completo; lijado se cotiza aparte. Rango convertido a Zona A (Córdoba) usando la tarifa hora vigente de agosto."}, {"rubro": "Construcción en seco", "tarea": "Cielorraso sin maestra hasta 3,00 m - emplacado + masillado N4", "unidad": "m²", "mercadoMin": 19800.0, "mercadoMax": 22000.0, "precio": 24000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Para paños de 1,20 m o menos según guía. Rango convertido a Zona A (Córdoba) usando la tarifa hora vigente de agosto."}, {"rubro": "Construcción en seco", "tarea": "Cielorraso bajo vigas F-47 hasta 3,00 m - emplacado + masillado N4", "unidad": "m²", "mercadoMin": 22400.0, "mercadoMax": 24800.0, "precio": 27000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Guía técnica de construcción en seco. Rango convertido a Zona A (Córdoba) usando la tarifa hora vigente de agosto."}, {"rubro": "Construcción en seco", "tarea": "Cielorraso inclinado hasta 3,00 m - completo", "unidad": "m²", "mercadoMin": 25900.0, "mercadoMax": 28800.0, "precio": 31000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Mayor dificultad. Rango convertido a Zona A (Córdoba) usando la tarifa hora vigente de agosto."}, {"rubro": "Construcción en seco", "tarea": "Cielorraso exterior/cochera/quincho hasta 3,00 m", "unidad": "m²", "mercadoMin": 26400.0, "mercadoMax": 29300.0, "precio": 32000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Mayor dificultad por ambiente exterior. Rango convertido a Zona A (Córdoba) usando la tarifa hora vigente de agosto."}, {"rubro": "Construcción en seco", "tarea": "SOLO colocar placas en cielorraso con estructura ya hecha, hasta 3,00 m", "unidad": "m²", "mercadoMin": 5800.0, "mercadoMax": 6500.0, "precio": 9000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Derivado del 25% de participación del emplacado en el cielorraso completo. En trabajos chicos aplicar salida mínima + movilidad. No incluye masillado, cinta ni lijado."}, {"rubro": "Construcción en seco", "tarea": "Masillado/tomado de juntas de cielorraso", "unidad": "m²", "mercadoMin": 6300.0, "mercadoMax": 7000.0, "precio": 8000.0, "tipo": "DERIVADO", "fecha": "Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Estimado desde la participación de masillado (27%) del cielorraso completo; ajustar por estado/juntas."}, {"rubro": "Construcción en seco", "tarea": "Lijado de cielorraso", "unidad": "m²", "mercadoMin": 1700.0, "mercadoMax": 1900.0, "precio": 3000.0, "tipo": "DERIVADO", "fecha": "Jul/Ago-2026", "fuente": "CostoSimple", "url": "https://costosimple.com.ar/revistas/revista-julio-ago-2026/", "obs": "Derivado de valores publicados para lijado y ajuste a Zona A."}, {"rubro": "Impermeabilización", "tarea": "Membrana líquida aplicada - materiales + mano de obra", "unidad": "m²", "mercadoMin": 14000.0, "mercadoMax": 26000.0, "precio": 26000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Servidos Córdoba", "url": "https://servidos.ar/servicios/impermeabilizacion/cordoba", "obs": "Referencia específica para Córdoba. Revisar si el precio incluye materiales según la tarea."}, {"rubro": "Impermeabilización", "tarea": "Membrana asfáltica aluminizada colocada", "unidad": "m²", "mercadoMin": 22000.0, "mercadoMax": 31000.0, "precio": 32000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Servidos Córdoba", "url": "https://servidos.ar/servicios/impermeabilizacion/cordoba", "obs": "Referencia específica para Córdoba. Revisar si el precio incluye materiales según la tarea."}, {"rubro": "Impermeabilización", "tarea": "Membrana geotextil + poliuretano", "unidad": "m²", "mercadoMin": 32000.0, "mercadoMax": 48000.0, "precio": 48000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Servidos Córdoba", "url": "https://servidos.ar/servicios/impermeabilizacion/cordoba", "obs": "Referencia específica para Córdoba. Revisar si el precio incluye materiales según la tarea."}, {"rubro": "Impermeabilización", "tarea": "Tratamiento pared con filtración/humedad puntual", "unidad": "servicio", "mercadoMin": 51000.0, "mercadoMax": 153000.0, "precio": 150000.0, "tipo": "DIRECTO", "fecha": "Ago-2026", "fuente": "Servidos Córdoba", "url": "https://servidos.ar/servicios/impermeabilizacion/cordoba", "obs": "Referencia específica para Córdoba. Revisar si el precio incluye materiales según la tarea."}, {"rubro": "Albañilería", "tarea": "Revoque grueso", "unidad": "m²", "mercadoMin": 10000, "mercadoMax": 20000, "precio": 16000, "tipo": "DERIVADO", "fecha": "Sep-2026", "fuente": "AMC / referencia de revoque completo", "url": "", "obs": "Valor comercial orientativo para revoque grueso. Ajustar por espesor, plomo y estado de pared."}, {"rubro": "Albañilería", "tarea": "Revoque grueso + fino", "unidad": "m²", "mercadoMin": 18000, "mercadoMax": 32000, "precio": 30000, "tipo": "DERIVADO", "fecha": "Sep-2026", "fuente": "AMC / referencias combinadas", "url": "", "obs": "Mano de obra conjunta de grueso y fino. Hidrófugo/azotado se cotiza aparte si corresponde."}];
+const LOGO_PNG = "data:image/png;base64,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…36445 tokens truncated…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";
+const LOGO_W = 260;
+const LOGO_H = 260;
+const KEY = 'acConstruccionAppV2';
+const DRAFT = 'acConstruccionDraftV2';
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const money = n => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(Number(n)||0);
+const clamp = n => Math.max(0, Number(n)||0);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const defaults = {
+  settings: {
+    company: 'AMC Construcciones y Arreglos',
+    phone: '',
+    location: 'Valle Hermoso, Córdoba',
+    validity: 10,
+    advance: 30,
+    employeeDay: 30000,
+    travelDefault: 12000,
+    shortDay: 55000,
+    halfDay: 90000,
+    fullDay: 115000,
+    payment: 'A convenir',
+    conditions: 'El presente presupuesto incluye exclusivamente los trabajos detallados. Toda tarea adicional o modificación se cotiza por separado.'
+  },
+  overrides: {},
+  customTariffs: [],
+  quotes: []
+};
+let db = loadDb();
+let draft = loadDraft() || newDraft();
+let selected = null;
+let compareState = null;
+
+function normalize(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+function loadDb(){
+  try {
+    const raw = window.AMCStored?.saved?.db || JSON.parse(localStorage.getItem(KEY) || '{}');
+    return {
+      settings: Object.assign({}, defaults.settings, raw.settings || {}),
+      overrides: raw.overrides || {},
+      customTariffs: Array.isArray(raw.customTariffs) ? raw.customTariffs : [],
+      quotes: Array.isArray(raw.quotes) ? raw.quotes : []
+    };
+  } catch(e) {
+    return structuredClone(defaults);
+  }
+}
+const IDB_NAME='AMCConstruccionesPresupuestosDB', IDB_STORE='state';
+function openIdb(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){ resolve(null); return; }
+    const req=indexedDB.open(IDB_NAME,1);
+    req.onupgradeneeded=()=>{ if(!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE); };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>resolve(null);
+  });
+}
+async function idbSaveState(){
+  try{
+    const idb=await openIdb(); if(!idb) return;
+    const tx=idb.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).put(JSON.parse(JSON.stringify(db)),'db');
+  }catch(e){}
+}
+async function idbLoadState(){
+  try{
+    const idb=await openIdb(); if(!idb) return null;
+    return await new Promise(resolve=>{
+      const tx=idb.transaction(IDB_STORE,'readonly');
+      const req=tx.objectStore(IDB_STORE).get('db');
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>resolve(null);
+    });
+  }catch(e){ return null; }
+}
+function saveDb(){
+  try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){}
+  idbSaveState();
+}
+async function strengthenStorage(){
+  try{
+    if(navigator.storage && navigator.storage.persist) await navigator.storage.persist();
+  }catch(e){}
+}
+function loadDraft(){ if(window.AMCStored?.saved)return window.AMCStored.saved.draft; try { return JSON.parse(localStorage.getItem(DRAFT) || 'null'); } catch(e) { return null; } }
+function saveDraft(){ localStorage.setItem(DRAFT, JSON.stringify(draft)); }
+function nextNumber(){
+  const d = new Date();
+  const pref = `AMC-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  const nums = (db.quotes||[]).map(q => q.number || '').filter(n => n.startsWith(pref)).map(n => Number(n.split('-').pop()) || 0);
+  const n = nums.length ? Math.max(...nums) + 1 : 1;
+  return `${pref}-${String(n).padStart(3,'0')}`;
+}
+function newDraft(){
+  return {
+    id: '',
+    number: nextNumber(),
+    date: today(),
+    client: '',
+    phone: '',
+    location: '',
+    materialsIncluded: 'No',
+    payment: db.settings.payment,
+    validity: db.settings.validity,
+    notes: '',
+    items: []
+  };
+}
+function effectivePrice(t) {
+  if(t && t.custom) return Number(t.precio)||0;
+  return db.overrides[t.tarea] ?? t.precio ?? 0;
+}
+function allTariffs(){ return BASE_TARIFF.concat(db.customTariffs || []); }
+function nav(name){
+  if(!window.amcBackNavigation&&history.state?.amcView!==name)history.pushState({amcView:name},'', '#'+name);
+  $$('.view').forEach(v => v.classList.remove('active'));
+  $('#view-' + name).classList.add('active');
+  $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  if (name === 'saved') renderSaved();
+  if (name === 'tariff') renderTariff();
+  if (name === 'jobs') renderCustomJobs();
+  if (name === 'settings') renderSettings();
+  if (name === 'print') renderPrintSheet(draft);
+  const target=document.querySelector(name==='add'?'#task-search':'#view-'+name);target.style.scrollMarginTop='85px';target.scrollIntoView({block:'start',behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => nav(b.dataset.view)));
+window.addEventListener('popstate',e=>{window.amcBackNavigation=true;nav(e.state?.amcView||'quote');window.amcBackNavigation=false;});
+
+function setDraftFromForm(){
+  draft.number = $('#q-number').value.trim() || draft.number;
+  draft.date = $('#q-date').value || today();
+  draft.client = $('#q-client').value.trim();
+  draft.phone = $('#q-phone').value.trim();
+  draft.location = $('#q-location').value.trim();
+  draft.materialsIncluded = $('#q-materials').value;
+  draft.payment = $('#q-payment').value.trim();
+  draft.validity = clamp($('#q-validity').value);
+  draft.notes = $('#q-notes').value.trim();
+  saveDraft();
+  renderQuote();
+}
+function loadDraftToForm(){
+  $('#q-number').value = draft.number || nextNumber();
+  $('#q-date').value = draft.date || today();
+  $('#q-client').value = draft.client || '';
+  $('#q-phone').value = draft.phone || '';
+  $('#q-location').value = draft.location || '';
+  $('#q-materials').value = draft.materialsIncluded || 'No';
+  $('#q-payment').value = draft.payment || db.settings.payment;
+  $('#q-validity').value = draft.validity ?? db.settings.validity;
+  $('#q-notes').value = draft.notes || '';
+}
+document.querySelectorAll('#quote-meta input, #quote-meta select, #quote-meta textarea').forEach(el => el.addEventListener('input', setDraftFromForm));
+
+function scoreTask(task, qNorm){
+  if (!qNorm) return 1;
+  const hay = normalize([task.rubro, task.tarea, task.unidad, task.obs].join(' '));
+  const terms = qNorm.split(' ').filter(Boolean);
+  let score = 0;
+  if (hay.includes(qNorm)) score += 10;
+  const title = normalize(task.tarea);
+  if (title.startsWith(qNorm)) score += 5;
+  for (const term of terms) {
+    if (title.includes(term)) score += 3;
+    else if (hay.includes(term)) score += 1;
+  }
+  return score;
+}
+function searchTasks(q){
+  const qNorm = normalize(q);
+  let list = allTariffs().map(t => ({t, score: scoreTask(t, qNorm)})).filter(x => x.score > 0);
+  list.sort((a,b) => b.score - a.score || effectivePrice(a.t) - effectivePrice(b.t));
+  return list.slice(0, 20).map(x => x.t);
+}
+function renderSearch(){
+  const q = $('#task-search').value.trim();
+  const box = $('#task-results');
+  const list = searchTasks(q);
+  if (!list.length) {
+    box.innerHTML = '<div class="search-item muted">No encontré coincidencias. Escribí el trabajo manualmente y seguí igual.</div>';
+    return;
+  }
+  box.innerHTML = list.map((t, i) => `
+    <div class="search-item">
+      <div class="scores"><span class="badge">${esc(t.rubro)}</span> <span class="small muted">${esc(t.tipo || '')}</span></div>
+      <div class="title" style="margin-top:6px">${esc(t.tarea)}</div>
+      <div class="small muted">${esc(t.unidad)} · Precio AC sugerido: <strong>${money(effectivePrice(t))}</strong></div>
+      <div class="actions" style="margin-top:8px"><button class="btn soft use-search" data-i="${i}" type="button">Usar este trabajo</button></div>
+    </div>`).join('');
+  box.querySelectorAll('.use-search').forEach((b) => b.addEventListener('click', () => chooseTask(list[Number(b.dataset.i)])));
+}
+$('#task-search').addEventListener('input', renderSearch);
+
+document.addEventListener('click', (e) => {
+  const search = document.getElementById('task-search');
+  const results = document.getElementById('task-results');
+  if (!search || !results) return;
+  if (e.target !== search && !results.contains(e.target)) results.innerHTML = '';
+});
+$('#task-search').addEventListener('focus', renderSearch);
+
+
+function chooseTask(t){
+  selected = t;
+  $('#task-name').value = t.tarea;
+  $('#client-desc').value = t.tarea;
+  $('#task-unit').value = t.unidad || 'unidad';
+  $('#task-price').value = effectivePrice(t);
+  $('#task-search').value = t.tarea;
+  $('#task-results').innerHTML = '';
+  $('#task-source').innerHTML = `<span class="badge ${t.tipo==='DIRECTO' ? 'ok' : 'warn'}">${esc(t.tipo || 'REFERENCIA')}</span> ${esc(t.fuente || '')}${t.fecha ? ' · ' + esc(t.fecha) : ''}`;
+  calcCompare();
+}
+$('#manual-task').addEventListener('click', () => {
+  selected = null;
+  const name = $('#task-search').value.trim() || $('#task-name').value.trim() || 'Trabajo de construcción';
+  $('#task-name').value = name;
+  $('#client-desc').value = $('#client-desc').value.trim() || name;
+  $('#task-source').textContent = 'Trabajo manual.';
+  calcCompare();
+});
+$('#clear-task').addEventListener('click', resetTask);
+
+['task-name','client-desc','task-unit','qty','task-price','m2-days','workers','hours','measurable','uncertainty','mixed','travel','tools','materials','other'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', calcCompare);
+});
+
+function quoteTotals(q = draft){
+  return (q.items || []).reduce((acc, it) => {
+    acc.sale += Number(it.clientCharge || 0);
+    acc.cost += Number(it.internalCost || 0);
+    return acc;
+  }, {sale:0, cost:0});
+}
+function jornalTier(hours){
+  const s = db.settings;
+  if (hours <= 2) return {label:'Salida hasta 2 h', rate:s.shortDay, days:1};
+  if (hours <= 4) return {label:'Media jornada', rate:s.halfDay, days:1};
+  if (hours <= 8) return {label:'Jornada completa', rate:s.fullDay, days:1};
+  return {label:`${Math.ceil(hours/8)} jornadas`, rate:s.fullDay, days:Math.ceil(hours/8)};
+}
+function recommendMethod(){
+  let m = 0, j = 0;
+  if ($('#measurable').value === 'yes') m += 3; else j += 3;
+  const uncertainty = $('#uncertainty').value;
+  if (uncertainty === 'low') m += 2;
+  if (uncertainty === 'medium') j += 1;
+  if (uncertainty === 'high') j += 3;
+  if ($('#mixed').value === 'yes') j += 2; else m += 1;
+  if (clamp($('#qty').value) >= 10) m += 1;
+  if (m > j) return {method:'m2', text:'Conviene cobrar por m²/unidad porque el alcance parece claro y medible.'};
+  if (j > m) return {method:'jornal', text:'Conviene cobrar por jornal porque hay incertidumbre, reparación o tareas mezcladas.'};
+  return {method:'either', text:'Las dos formas son válidas. Mirá margen, riesgo y cuál te conviene explicar mejor.'};
+}
+function calcCompare(){
+  const qty = clamp($('#qty').value);
+  const price = clamp($('#task-price').value);
+  const workers = Math.max(1, Math.ceil(clamp($('#workers').value) || 1));
+  const m2Days = Math.max(1, Math.ceil(clamp($('#m2-days').value) || 1));
+  const hours = Math.max(0.25, clamp($('#hours').value) || 8);
+  const travel = clamp($('#travel').value);
+  const tools = clamp($('#tools').value);
+  const materials = clamp($('#materials').value);
+  const other = clamp($('#other').value);
+  const employeeDay = clamp(db.settings.employeeDay);
+
+  const m2Sale = qty * price + travel + tools + materials + other;
+  const m2Cost = m2Days * workers * employeeDay + travel + tools + materials + other;
+
+  const jt = jornalTier(hours);
+  const jSale = jt.days * workers * jt.rate + travel + tools + materials + other;
+  const jCost = jt.days * workers * employeeDay + travel + tools + materials + other;
+
+  const rec = recommendMethod();
+  compareState = {
+    m2: {sale:m2Sale, cost:m2Cost, margin:m2Sale-m2Cost, days:m2Days, detail:`${qty} × ${money(price)} por ${$('#task-unit').value || 'unidad'}`},
+    jornal: {sale:jSale, cost:jCost, margin:jSale-jCost, days:jt.days, tier:jt.label, detail:`${jt.label} · ${workers} operario(s)`},
+    rec
+  };
+
+  $('#m2-total').textContent = money(m2Sale);
+  $('#m2-desc').textContent = compareState.m2.detail;
+  $('#m2-margin').textContent = 'Margen bruto estimado: ' + money(compareState.m2.margin);
+  $('#j-total').textContent = money(jSale);
+  $('#j-desc').textContent = compareState.jornal.detail;
+  $('#j-margin').textContent = 'Margen bruto estimado: ' + money(compareState.jornal.margin);
+  $('#opt-m2').classList.toggle('recommended', rec.method === 'm2');
+  $('#opt-j').classList.toggle('recommended', rec.method === 'jornal');
+  $('#rec-box').className = 'notice' + (rec.method === 'either' ? ' warn' : '');
+  $('#rec-text').textContent = rec.text;
+}
+function resetTask(){
+  selected = null;
+  $('#task-search').value = '';
+  $('#task-name').value = '';
+  $('#client-desc').value = '';
+  $('#task-unit').value = 'm²';
+  $('#qty').value = 1;
+  $('#task-price').value = 0;
+  $('#workers').value = 1;
+  $('#m2-days').value = 1;
+  $('#hours').value = 8;
+  $('#measurable').value = 'yes';
+  $('#uncertainty').value = 'low';
+  $('#mixed').value = 'no';
+  $('#travel').value = db.settings.travelDefault;
+  $('#tools').value = 0;
+  $('#materials').value = 0;
+  $('#other').value = 0;
+  $('#task-source').textContent = 'Elegí una tarifa o cargá el trabajo manualmente.';
+  $('#task-results').innerHTML = '';
+  calcCompare();
+}
+function addItem(method){
+  if (!compareState) calcCompare();
+  const desc = $('#task-name').value.trim();
+  const clientDesc = $('#client-desc').value.trim() || desc;
+  if (!desc) { alert('Primero elegí o escribí un trabajo.'); return; }
+  const info = compareState[method];
+  draft.items.push({
+    id: 'it_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    description: desc,
+    clientDescription: clientDesc,
+    method: method,
+    clientCharge: info.sale,
+    internalCost: info.cost,
+    details: {
+      quantity: clamp($('#qty').value),
+      unit: $('#task-unit').value,
+      unitPrice: clamp($('#task-price').value),
+      workers: Math.max(1, Math.ceil(clamp($('#workers').value) || 1)),
+      m2Days: Math.max(1, Math.ceil(clamp($('#m2-days').value) || 1)),
+      hours: clamp($('#hours').value),
+      travel: clamp($('#travel').value),
+      tools: clamp($('#tools').value),
+      materials: clamp($('#materials').value),
+      other: clamp($('#other').value)
+    }
+  });
+  saveDraft();
+  renderQuote();
+  resetTask();
+  nav('quote');
+}
+$('#choose-m2').addEventListener('click', () => addItem('m2'));
+$('#choose-jornal').addEventListener('click', () => addItem('jornal'));
+
+function renderQuote(){
+  const box = $('#quote-items');
+  const items = draft.items || [];
+  if (!items.length) {
+    box.innerHTML = '<div class="notice">Todavía no agregaste trabajos. Entrá en “Agregar trabajo” para sumar revoque, cerámico, arreglos, etc.</div>';
+  } else {
+    box.innerHTML = items.map((it, i) => `
+      <div class="quote-item">
+        <div class="quote-head">
+          <div>
+            <div class="quote-title">${esc(it.clientDescription)}</div>
+            <div class="small muted">${it.method === 'm2' ? 'Cobrado por m²/unidad' : 'Cobrado por jornal'} · Costo interno: ${money(it.internalCost)}</div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn danger remove-item" data-i="${i}">Borrar</button>
+          </div>
+        </div>
+        <div class="task-list">
+          <span class="task-chip">Cliente: ${money(it.clientCharge)}</span>
+          <span class="task-chip">Método: ${it.method === 'm2' ? 'm²/unidad' : 'jornal'}</span>
+          <span class="task-chip">Interno: ${money(it.internalCost)}</span>
+        </div>
+      </div>
+    `).join('');
+    box.querySelectorAll('.remove-item').forEach(b => b.addEventListener('click', () => {
+      draft.items.splice(Number(b.dataset.i), 1);
+      saveDraft();
+      renderQuote();
+    }));
+  }
+  const totals = quoteTotals();
+  $('#sum-sale').textContent = money(totals.sale);
+  $('#sum-cost').textContent = money(totals.cost);
+  $('#sum-margin').textContent = money(totals.sale - totals.cost);
+  renderClientPreview();
+}
+function renderClientPreview(){
+  const totals = quoteTotals();
+  $('#client-preview').innerHTML = `
+    <div class="client-sheet">
+      <div class="brandline">
+        <img src="${LOGO_PNG}" alt="Logo">
+        <div>
+          <div style="font-size:21px;font-weight:900">${esc(db.settings.company)}</div>
+          <div class="muted">Presupuesto ${esc(draft.number)} · ${esc(draft.date)}</div>
+        </div>
+      </div>
+      ${draft.client ? `<p><strong>Cliente:</strong> ${esc(draft.client)}</p>` : ''}
+      ${draft.location ? `<p><strong>Localidad:</strong> ${esc(draft.location)}</p>` : ''}
+      <div class="hr"></div>
+      <strong>Trabajos incluidos</strong>
+      <ul>${(draft.items||[]).map(it => `<li>${esc(it.clientDescription)}</li>`).join('')}</ul>
+      <div class="big">TOTAL FINAL: ${money(totals.sale)}</div>
+      <div class="small muted">Validez: ${draft.validity || db.settings.validity} días · Forma de pago: ${esc(draft.payment || db.settings.payment)} · Materiales incluidos: ${esc(draft.materialsIncluded || 'No')}</div>
+    </div>`;
+}
+function saveQuote(){
+  setDraftFromForm();
+  if (!(draft.items||[]).length) { alert('Agregá al menos un trabajo.'); return; }
+  const now = new Date().toISOString();
+  if (draft.id) {
+    const i = db.quotes.findIndex(q => q.id === draft.id);
+    if (i >= 0) db.quotes[i] = {...draft, updatedAt: now};
+    else db.quotes.unshift({...draft, updatedAt: now});
+  } else {
+    draft.id = 'q_' + Date.now();
+    db.quotes.unshift({...draft, createdAt: now, updatedAt: now});
+  }
+  saveDb();
+  saveDraft();
+  renderSaved();
+  const st=document.getElementById('save-status');
+  if(st) st.textContent='Guardado en el dispositivo · ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  alert('Presupuesto guardado.');
+}
+$('#save-quote').addEventListener('click', saveQuote);
+$('#new-quote').addEventListener('click', () => {
+  if ((draft.items||[]).length && !confirm('¿Querés empezar un presupuesto nuevo? Guardá antes si lo querés conservar.')) return;
+  draft = newDraft();
+  saveDraft();
+  loadDraftToForm();
+  renderQuote();
+  resetTask();
+  nav('quote');
+});
+
+function renderSaved(){
+  const q = normalize($('#saved-search').value);
+  const list = (db.quotes || []).filter(item => {
+    if (!q) return true;
+    return normalize([item.number, item.client, item.location, item.date].join(' ')).includes(q);
+  });
+  const box = $('#saved-list');
+  if (!list.length) {
+    box.innerHTML = '<div class="notice">No hay presupuestos guardados con esa búsqueda.</div>';
+    return;
+  }
+  box.innerHTML = list.map(qt => {
+    const totals = quoteTotals(qt);
+    return `
+      <div class="saved-card">
+        <div class="saved-top">
+          <div><strong>${esc(qt.number)}</strong><div class="small muted">${esc(qt.client || 'Sin cliente')} · ${esc(qt.date || '')}</div></div>
+          <strong>${money(totals.sale)}</strong>
+        </div>
+        <div class="small muted" style="margin-top:4px">${esc(qt.location || '')}</div>
+        <div class="actions" style="margin-top:10px">
+          <button class="btn open-q" data-id="${esc(qt.id)}">Abrir</button>
+          <button class="btn pdf-q" data-id="${esc(qt.id)}">PDF</button>
+          <button class="btn soft dup-q" data-id="${esc(qt.id)}">Duplicar</button>
+          <button class="btn danger del-q" data-id="${esc(qt.id)}">Eliminar</button>
+        </div>
+      </div>`;
+  }).join('');
+  box.querySelectorAll('.open-q').forEach(b => b.addEventListener('click', () => {
+    const qx = db.quotes.find(q => q.id === b.dataset.id); if (!qx) return;
+    draft = JSON.parse(JSON.stringify(qx)); saveDraft(); loadDraftToForm(); renderQuote(); nav('quote');
+  }));
+  box.querySelectorAll('.pdf-q').forEach(b => b.addEventListener('click', () => {
+    const qx = db.quotes.find(q => q.id === b.dataset.id); if (!qx) return; downloadPdf(qx);
+  }));
+  box.querySelectorAll('.dup-q').forEach(b => b.addEventListener('click', () => {
+    const qx = db.quotes.find(q => q.id === b.dataset.id); if (!qx) return;
+    draft = JSON.parse(JSON.stringify(qx)); draft.id=''; draft.number = nextNumber(); draft.date = today(); saveDraft(); loadDraftToForm(); renderQuote(); nav('quote');
+  }));
+  box.querySelectorAll('.del-q').forEach(b => b.addEventListener('click', () => {
+    if (!confirm('¿Eliminar este presupuesto guardado?')) return;
+    db.quotes = db.quotes.filter(q => q.id !== b.dataset.id); saveDb(); renderSaved();
+  }));
+}
+$('#saved-search').addEventListener('input', renderSaved);
+
+function renderTariff(){
+  const q = normalize($('#tariff-search').value), cat = $('#tariff-cat').value;
+  let list = allTariffs().filter(t => (!cat || t.rubro === cat) && (!q || normalize([t.rubro, t.tarea, t.unidad].join(' ')).includes(q)));
+  $('#tariff-count').textContent = list.length + ' tarifas';
+  $('#tariff-body').innerHTML = list.map(t => `
+    <tr>
+      <td>${esc(t.rubro)}</td>
+      <td><strong>${esc(t.tarea)}</strong><div class="small muted">${esc(t.custom ? 'PROPIO' : t.tipo)} · ${esc(t.custom ? 'AMC' : t.fuente)}</div></td>
+      <td>${esc(t.unidad)}</td>
+      <td>${money(t.mercadoMin)} - ${money(t.mercadoMax)}</td>
+      <td><input class="price-input tariff-p" data-task="${esc(t.tarea)}" type="number" min="0" value="${effectivePrice(t)}"></td>
+    </tr>`).join('');
+  $$('.tariff-p').forEach(inp => inp.addEventListener('change', () => {
+    const ct=(db.customTariffs||[]).find(t=>t.tarea===inp.dataset.task);
+    if(ct){ ct.precio=clamp(inp.value); } else { db.overrides[inp.dataset.task] = clamp(inp.value); }
+    saveDb(); renderCustomJobs();
+    if (selected && selected.tarea === inp.dataset.task) $('#task-price').value = clamp(inp.value);
+  }));
+}
+$('#tariff-search').addEventListener('input', renderTariff);
+$('#tariff-cat').addEventListener('change', renderTariff);
+$('#reset-prices').addEventListener('click', () => {
+  if (!confirm('¿Restaurar los precios del tarifario base? Tus trabajos propios no se borran.')) return;
+  db.overrides = {}; saveDb(); renderTariff();
+});
+
+
+function clearJobForm(){
+  $('#job-edit-id').value=''; $('#job-rubro').value=''; $('#job-name').value=''; $('#job-unit').value='m²'; $('#job-price').value=''; $('#job-note').value='';
+  $('#job-save').textContent='Guardar trabajo'; $('#job-cancel').classList.add('hidden');
+}
+function renderCustomJobs(){
+  const q=normalize($('#jobs-search') ? $('#jobs-search').value : '');
+  const list=(db.customTariffs||[]).filter(t=>!q || normalize([t.rubro,t.tarea,t.unidad,t.obs].join(' ')).includes(q));
+  const box=$('#custom-jobs-list'); if(!box) return;
+  if(!list.length){ box.innerHTML='<div class="notice">Todavía no agregaste trabajos propios. Usá el formulario para crear el primero.</div>'; return; }
+  box.innerHTML=list.map(t=>`<div class="custom-card"><div class="custom-card-top"><div><span class="badge">${esc(t.rubro||'Sin rubro')}</span><div style="font-weight:850;margin-top:6px">${esc(t.tarea)}</div><div class="small muted">${esc(t.unidad)} · ${esc(t.obs||'')}</div><div class="price-tag" style="margin-top:5px">${money(t.precio)}</div></div><div class="actions"><button class="btn edit-job" data-id="${esc(t.id)}" type="button">Editar</button><button class="btn danger delete-job" data-id="${esc(t.id)}" type="button">Eliminar</button></div></div></div>`).join('');
+  box.querySelectorAll('.edit-job').forEach(b=>b.addEventListener('click',()=>{
+    const t=(db.customTariffs||[]).find(x=>x.id===b.dataset.id); if(!t)return;
+    $('#job-edit-id').value=t.id; $('#job-rubro').value=t.rubro; $('#job-name').value=t.tarea; $('#job-unit').value=t.unidad; $('#job-price').value=t.precio; $('#job-note').value=t.obs||'';
+    $('#job-save').textContent='Actualizar trabajo'; $('#job-cancel').classList.remove('hidden'); document.querySelector('#view-jobs').scrollIntoView({block:'start',behavior:'smooth'});
+  }));
+  box.querySelectorAll('.delete-job').forEach(b=>b.addEventListener('click',()=>{
+    const t=(db.customTariffs||[]).find(x=>x.id===b.dataset.id); if(!t)return;
+    if(!confirm('¿Eliminar “'+t.tarea+'” de tu listado?'))return;
+    db.customTariffs=db.customTariffs.filter(x=>x.id!==t.id); saveDb(); renderCustomJobs(); renderTariff();
+  }));
+}
+$('#job-save').addEventListener('click',()=>{
+  const id=$('#job-edit-id').value; const rubro=$('#job-rubro').value.trim(); const tarea=$('#job-name').value.trim(); const unidad=$('#job-unit').value; const precio=clamp($('#job-price').value); const obs=$('#job-note').value.trim();
+  if(!tarea){alert('Escribí el nombre del trabajo.');return;} if(precio<=0){alert('Cargá un precio mayor a cero.');return;}
+  if(id){ const t=db.customTariffs.find(x=>x.id===id); if(t){Object.assign(t,{rubro:rubro||'Otros',tarea,unidad,precio,obs});} }
+  else { db.customTariffs.push({id:'job_'+Date.now(),rubro:rubro||'Otros',tarea,unidad,precio,mercadoMin:0,mercadoMax:0,tipo:'PROPIO',fecha:today(),fuente:'AMC',url:'',obs,custom:true}); }
+  saveDb(); clearJobForm(); renderCustomJobs(); renderTariff(); alert(id?'Trabajo actualizado.':'Trabajo agregado a tu listado.');
+});
+$('#job-cancel').addEventListener('click',clearJobForm);
+$('#jobs-search').addEventListener('input',renderCustomJobs);
+
+function renderSettings(){
+  const s = db.settings;
+  ['company','phone','location','validity','advance','employeeDay','travelDefault','shortDay','halfDay','fullDay','payment','conditions'].forEach(k => {
+    const el = document.getElementById('set-' + k); if (el) el.value = s[k] ?? '';
+  });
+}
+$('#save-settings').addEventListener('click', () => {
+  const s = db.settings;
+  ['company','phone','location','payment','conditions'].forEach(k => s[k] = $('#set-' + k).value.trim());
+  ['validity','advance','employeeDay','travelDefault','shortDay','halfDay','fullDay'].forEach(k => s[k] = clamp($('#set-' + k).value));
+  saveDb();
+  if (!draft.id) {
+    draft.validity = s.validity;
+    draft.payment = s.payment;
+    saveDraft();
+  }
+  renderQuote(); calcCompare();
+  alert('Configuración guardada.');
+});
+
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
+  downloadBlob(blob, `AMC_respaldo_${today()}.json`);
+}
+$('#backup-export').addEventListener('click', exportBackup);
+$('#backup-import').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const x = JSON.parse(fr.result);
+      if (!x.settings || !Array.isArray(x.quotes)) throw new Error('invalid');
+      db = {
+        settings: Object.assign({}, defaults.settings, x.settings || {}),
+        overrides: x.overrides || {},
+        customTariffs: Array.isArray(x.customTariffs) ? x.customTariffs : [],
+        quotes: x.quotes || []
+      };
+      saveDb();
+      alert('Respaldo importado.');
+      renderSettings(); renderSaved(); renderTariff();
+    } catch(err) {
+      alert('El archivo no es un respaldo válido.');
+    }
+  };
+  fr.readAsText(file);
+});
+
+function renderPrintSheet(q = draft){
+  const totals = quoteTotals(q);
+  const advance = totals.sale * (clamp(db.settings.advance) / 100);
+  $('#print-sheet').innerHTML = `
+    <div class="client-sheet">
+      <div class="brandline">
+        <img src="${LOGO_PNG}" alt="Logo">
+        <div>
+          <div style="font-size:24px;font-weight:900">${esc(db.settings.company)}</div>
+          <div class="muted">PRESUPUESTO</div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="grid2" style="gap:14px">
+        <div>
+          <div><strong>N°:</strong> ${esc(q.number || '')}</div>
+          <div><strong>Fecha:</strong> ${esc(q.date || '')}</div>
+          <div><strong>Cliente:</strong> ${esc(q.client || '')}</div>
+          <div><strong>Teléfono:</strong> ${esc(q.phone || '')}</div>
+          <div><strong>Localidad:</strong> ${esc(q.location || '')}</div>
+        </div>
+        <div>
+          <div><strong>Validez:</strong> ${esc(q.validity || db.settings.validity)} días</div>
+          <div><strong>Forma de pago:</strong> ${esc(q.payment || db.settings.payment)}</div>
+          <div><strong>Materiales incluidos:</strong> ${esc(q.materialsIncluded || 'No')}</div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div style="font-weight:900">Trabajos incluidos</div>
+      <ul>${(q.items || []).map(it => `<li>${esc(it.clientDescription)}</li>`).join('')}</ul>
+      ${q.notes ? `<p><strong>Observaciones:</strong> ${esc(q.notes)}</p>` : ''}
+      <div class="big">TOTAL FINAL: ${money(totals.sale)}</div>
+      ${clamp(db.settings.advance) > 0 ? `<div><strong>Anticipo sugerido (${db.settings.advance}%):</strong> ${money(advance)}</div>` : ''}
+      <p class="small muted" style="margin-top:12px">${esc(db.settings.conditions)}</p>
+      ${db.settings.phone ? `<p><strong>Contacto:</strong> ${esc(db.settings.phone)}</p>` : ''}
+    </div>`;
+}
+$('#open-print').addEventListener('click', () => { renderPrintSheet(draft); nav('print'); });
+$('#print-btn').addEventListener('click', () => { renderPrintSheet(draft); window.print(); });
+$('#download-pdf').addEventListener('click', () => downloadPdf(draft));
+$('#share-pdf').addEventListener('click', () => sharePdf(draft));
+$('#download-pdf-2').addEventListener('click', () => downloadPdf(draft));
+
+
+function persistCurrentSilently(){
+  setDraftFromForm();
+  if (!(draft.items||[]).length) return false;
+  const now = new Date().toISOString();
+  if (draft.id) {
+    const i = db.quotes.findIndex(q => q.id === draft.id);
+    if (i >= 0) db.quotes[i] = {...draft, updatedAt: now};
+    else db.quotes.unshift({...draft, updatedAt: now});
+  } else {
+    draft.id = 'q_' + Date.now();
+    db.quotes.unshift({...draft, createdAt: now, updatedAt: now});
+  }
+  saveDb();
+  saveDraft();
+  const st=document.getElementById('save-status');
+  if(st) st.textContent='Guardado en el dispositivo · ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  return true;
+}
+
+function bytesFromBinary(s) {
+  const arr = new Uint8Array(s.length);
+  for (let i=0;i<s.length;i++) arr[i] = s.charCodeAt(i) & 255;
+  return arr;
+}
+function cp1252Byte(ch){
+  const c = ch.charCodeAt(0);
+  if (c <= 255) return c;
+  const map = {'€':128,'‚':130,'ƒ':131,'„':132,'…':133,'†':134,'‡':135,'ˆ':136,'‰':137,'Š':138,'‹':139,'Œ':140,'Ž':142,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'˜':152,'™':153,'š':154,'›':155,'œ':156,'ž':158,'Ÿ':159};
+  return map[ch] || 63;
+}
+function pdfEsc(s){
+  let out = '';
+  for (const ch of String(s || '')) {
+    const b = cp1252Byte(ch);
+    const cc = String.fromCharCode(b);
+    if (cc === '\\' || cc === '(' || cc === ')') out += '\\' + cc;
+    else if (b === 10 || b === 13) out += ' ';
+    else out += cc;
+  }
+  return out;
+}
+function wrapText(s, max = 82){
+  const words = String(s || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? line + ' ' + w : w;
+    if (next.length > max) {
+      if (line) lines.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function makePdf(q){
+  const W=595,H=842,L=42,R=553,CW=511,BOTTOM=755;
+  const blue='0.035 0.40 0.37',ink='0.12 0.18 0.24',muted='0.38 0.44 0.49',rule='0.82 0.87 0.90';
+  const pages=[];let commands=[],y=0;
+  const measureCanvas=document.createElement('canvas'),measure=measureCanvas.getContext('2d');
+  function width(value,size,bold=false){measure.font=(bold?'bold ':'')+size+'px Arial';return measure.measureText(String(value)).width*1.035;}
+  function wrap(value,max,size=11,bold=false){
+    const result=[];for(const paragraph of String(value??'').split(/\r?\n/)){
+      if(!paragraph.trim()){result.push('');continue;}let line='';
+      for(const word of paragraph.trim().split(/\s+/)){
+        if(width(word,size,bold)>max){if(line){result.push(line);line='';}let part='';for(const ch of word){if(width(part+ch,size,bold)>max&&part){result.push(part);part='';}part+=ch;}line=part;}
+        else if(width(line?line+' '+word:word,size,bold)>max){result.push(line);line=word;}
+        else line+=(line?' ':'')+word;
+      }if(line)result.push(line);
+    }return result.length?result:[''];
+  }
+  function txt(value,x,top,size=11,bold=false,color=ink){commands.push(`BT ${color} rg /F${bold?2:1} ${size} Tf 1 0 0 1 ${x} ${H-top} Tm (${pdfEsc(value)}) Tj ET`);}
+  function box(x,top,w,h,fill,stroke=null){commands.push(`q ${fill} rg ${x} ${H-top-h} ${w} ${h} re f Q`);if(stroke)commands.push(`q ${stroke} RG 0.6 w ${x} ${H-top-h} ${w} ${h} re S Q`);}
+  function line(x1,top,x2,color=rule){commands.push(`q ${color} RG 0.6 w ${x1} ${H-top} m ${x2} ${H-top} l S Q`);}
+  function newPage(){
+    if(commands.length)pages.push(commands);commands=[];
+    const company=String(db.settings.company||'AMC CONSTRUCCIONES Y ARREGLOS').toUpperCase();
+    const brandLines=wrap(company,414,17,true),brandHeight=brandLines.length*21;
+    const headerHeight=Math.max(100,brandHeight+54);
+    box(0,0,W,headerHeight,blue);
+    const logoSize=62,logoTop=25;commands.push(`q ${logoSize} 0 0 ${logoSize} ${L} ${H-logoTop-logoSize} cm /Im1 Do Q`);
+    brandLines.forEach((value,i)=>txt(value,122,43+i*21,17,true,'1 1 1'));
+    txt('PRESUPUESTO DE OBRA',122,43+brandHeight+9,10,true,'0.76 0.86 0.94');
+    const metadataTop=headerHeight+20;
+    txt('NÚMERO DE PRESUPUESTO',L,metadataTop,8.5,true,muted);
+    const numberLines=wrap(q.number||'Sin número',325,11,true);numberLines.forEach((v,i)=>txt(v,L,metadataTop+19+i*15,11,true));
+    txt('FECHA',435,metadataTop,8.5,true,muted);txt(q.date||'',435,metadataTop+19,11);
+    y=metadataTop+19+numberLines.length*15+10;line(L,y,R);y+=24;
+  }
+  function ensure(height){if(y+height>BOTTOM)newPage();}
+  function section(title){ensure(58);txt(title,L,y+12,11,true,blue);y+=28;}
+  function paragraph(value,size=10.5,color=ink){for(const v of wrap(value,CW,size)){ensure(17);txt(v,L,y+size,size,false,color);y+=17;}}
+  function labeled(label,value){const lines=wrap(value||'No informado',CW-26,11);let index=0;while(index<lines.length){ensure(60);const count=Math.max(1,Math.min(lines.length-index,Math.floor((BOTTOM-y-36)/16)));const h=33+count*16;box(L,y,CW,h,'0.96 0.975 0.985',rule);txt(label+(index?' (continuación)':''),L+13,y+17,8.5,true,muted);for(let j=0;j<count;j++)txt(lines[index+j],L+13,y+36+j*16,11);y+=h+10;index+=count;}}
+  function tableHeader(){ensure(65);box(L,y,CW,28,'0.90 0.94 0.97');txt('N°',L+12,y+18,9,true,blue);txt('DESCRIPCIÓN DEL TRABAJO',L+49,y+18,9,true,blue);y+=28;}
+  newPage();
+  labeled('CLIENTE',q.client);
+  const town=wrap(q.location||'No informada',305,11),phone=wrap(q.phone||'No informado',153,11),contactHeight=34+Math.max(town.length,phone.length)*16;
+  if(contactHeight<200){ensure(contactHeight+14);box(L,y,CW,contactHeight,'0.96 0.975 0.985',rule);txt('LOCALIDAD / DIRECCIÓN',L+13,y+17,8.5,true,muted);txt('TELÉFONO',L+344,y+17,8.5,true,muted);town.forEach((v,i)=>txt(v,L+13,y+36+i*16,11));phone.forEach((v,i)=>txt(v,L+344,y+36+i*16,11));y+=contactHeight+22;}else{labeled('LOCALIDAD / DIRECCIÓN',q.location);labeled('TELÉFONO',q.phone);y+=12;}
+  section('TRABAJOS INCLUIDOS');tableHeader();
+  const items=q.items||[];
+  items.forEach((item,index)=>{
+    const lines=wrap(item.clientDescription||'',CW-65,11);let at=0;
+    while(at<lines.length){if(BOTTOM-y<44){newPage();section('TRABAJOS INCLUIDOS · CONTINUACIÓN');tableHeader();}
+      const count=Math.min(lines.length-at,Math.max(1,Math.floor((BOTTOM-y-24)/16))),height=Math.max(42,count*16+24);
+      box(L,y,CW,height,index%2?'0.966 0.976 0.983':'1 1 1');
+      txt(at?'...' :String(index+1),L+12,y+24,10,true,muted);
+      for(let i=0;i<count;i++)txt(lines[at+i],L+49,y+24+i*16,11);
+      line(L,y+height,R);y+=height;at+=count;
+    }
+  });
+  if(!items.length){paragraph('Sin trabajos cargados.');}
+  y+=24;ensure(116);
+  const totals=quoteTotals(q),totalText=money(totals.sale);let totalSize=26;while(width(totalText,totalSize,true)>CW-36&&totalSize>12)totalSize-=1;
+  box(L,y,CW,74,blue);txt('TOTAL FINAL',L+18,y+24,10,true,'0.80 0.88 0.94');txt(totalText,L+18,y+55,totalSize,true,'1 1 1');y+=90;
+  const adv=clamp(db.settings.advance);if(adv>0){paragraph(`Anticipo sugerido (${adv}%): ${money(totals.sale*adv/100)}`,11);y+=12;}
+  section('CONDICIONES DEL PRESUPUESTO');
+  paragraph(`Validez: ${q.validity||db.settings.validity} días.    Materiales incluidos: ${q.materialsIncluded||'No'}`);y+=7;
+  paragraph(`Forma de pago: ${q.payment||db.settings.payment||'A convenir'}`);y+=7;
+  y+=7;
+  if(q.notes){section('OBSERVACIONES');paragraph(q.notes);y+=16;}
+  if(db.settings.conditions){section('ACLARACIONES');paragraph(db.settings.conditions,10,muted);y+=16;}
+  if(db.settings.phone){ensure(40);paragraph('Contacto AMC: '+db.settings.phone,10.5);}
+  pages.push(commands);
+  const streams=pages.map((cmd,i)=>{commands=cmd;line(L,788,R);txt('AMC · Construcciones y Arreglos',L,805,8.5,false,muted);txt(`Página ${i+1} de ${pages.length}`,470,805,8.5,false,muted);return commands.join('\n');});
+  const image=atob(LOGO_JPG_B64),objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';objects[5]=`<< /Type /XObject /Subtype /Image /Width ${LOGO_W} /Height ${LOGO_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>\nstream\n${image}\nendstream`;
+  let next=6;const ids=streams.map(()=>({page:next++,content:next++}));objects[2]=`<< /Type /Pages /Kids [${ids.map(x=>x.page+' 0 R').join(' ')}] /Count ${ids.length} >>`;
+  streams.forEach((stream,i)=>{objects[ids[i].page]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Im1 5 0 R >> >> /Contents ${ids[i].content} 0 R >>`;objects[ids[i].content]=`<< /Length ${bytesFromBinary(stream).length} >>\nstream\n${stream}\nendstream`;});
+  let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=bytesFromBinary(pdf).length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`;}
+  const xref=bytesFromBinary(pdf).length;pdf+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;return new Blob([bytesFromBinary(pdf)],{type:'application/pdf'});
+}
+
+
+
+async function blobToBase64(blob){
+  const buf=await blob.arrayBuffer();
+  const bytes=new Uint8Array(buf); let binary='';
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk) binary+=String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+  return btoa(binary);
+}
+async function nativePdfAction(q,share){
+  const blob=makePdf(q); const name=fileName(q);
+  if(window.AndroidBridge && typeof window.AndroidBridge.savePdf==='function'){
+    try{
+      const b64=await blobToBase64(blob);
+      window.AndroidBridge.savePdf(b64,name,!!share);
+      return true;
+    }catch(e){ console.error(e); }
+  }
+  return false;
+}
+
+function fileName(q){
+  const a = (q.number || 'presupuesto').replace(/[^a-z0-9_-]+/gi, '_');
+  const b = (q.client || 'cliente').replace(/[^a-z0-9_-]+/gi, '_');
+  return `Presupuesto_${a}_${b}.pdf`;
+}
+function downloadBlob(blob, name){
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1500);
+}
+async function downloadPdf(q){
+  if (!(q.items||[]).length) { alert('No hay trabajos cargados para generar el PDF.'); return; }
+  if (q === draft) persistCurrentSilently();
+  if(await nativePdfAction(q,false)) return;
+  downloadBlob(makePdf(q), fileName(q));
+}
+async function sharePdf(q){
+  if (!(q.items||[]).length) { alert('No hay trabajos cargados para compartir.'); return; }
+  if (q === draft) persistCurrentSilently();
+  if(await nativePdfAction(q,true)) return;
+  const blob = makePdf(q);
+  const file = new File([blob], fileName(q), {type:'application/pdf'});
+  try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+      await navigator.share({title:'Presupuesto ' + (q.number || ''), files:[file]});
+    } else {
+      downloadBlob(blob, file.name);
+    }
+  } catch(err) {
+    if (err.name !== 'AbortError') downloadBlob(blob, file.name);
+  }
+}
+
+window.addEventListener('beforeunload', saveDraft);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraft(); });
+
+(async function init(){
+  await strengthenStorage();
+  if (!window.AMCStored?.saved && !(db.quotes||[]).length) {
+    const recovered = await idbLoadState();
+    if (recovered && Array.isArray(recovered.quotes) && recovered.quotes.length) {
+      db = {
+        settings: Object.assign({}, defaults.settings, recovered.settings || {}),
+        overrides: recovered.overrides || {},
+        customTariffs: Array.isArray(recovered.customTariffs) ? recovered.customTariffs : [],
+        quotes: recovered.quotes || []
+      };
+      saveDb();
+    }
+  }
+  const cats = [...new Set(allTariffs().map(t => t.rubro).filter(Boolean))].sort();
+  $('#tariff-cat').innerHTML = '<option value="">Todos los rubros</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+  loadDraftToForm();
+  renderQuote();
+  renderSaved();
+  renderTariff();
+  renderCustomJobs();
+  renderSettings();
+  resetTask();
+  document.getElementById('logoA').src = LOGO_PNG;
+  document.getElementById('logoB').src = LOGO_PNG;
+  document.getElementById('app-version').textContent = 'Tarifario base cargado: ' + BASE_TARIFF.length + ' referencias base + ' + (db.customTariffs||[]).length + ' trabajos propios · AMC Presupuestos V5.';
+})();
+</script>
+<script src="estimator-v1.js"></script><script>if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script></body>
+</html>

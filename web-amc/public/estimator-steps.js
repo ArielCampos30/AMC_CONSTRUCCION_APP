@@ -1,0 +1,14 @@
+// Navigation around the existing estimator: calculations and saved drafts remain unchanged.
+(()=>{
+ const banner=document.getElementById('connected-request')?.closest('section');if(!banner)return;
+ const bar=document.createElement('nav');bar.className='estimate-steps';bar.setAttribute('aria-label','Pasos del presupuesto');
+ const summary=document.createElement('p');summary.setAttribute('role','status');summary.className='estimate-summary';
+ bar.innerHTML=['Cliente','Trabajos y cantidades','Revisar total','Enviar'].map((name,i)=>`<button type="button" data-step="${i}">${i+1}. ${name}</button>`).join('');bar.append(summary);document.body.prepend(bar);
+ const send=document.getElementById('send-connected'),review=document.createElement('section');review.className='estimate-send';review.innerHTML='<h2>4. Enviar presupuesto</h2><p>Revisá el cliente, los trabajos y el total antes de confirmar.</p>';send.parentNode.insertBefore(review,send);review.append(send);
+ const originalStatus=document.getElementById('connection-status');const feedback=document.createElement('p');feedback.setAttribute('role','status');review.append(feedback);new MutationObserver(()=>feedback.textContent=originalStatus.textContent).observe(originalStatus,{childList:true,subtree:true,characterData:true});
+ document.body.append(review);
+ const style=document.createElement('style');style.textContent='.estimate-steps{position:sticky;top:0;z-index:15;background:#fff;padding:8px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;border-bottom:1px solid #cadfd9}.estimate-steps button{font:inherit;font-size:12px;white-space:normal;padding:9px 4px;border:1px solid #aacfc6;border-radius:8px;background:#f0f7f4;color:#174b40}.estimate-steps button[aria-current=step]{background:#09675f;color:#fff}.estimate-summary{grid-column:1/-1;font-size:13px;margin:3px}.estimate-send{padding:18px;margin:18px 12px;border:1px solid #cadfd9;border-radius:12px}.tabs{position:static!important}#task-search,#view-print,.estimate-send{scroll-margin-top:125px}';document.head.append(style);
+ function update(){summary.textContent=(draft.client||'Elegí un cliente')+' · '+draft.items.length+' trabajos · Total '+money(quoteTotals(draft).sale)+' · '+(document.getElementById('estimator-save-status')?.textContent||'Guardando…');}
+ function go(i){bar.querySelectorAll('button').forEach((b,n)=>b.setAttribute('aria-current',n===i?'step':'false'));if(i===0)banner.scrollIntoView({block:'start',behavior:'smooth'});if(i===1)nav('add');if(i===2)nav('print');if(i===3)review.scrollIntoView({block:'start',behavior:'smooth'});update();}
+ bar.addEventListener('click',e=>{const b=e.target.closest('[data-step]');if(b)go(Number(b.dataset.step));});document.addEventListener('input',update);document.addEventListener('click',()=>queueMicrotask(update));setInterval(update,1500);update();
+})();

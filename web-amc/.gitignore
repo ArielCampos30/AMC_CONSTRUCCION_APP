@@ -1,0 +1,14 @@
+data/
+*.sqlite*
+.env
+firebase-service-account.json
+**/google-services.json
+**/local.properties
+**/.gradle/
+**/build/
+*.jks
+*.keystore
+
+.env.*
+*.amcbak
+firebase-admin.json
