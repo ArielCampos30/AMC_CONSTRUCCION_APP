@@ -106,7 +106,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
   try{
    if(!['GET','HEAD'].includes(method)){if(req.headers.origin!==origin)fail(403,'Origen no permitido.');if(!['/api/login','/api/register','/api/forgot-password','/api/reset-password'].includes(p)&&(!session||req.headers['x-csrf-token']!==session.csrf))fail(403,'Sesión vencida. Volvé a ingresar.');}
    if(['/api/forgot-password','/api/reset-password'].includes(p)){if(method!=='POST')fail(405,'Método no permitido.');checkRate(req.socket.remoteAddress+':recovery',8);const b=await readBody(req);if(await recovery.route({p,method,b,user,res}))return;}
-   if(p==='/healthz'&&method==='GET'){db.prepare('SELECT 1 AS ok').get();return send(res,200,{ok:true});}
+   if((p==='/health'||p==='/healthz')&&method==='GET'){db.prepare('SELECT 1 AS ok').get();return send(res,200,{ok:true,database:'available'});}
    if(p==='/api/config')return send(res,200,{demo,webPushKey:keys.publicKey,services});
    if(p==='/api/login'||p==='/api/register'){
     if(method!=='POST')fail(405,'Método no permitido.');checkRate(req.socket.remoteAddress+':login',30);const b=await readBody(req),email=text(b.email).toLowerCase(),password=typeof b.password==='string'?b.password:'';if(password.length>200)fail(400,'Contraseña inválida.');let u;

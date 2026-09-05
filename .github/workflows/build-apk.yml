@@ -3,7 +3,7 @@ name: Compilar APK AMC
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, amc-servidor-supabase ]
     paths:
       - 'app/**'
       - 'build.gradle'
@@ -30,6 +30,9 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
+      - name: Crear Gradle Wrapper reproducible
+        run: gradle wrapper --gradle-version 8.11.1
+
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
@@ -44,11 +47,18 @@ jobs:
           AMC_STORE_PASSWORD: ${{ secrets.AMC_STORE_PASSWORD }}
           AMC_KEY_ALIAS: ${{ secrets.AMC_KEY_ALIAS }}
           AMC_KEY_PASSWORD: ${{ secrets.AMC_KEY_PASSWORD }}
+          AMC_GOOGLE_SERVICES_B64: ${{ secrets.AMC_GOOGLE_SERVICES_B64 }}
         run: |
           test -n "$AMC_KEYSTORE_B64" || (echo "Falta el secret AMC_KEYSTORE_B64" && exit 1)
           test -n "$AMC_STORE_PASSWORD" || (echo "Falta el secret AMC_STORE_PASSWORD" && exit 1)
           test -n "$AMC_KEY_ALIAS" || (echo "Falta el secret AMC_KEY_ALIAS" && exit 1)
           test -n "$AMC_KEY_PASSWORD" || (echo "Falta el secret AMC_KEY_PASSWORD" && exit 1)
+          test -n "$AMC_GOOGLE_SERVICES_B64" || (echo "Falta el secret AMC_GOOGLE_SERVICES_B64" && exit 1)
+
+      - name: Recuperar configuración pública Firebase
+        env:
+          AMC_GOOGLE_SERVICES_B64: ${{ secrets.AMC_GOOGLE_SERVICES_B64 }}
+        run: echo "$AMC_GOOGLE_SERVICES_B64" | base64 --decode > app/google-services.json
 
       - name: Recuperar clave de firma
         env:
@@ -56,21 +66,31 @@ jobs:
         run: |
           echo "$AMC_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/amc-release.jks"
 
-      - name: Compilar APK firmado
+      - name: Compilar APK y AAB firmados
         env:
           AMC_KEYSTORE_PATH: ${{ runner.temp }}/amc-release.jks
           AMC_STORE_PASSWORD: ${{ secrets.AMC_STORE_PASSWORD }}
           AMC_KEY_ALIAS: ${{ secrets.AMC_KEY_ALIAS }}
           AMC_KEY_PASSWORD: ${{ secrets.AMC_KEY_PASSWORD }}
-        run: gradle --no-daemon :app:assembleRelease
+          AMC_BACKEND_URL: https://amc-o0xb.onrender.com/
+        run: ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease
+
+      - name: Verificar firma release
+        run: |
+          apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+          jarsigner -verify -strict app/build/outputs/bundle/release/app-release.aab
 
       - name: Renombrar APK
-        run: cp app/build/outputs/apk/release/app-release.apk AMC_Presupuestos_v1.0.0.apk
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk AMC_Construcciones_v1.0.0.apk
+          cp app/build/outputs/bundle/release/app-release.aab AMC_Construcciones_v1.0.0.aab
 
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: AMC-Presupuestos-APK-v1.0.0
-          path: AMC_Presupuestos_v1.0.0.apk
+          name: AMC-Construcciones-v1.0.0-release
+          path: |
+            AMC_Construcciones_v1.0.0.apk
+            AMC_Construcciones_v1.0.0.aab
           if-no-files-found: error
           retention-days: 30

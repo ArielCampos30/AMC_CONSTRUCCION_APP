@@ -20,3 +20,7 @@ services:
         sync: false
       - key: AMC_ADMIN_PASSWORD
         sync: false
+      - key: AMC_FIREBASE_CREDENTIALS_JSON
+        sync: false
+      - key: AMC_ORIGIN
+        value: https://amc-o0xb.onrender.com

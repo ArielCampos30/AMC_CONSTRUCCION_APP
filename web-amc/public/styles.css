@@ -7,3 +7,5 @@
 
 
 .service-catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:16px 0;padding:14px}.service-catalog section{padding:10px;border:1px solid var(--line);border-radius:12px}.service-catalog h3{margin:0 0 8px}.service-catalog label{display:flex;gap:8px;align-items:center;margin:7px 0}.service-catalog input{width:auto}@media(max-width:420px){.service-catalog{grid-template-columns:1fr;padding:10px}}
+
+.ios-install{position:fixed;z-index:1200;left:12px;right:12px;bottom:calc(82px + env(safe-area-inset-bottom));max-width:520px;margin:auto;padding:14px 42px 14px 16px;border-radius:16px;background:#fff;color:#123b37;box-shadow:0 12px 36px #1238;display:grid;gap:5px}.ios-install button{position:absolute;right:8px;top:7px;border:0;background:transparent;font-size:26px;min-width:36px;min-height:36px}.ios-install span{font-size:14px;line-height:1.4}
