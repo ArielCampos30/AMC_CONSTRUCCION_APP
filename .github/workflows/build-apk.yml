@@ -58,7 +58,28 @@ jobs:
       - name: Recuperar configuración pública Firebase
         env:
           AMC_GOOGLE_SERVICES_B64: ${{ secrets.AMC_GOOGLE_SERVICES_B64 }}
-        run: echo "$AMC_GOOGLE_SERVICES_B64" | base64 --decode > app/google-services.json
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+
+          encoded = os.environ["AMC_GOOGLE_SERVICES_B64"].strip()
+          decoded = base64.b64decode(encoded, validate=True)
+          config = json.loads(decoded.decode("utf-8-sig"))
+          project_number = config.get("project_info", {}).get("project_number")
+          packages = {
+              client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+              for client in config.get("client", [])
+          }
+          if not project_number:
+              raise SystemExit("google-services.json no contiene project_info.project_number")
+          if "com.amc.construcciones" not in packages:
+              raise SystemExit("google-services.json no contiene el paquete de producción")
+          Path("app/google-services.json").write_bytes(decoded)
+          print("Configuración Firebase validada para com.amc.construcciones")
+          PY
 
       - name: Recuperar clave de firma
         env:
