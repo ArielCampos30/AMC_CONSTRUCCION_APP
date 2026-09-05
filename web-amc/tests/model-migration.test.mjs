@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,rmSync} from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {DatabaseSync} from 'node:sqlite';
 import {createApp} from '../server.mjs';
 
 const listen=app=>new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
@@ -11,13 +10,12 @@ const close=app=>new Promise(resolve=>app.server.close(resolve));
 
 test('migrates legacy solicitud, accepted presupuesto and orphan obra without deleting data',async()=>{
  const dir=mkdtempSync(path.join(os.tmpdir(),'amc-relations-')),file=path.join(dir,'legacy.sqlite');
- const bootstrap=createApp({dbPath:file,origin:'http://localhost'});await listen(bootstrap);await close(bootstrap);
- const db=new DatabaseSync(file),owner='legacy-client';
+ const bootstrap=createApp({dbPath:file,origin:'http://localhost'});await listen(bootstrap);const db=bootstrap.db,owner='legacy-client';
  const insert=(id,kind,body)=>db.prepare('INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?)').run(id,kind,owner,JSON.stringify(body));
  insert('sol-old','request',{id:'sol-old',userId:owner,status:'Presupuestada',name:'Anterior'});
  insert('pre-old','quote',{id:'pre-old',userId:owner,requestId:'sol-old',status:'Aceptado',total:10});
  insert('obra-old','work',{id:'obra-old',userId:owner,quoteId:'pre-old',status:'Presupuesto aceptado',payments:[],updates:[]});
- insert('obra-huerfana','work',{id:'obra-huerfana',userId:owner,status:'En ejecución',payments:[],updates:[]});db.close();
+ insert('obra-huerfana','work',{id:'obra-huerfana',userId:owner,status:'En ejecución',payments:[],updates:[]});await close(bootstrap);
  const migrated=createApp({dbPath:file,origin:'http://localhost'});await listen(migrated);
  const read=id=>JSON.parse(migrated.db.prepare('SELECT body FROM docs WHERE id=?').get(id).body),sol=read('sol-old'),pre=read('pre-old'),obra=read('obra-old'),orphan=read('obra-huerfana');
  assert.equal(sol.solicitudId,'sol-old');assert.deepEqual(sol.presupuestoIds,['pre-old']);assert.deepEqual(sol.obraIds,['obra-old']);
