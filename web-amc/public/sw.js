@@ -1,6 +1,6 @@
-const OFFLINE_CACHE='AMC-offline-shell-v4';
+const OFFLINE_CACHE='AMC-offline-shell-v5';
 const THUMB_CACHE='AMC-private-thumbs-v1',THUMB_LIMIT=80;
-const SHELL_FILES=['/offline.html','/offline.js','/offline-store.js','/offline.css','/styles.css','/aqua.css','/admin-v3.css'];
+const SHELL_FILES=['/offline.html','/offline.js','/offline-store.js','/offline.css','/styles.css','/aqua.css','/admin-v3.css','/employee-v4.css'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(OFFLINE_CACHE).then(c=>c.addAll(SHELL_FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==self.location.origin||e.request.method!=='GET')return;if(u.pathname.startsWith('/media/')&&u.searchParams.has('thumb'))e.respondWith((async()=>{const cache=await caches.open(THUMB_CACHE),cached=await cache.match(e.request);if(cached)return cached;const response=await fetch(e.request);if(response.ok){await cache.put(e.request,response.clone());const keys=await cache.keys();await Promise.all(keys.slice(0,Math.max(0,keys.length-THUMB_LIMIT)).map(k=>cache.delete(k)));}return response;})());else if(SHELL_FILES.includes(u.pathname))e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));else if(e.request.mode==='navigate'&&u.pathname==='/')e.respondWith(fetch(e.request).catch(()=>caches.match('/offline.html')));});
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('AMC-offline-shell-')&&k!==OFFLINE_CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));
