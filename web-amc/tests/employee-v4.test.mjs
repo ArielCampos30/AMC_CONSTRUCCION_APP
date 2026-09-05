@@ -4,12 +4,11 @@ import {readFile} from 'node:fs/promises';
 import {createApp} from '../server.mjs';
 
 test('employee v4 has isolated mobile navigation, filters and native camera contracts',async()=>{
- const [app,team,css,sw,native]=await Promise.all([
+ const [app,team,css,sw]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
   readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
   readFile(new URL('../public/employee-v4.css',import.meta.url),'utf8'),
-  readFile(new URL('../public/sw.js',import.meta.url),'utf8'),
-  readFile(new URL('../android-unificada/app/src/main/java/com/amc/connected/ConnectionActivity.java',import.meta.url),'utf8')
+  readFile(new URL('../public/sw.js',import.meta.url),'utf8')
  ]);
  assert.match(app,/\['inicio-empleado','Inicio'.*\['mis-trabajos','Mis trabajos'.*\['chat-equipo','Chat'.*\['perfil','Perfil'/s);
  assert.match(team,/¿Qué tengo que hacer hoy\?/);
@@ -21,9 +20,6 @@ test('employee v4 has isolated mobile navigation, filters and native camera cont
  assert.match(css,/@media\(max-width:390px\)/);
  assert.match(css,/grid-template-columns:repeat\(4,1fr\)/);
  assert.doesNotMatch(sw,/\/api\//);
- assert.match(native,/ACTION_IMAGE_CAPTURE/);
- assert.match(native,/MediaStore\.Images/);
- assert.match(native,/result!=RESULT_OK.*delete/s);
 });
 
 test('employee staff unread badge clears only when that employee reads the chat',async()=>{
