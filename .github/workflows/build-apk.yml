@@ -98,6 +98,7 @@ jobs:
 
       - name: Verificar firma release
         run: |
+          export PATH="$ANDROID_HOME/build-tools/35.0.0:$PATH"
           apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
           jarsigner -verify -strict app/build/outputs/bundle/release/app-release.aab
 
