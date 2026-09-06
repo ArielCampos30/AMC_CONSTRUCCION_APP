@@ -12,12 +12,12 @@ test('admin v3 exposes the five primary destinations and responsive views',async
     readFile(new URL('../public/project-hub.js',import.meta.url),'utf8'),
     readFile(new URL('../public/sw.js',import.meta.url),'utf8')
   ]);
-  const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['obras','Obras','⌂'],['chat-admin','Chat','◌'],['mas-admin','Más','•••']]";
+  const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
-  assert.match(app,/\['Gestión'.*'Presupuestos'.*'Clientes'.*'Empleados'/s);
+  assert.match(app,/\['Gestión'.*'Chat'.*'Clientes'.*'Empleados'/s);
   assert.match(app,/\['Herramientas'.*'Tarifario'.*'Estadísticas'/s);
   assert.match(app,/\['Sistema'.*'Configuración'.*'Respaldos'/s);
-  assert.match(app,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Visitas programadas hoy.*Obras en curso.*Mensajes sin leer/s);
+  assert.match(app,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
   assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
   assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
   assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
