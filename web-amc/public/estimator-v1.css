@@ -1,4 +1,4 @@
-:root{--brand:#0f3f74;--brand2:#1d63b3;--soft:#edf4fc}
+:root{--brand:#0b675f;--brand2:#17877c;--soft:#e3f1ed}
 .app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 .dashboard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .dashboard-grid .kpi{background:#fff}.dashboard-grid .v{overflow-wrap:anywhere}

@@ -21,6 +21,6 @@ public class PushService extends FirebaseMessagingService {
         if(Build.VERSION.SDK_INT>=26){NotificationChannel c=new NotificationChannel(channel,channel.equals("amc_urgent")?"Avisos urgentes AMC":"Novedades AMC",NotificationManager.IMPORTANCE_HIGH);manager.createNotificationChannel(c);}
         Intent open=new Intent(this,MainActivity.class).putExtra("amc_url",url).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pending=PendingIntent.getActivity(this,0,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-        manager.notify((message.getMessageId()==null?url:message.getMessageId()).hashCode(),new NotificationCompat.Builder(this,channel).setSmallIcon(R.drawable.amc_logo).setContentTitle(title).setContentText(body).setAutoCancel(true).setContentIntent(pending).setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)).build());
+        manager.notify((message.getMessageId()==null?url:message.getMessageId()).hashCode(),new NotificationCompat.Builder(this,channel).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setAutoCancel(true).setContentIntent(pending).setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)).build());
     }
 }
