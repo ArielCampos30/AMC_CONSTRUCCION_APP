@@ -63,7 +63,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const canAccessQuote=(u,q)=>u.role==='admin'||u.role==='client'&&q.userId===u.id;
  const canAccessWork=(u,w)=>u.role==='admin'||u.role==='client'&&w.userId===u.id||u.role==='employee'&&employeeRequestIds(u).has(requestForWork(w));
  const requireResource=(u,resource,check)=>{if(!resource||!check(u,resource))fail(404,'No encontrado.');return resource;};
- const publicWork=w=>{const {internalNotes,cost,internalCost,grossMargin,margin,journal,mobility,tools,contingency,calculations,estimatedTeam,personnelCost,...safe}=w;return safe;};
+ const publicWork=w=>{const {internalNotes,cost,internalCost,grossMargin,margin,journal,mobility,tools,contingency,calculations,estimatedTeam,personnelCost,actualPersonnelCost,actualOtherCosts,finalCost,realProfit,...safe}=w;return safe;};
  const publicQuote=q=>{const {cost,internalCost,grossMargin,margin,journal,mobility,tools,contingency,calculations,internalNotes,estimatedTeam,personnelCost,...safe}=q;return safe;};
  const employeeWork=w=>{const safe=publicWork(w);delete safe.budget;delete safe.payments;delete safe.baseBudget;delete safe.userId;return safe;};
  const keys=pushKeys(db);
