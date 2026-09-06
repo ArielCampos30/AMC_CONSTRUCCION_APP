@@ -53,3 +53,16 @@ test('admin can classify a request as not taken without deleting it',async()=>{
   }
 });
 
+
+test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
+  const [app,steps]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/estimator-steps.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/case'manual-admin':openClientDialog\('budget'\)/);
+  assert.match(app,/Si el teléfono ya existe, AMC usará automáticamente la ficha guardada/);
+  assert.match(app,/data-use-existing/);
+  assert.match(app,/Cliente existente encontrado/);
+  assert.match(steps,/\['Cliente','Trabajo','Costos','Revisar'\]/);
+  assert.match(steps,/Mano de obra estimada/);
+});
