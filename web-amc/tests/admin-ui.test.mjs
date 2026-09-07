@@ -73,3 +73,16 @@ test('quick budget starts with direct client data and exposes the four estimator
   assert.match(bridge,/if\(new URLSearchParams\(location\.search\)\.get\('solicitud'\)\)importRequest\(false\)/);
   assert.match(bridge,/nav\('add'\)/);
 });
+
+test('suggested price and visibility refresh preserve the active estimator',async()=>{
+  const [app,bridge,directory]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/client-directory.js',import.meta.url),'utf8')
+  ]);
+  assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\*100\)\/100/);
+  assert.match(bridge,/const sale=Number\.isFinite\(override\)&&override>0\?override:total\.sale/);
+  assert.doesNotMatch(bridge,/last\.clientCharge/);
+  assert.match(app,/const preservingEstimator=page==='cotizador'\|\|!!document\.querySelector\('#amc-estimator'\)/);
+  assert.match(directory,/class="client-view-action"/);
+});

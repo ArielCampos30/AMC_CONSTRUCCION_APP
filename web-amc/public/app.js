@@ -93,7 +93,7 @@ if(f.id==='referral')await api('/api/referrals',data);
 await reload();dirty=false;render();toast('Guardado.');
 }catch(err){toast(err.message);}finally{buttons.forEach(b=>b.disabled=false);if(f.classList.contains('message-form'))f.querySelector('button[type=submit]').textContent='Enviar mensaje';}});
 document.addEventListener('change',e=>{if(planning.change(e.target)){dirty=false;render();}});
-let refreshing=false;async function refreshVisible(){if(refreshing||!state.user||loggingOut||document.hidden)return;refreshing=true;try{await reload();features.syncChatAccess();if(!dirty)render();}catch{}finally{refreshing=false;}}
+let refreshing=false;async function refreshVisible(){if(refreshing||!state.user||loggingOut||document.hidden)return;refreshing=true;try{await reload();features.syncChatAccess();const preservingEstimator=page==='cotizador'||!!document.querySelector('#amc-estimator');if(!dirty&&!preservingEstimator)render();}catch{}finally{refreshing=false;}}
 window.addEventListener('hashchange',async()=>{page=recoveryRoute()||location.hash.slice(1)||'inicio';if(isAdmin()&&LEGACY_ADMIN_ROUTES.has(page)){page='inicio';history.replaceState(null,'','#inicio');}dirty=false;if(state.user)try{await reload();if(page==='chat-equipo'&&state.user.role==='employee'&&state.staffUnread){await api('/api/staff-chat/read',{});await reload();}}catch{}render();scrollTo(0,0);});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshVisible();});
 window.addEventListener('focus',refreshVisible);
