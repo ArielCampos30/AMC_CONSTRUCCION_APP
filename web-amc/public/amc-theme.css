@@ -10,6 +10,8 @@ header .compact{display:none}.workspace header{padding-top:env(safe-area-inset-t
 @media(max-width:850px){header .compact{display:flex}.workspace header{position:sticky;top:0;z-index:18;background:#fffffff2}.workspace main{padding-top:18px;padding-bottom:calc(92px + env(safe-area-inset-bottom))}}
 @media(min-width:851px){.workspace header .compact{display:none!important}}
 
+.amc-live-alert{position:fixed;z-index:80;top:max(18px,calc(env(safe-area-inset-top) + 12px));right:18px;width:min(390px,calc(100vw - 36px));pointer-events:none}.amc-alert-card{pointer-events:auto;background:#fff;border:1px solid var(--line);border-left:5px solid var(--green);border-radius:16px;box-shadow:0 14px 44px #173d3930;padding:16px 48px 16px 18px;position:relative}.amc-alert-card[data-priority="urgent"]{border-left-color:#b42318;background:#fff8f7}.amc-alert-card h2{font-size:18px;margin:0 0 6px}.amc-alert-card p{margin:0 0 12px;color:var(--muted)}.amc-alert-card a{display:inline-flex;font-weight:700}.amc-alert-close{position:absolute;right:10px;top:8px;border:0;background:transparent;color:var(--ink);font-size:24px;line-height:1;padding:7px}.notification[data-priority="important"]{border-left:4px solid var(--green)}.notification[data-priority="urgent"]{border-left:4px solid #b42318}
+
 /* Final AMC theme overrides legacy component colors. */
 :root{color-scheme:light;--admin-ink:var(--ink);--admin-line:var(--line);--admin-soft:var(--mint)}
 .admin-v3-attention a,.admin-v3-card,.admin-v3-kpis article,.quick-access a,.panel{border-color:var(--line)}

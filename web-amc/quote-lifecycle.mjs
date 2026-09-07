@@ -6,11 +6,11 @@ export function quoteLifecycle({all,put,transaction,notify,notifyAdmins,clock=Da
  function run(){const timestamp=clock();for(const q of all('quote')){
   if(q.status!=='Enviado')continue;
   const deadline=Date.parse(q.expiresAt);if(!Number.isFinite(deadline))continue;
-  if(timestamp>=deadline){transaction(()=>{put('quote',q.userId,{...q,status:'Vencido',expiredAt:new Date(timestamp).toISOString()});notify(q.userId,'Venció el plazo del presupuesto',q.number+' quedó sin respuesta dentro de los 10 días. Escribile a AMC para revisarlo.','/#presupuestos');notifyAdmins('Presupuesto sin respuesta',q.number+' venció después de 10 días.');});continue;}
+  if(timestamp>=deadline){transaction(()=>{put('quote',q.userId,{...q,status:'Vencido',expiredAt:new Date(timestamp).toISOString()});notify(q.userId,'Venció el plazo del presupuesto',q.number+' quedó sin respuesta dentro de los 10 días. Escribile a AMC para revisarlo.','/#presupuesto/'+q.id);notifyAdmins('Presupuesto sin respuesta',q.number+' venció después de 10 días.','/#presupuesto-admin/'+q.id);});continue;}
   const elapsed=Math.floor((timestamp-(deadline-10*DAY))/DAY),stage=[9,7,3].find(day=>elapsed>=day)||0;
   if(stage<=(q.reminderStage||0))continue;
   const until=new Date(deadline).toLocaleString('es-AR',{timeZone:'America/Buenos_Aires',dateStyle:'short',timeStyle:'short'});
-  transaction(()=>{put('quote',q.userId,{...q,reminderStage:stage,lastReminderAt:new Date(timestamp).toISOString()});notify(q.userId,stage===9?'Último recordatorio de tu presupuesto':'Tu presupuesto espera una respuesta',q.number+': podés aceptar, pedir cambios o rechazar hasta el '+until+' (hora de Argentina).','/#presupuestos');});
+  transaction(()=>{put('quote',q.userId,{...q,reminderStage:stage,lastReminderAt:new Date(timestamp).toISOString()});notify(q.userId,stage===9?'Último recordatorio de tu presupuesto':'Tu presupuesto espera una respuesta',q.number+': podés aceptar, pedir cambios o rechazar hasta el '+until+' (hora de Argentina).','/#presupuesto/'+q.id);});
  }}
  return {terms,run};
 }
