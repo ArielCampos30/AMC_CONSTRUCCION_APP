@@ -804,6 +804,8 @@ function renderQuote(){
 }
 function renderClientPreview(){
   const totals = quoteTotals();
+  const explicitFinal = Number(draft.amcClientPrice);
+  const hasExplicitFinal = Number.isFinite(explicitFinal) && explicitFinal > 0;
   $('#client-preview').innerHTML = `
     <div class="client-sheet">
       <div class="brandline">
@@ -818,7 +820,7 @@ function renderClientPreview(){
       <div class="hr"></div>
       <strong>Trabajos incluidos</strong>
       <ul>${(draft.items||[]).map(it => `<li>${esc(it.clientDescription)}</li>`).join('')}</ul>
-      <div class="big">TOTAL FINAL: ${money(totals.sale)}</div>
+      <div class="big">${hasExplicitFinal ? 'TOTAL FINAL: ' + money(explicitFinal) : 'PRECIO FINAL PENDIENTE'}</div>
       <div class="small muted">Validez: ${draft.validity || db.settings.validity} días · Forma de pago: ${esc(draft.payment || db.settings.payment)} · Materiales incluidos: ${esc(draft.materialsIncluded || 'No')}</div>
     </div>`;
 }
@@ -839,7 +841,7 @@ function saveQuote(){
   renderSaved();
   const st=document.getElementById('save-status');
   if(st) st.textContent='Guardado en el dispositivo · ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  alert('Presupuesto guardado.');
+  if(st) st.textContent='Borrador guardado · ' + new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
 }
 $('#save-quote').addEventListener('click', saveQuote);
 $('#new-quote').addEventListener('click', () => {
@@ -1264,7 +1266,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   resetTask();
   document.getElementById('logoA').src = LOGO_PNG;
   document.getElementById('logoB').src = LOGO_PNG;
-  document.getElementById('app-version').textContent = 'Tarifario base cargado: ' + BASE_TARIFF.length + ' referencias base + ' + (db.customTariffs||[]).length + ' trabajos propios · AMC Construcciones v1.0.';
+  document.getElementById('app-version').textContent = '';
 })();
 </script>
 <script src="estimator-v1.js"></script><script>if('serviceWorker' in navigator && location.protocol.startsWith('http')){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script></body>
