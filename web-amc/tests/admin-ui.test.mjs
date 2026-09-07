@@ -86,3 +86,15 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
   assert.match(app,/const preservingEstimator=page==='cotizador'\|\|!!document\.querySelector\('#amc-estimator'\)/);
   assert.match(directory,/class="client-view-action"/);
 });
+
+test('notification, refresh and margin UI avoid duplicate work',async()=>{
+  const [app,bridge]=await Promise.all([readFile(new URL('../public/app.js',import.meta.url),'utf8'),readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')]);
+  assert.match(app,/const activeRequests=new Map\(\)/);
+  assert.match(app,/if\(activeRequests\.has\(key\)\)return activeRequests\.get\(key\)/);
+  assert.match(app,/instantRequests=new Set\(\['\/api\/notices\/read'/);
+  assert.equal((app.match(/const link=e\.target\.closest\('\[data-notice\]'\)/g)||[]).length,1);
+  assert.match(app,/if\(!dirty&&page!=='cotizador'\)render\(\)/);
+  assert.match(bridge,/Precio actual al cliente/);
+  assert.match(bridge,/Tu precio actual ya alcanza el margen objetivo/);
+  assert.match(bridge,/Ajustar precio final a/);
+});
