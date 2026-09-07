@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#09675f">
 <title>AMC Construcciones y Arreglos</title>
-<link rel="icon" href="logo.png" type="image/png">
+<link rel="icon" href="/assets/amc-logo.webp" type="image/webp">
 <style>
 :root{
   --bg:#f3f5f8; --card:#ffffff; --text:#111827; --muted:#6b7280; --line:#d8dee8;
@@ -266,8 +266,8 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
       </div>
 
       <div class="card">
-        <h2>3. Comparación automática</h2>
-        <p class="small muted">La app calcula los dos métodos y te deja elegir cualquiera.</p>
+        <h2>3. Estimación para presupuestar</h2>
+        <p class="small muted">Esta ayuda interna compara alternativas. Ningún importe pasa al presupuesto hasta que elijas “Agregar esta opción al presupuesto”.</p>
         <div class="option-grid" style="margin-top:12px">
           <div id="opt-m2" class="option">
             <span class="badge">Por m² / unidad</span>
@@ -699,11 +699,12 @@ function calcCompare(){
     rec
   };
 
-  $('#m2-total').textContent = money(m2Sale);
-  $('#m2-desc').textContent = compareState.m2.detail;
+  const costBreakdown = `<br>Movilidad: ${money(travel)} · Materiales: ${money(materials)} · Herramientas: ${money(tools)} · Otros costos: ${money(other)}`;
+  $('#m2-total').textContent = 'Estimación total: ' + money(m2Sale);
+  $('#m2-desc').innerHTML = `Precio base del trabajo: ${money(qty * price)}${costBreakdown}`;
   $('#m2-margin').textContent = 'Margen bruto estimado: ' + money(compareState.m2.margin);
-  $('#j-total').textContent = money(jSale);
-  $('#j-desc').textContent = compareState.jornal.detail;
+  $('#j-total').textContent = 'Estimación total: ' + money(jSale);
+  $('#j-desc').innerHTML = `Precio base por jornal: ${money(jt.days * workers * jt.rate)}${costBreakdown}`;
   $('#j-margin').textContent = 'Margen bruto estimado: ' + money(compareState.jornal.margin);
   $('#opt-m2').classList.toggle('recommended', rec.method === 'm2');
   $('#opt-j').classList.toggle('recommended', rec.method === 'jornal');
@@ -1107,7 +1108,8 @@ function wrapText(s, max = 82){
   if (line) lines.push(line);
   return lines;
 }
-function makePdf(q){
+async function makePdf(q){
+  const image=await loadPdfLogo();
   const W=595,H=842,L=42,R=553,CW=511,BOTTOM=755;
   const blue='0.035 0.40 0.37',ink='0.12 0.18 0.24',muted='0.38 0.44 0.49',rule='0.82 0.87 0.90';
   const pages=[];let commands=[],y=0;
@@ -1176,7 +1178,7 @@ function makePdf(q){
   if(db.settings.phone){ensure(40);paragraph('Contacto AMC: '+db.settings.phone,10.5);}
   pages.push(commands);
   const streams=pages.map((cmd,i)=>{commands=cmd;line(L,788,R);txt('AMC · Construcciones y Arreglos',L,805,8.5,false,muted);txt(`Página ${i+1} de ${pages.length}`,470,805,8.5,false,muted);return commands.join('\n');});
-  const image=atob(LOGO_JPG_B64),objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';objects[5]=`<< /Type /XObject /Subtype /Image /Width ${LOGO_W} /Height ${LOGO_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>\nstream\n${image}\nendstream`;
+  const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';objects[5]=`<< /Type /XObject /Subtype /Image /Width ${LOGO_W} /Height ${LOGO_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>\nstream\n${image}\nendstream`;
   let next=6;const ids=streams.map(()=>({page:next++,content:next++}));objects[2]=`<< /Type /Pages /Kids [${ids.map(x=>x.page+' 0 R').join(' ')}] /Count ${ids.length} >>`;
   streams.forEach((stream,i)=>{objects[ids[i].page]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Im1 5 0 R >> >> /Contents ${ids[i].content} 0 R >>`;objects[ids[i].content]=`<< /Length ${bytesFromBinary(stream).length} >>\nstream\n${stream}\nendstream`;});
   let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=bytesFromBinary(pdf).length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`;}
@@ -1193,7 +1195,7 @@ async function blobToBase64(blob){
   return btoa(binary);
 }
 async function nativePdfAction(q,share){
-  const blob=makePdf(q); const name=fileName(q);
+  const blob=await makePdf(q); const name=fileName(q);
   if(window.AndroidBridge && typeof window.AndroidBridge.savePdf==='function'){
     try{
       const b64=await blobToBase64(blob);
@@ -1219,13 +1221,13 @@ async function downloadPdf(q){
   if (!(q.items||[]).length) { alert('No hay trabajos cargados para generar el PDF.'); return; }
   if (q === draft) persistCurrentSilently();
   if(await nativePdfAction(q,false)) return;
-  downloadBlob(makePdf(q), fileName(q));
+  downloadBlob(await makePdf(q), fileName(q));
 }
 async function sharePdf(q){
   if (!(q.items||[]).length) { alert('No hay trabajos cargados para compartir.'); return; }
   if (q === draft) persistCurrentSilently();
   if(await nativePdfAction(q,true)) return;
-  const blob = makePdf(q);
+  const blob = await makePdf(q);
   const file = new File([blob], fileName(q), {type:'application/pdf'});
   try {
     if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
