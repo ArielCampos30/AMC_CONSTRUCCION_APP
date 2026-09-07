@@ -22,6 +22,7 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   assert.match(app,/function showInternalNotice/);
   assert.match(app,/notice\.priority==='normal'/);
   assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)/);
+  assert.match(app,/selectedId\?q\.id===selectedId:match\(q\)/);
   assert.match(app,/page\.startsWith\('chat-admin\/'\)/);
   assert.match(app,/page\.startsWith\('chat-equipo\/'\)/);
   assert.match(index,/aria-live="assertive"/);
