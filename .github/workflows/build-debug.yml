@@ -3,13 +3,13 @@ name: Compilar APK Debug AMC
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'app/**'
-      - 'build.gradle'
-      - 'settings.gradle'
-      - 'gradle.properties'
-      - '.github/workflows/build-debug.yml'
+      - "app/**"
+      - "build.gradle"
+      - "settings.gradle"
+      - "gradle.properties"
+      - ".github/workflows/build-debug.yml"
 
 jobs:
   build-debug-apk:
@@ -23,12 +23,12 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Configurar Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.11.1'
+          gradle-version: "8.11.1"
 
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
@@ -37,6 +37,12 @@ jobs:
         run: |
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Recuperar configuración pública Firebase
+        env:
+          AMC_GOOGLE_SERVICES_B64: ${{ secrets.AMC_GOOGLE_SERVICES_B64 }}
+        run: |
+          echo "$AMC_GOOGLE_SERVICES_B64" | base64 --decode > app/google-services.json
 
       - name: Compilar APK de prueba
         run: gradle --no-daemon :app:assembleDebug
