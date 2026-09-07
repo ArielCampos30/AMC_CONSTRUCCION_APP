@@ -17,3 +17,5 @@ header .compact{display:none}.workspace header{padding-top:env(safe-area-inset-t
 .admin-v3-chat aside button.active,.message.mine,.notification.unread,.appointment-date{background:var(--mint);color:var(--ink)}
 .task-card{border-left-color:var(--green)}
 @media(max-width:850px){header{min-height:calc(68px + env(safe-area-inset-top));height:auto;padding-top:env(safe-area-inset-top)}main{padding-bottom:calc(92px + env(safe-area-inset-bottom))}.bottom-nav{padding-bottom:calc(7px + env(safe-area-inset-bottom))}}
+
+.client-card .client-actions .client-view-action{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:13px;font-weight:600}.client-card .client-actions .client-view-action span{color:var(--green);font-size:16px}.client-card .client-actions .primary{order:1}.client-card .client-actions .client-view-action{order:2}
