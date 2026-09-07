@@ -1,0 +1,4 @@
+const database=new Promise((resolve,reject)=>{const r=indexedDB.open('AMC-offline-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('records');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+export async function read(key){const db=await database;return new Promise((resolve,reject)=>{const r=db.transaction('records').objectStore('records').get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function write(key,value){const db=await database;return new Promise((resolve,reject)=>{const tx=db.transaction('records','readwrite');tx.objectStore('records').put(value,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+export async function clearOffline(){const pending=await read('queue')||[];if(pending.length)throw Error('Tenés informes sin enviar. Entrá a Trabajo sin conexión para enviarlos o descargar una copia antes de borrarlos y cerrar sesión.');await write('snapshot',null);}

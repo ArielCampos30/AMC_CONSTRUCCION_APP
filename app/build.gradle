@@ -1,11 +1,13 @@
 plugins {
     id 'com.android.application'
+    id 'com.google.gms.google-services'
 }
 
 def keystorePath = System.getenv('AMC_KEYSTORE_PATH')
 def storePasswordValue = System.getenv('AMC_STORE_PASSWORD')
 def keyAliasValue = System.getenv('AMC_KEY_ALIAS')
 def keyPasswordValue = System.getenv('AMC_KEY_PASSWORD')
+def backendUrlValue = System.getenv('AMC_BACKEND_URL') ?: 'https://amc-o0xb.onrender.com/'
 
 android {
     namespace 'com.amc.construcciones'
@@ -15,8 +17,9 @@ android {
         applicationId 'com.amc.construcciones'
         minSdk 29
         targetSdk 35
-        versionCode 1
+        versionCode 7
         versionName '1.0.0'
+        buildConfigField 'String', 'AMC_BACKEND_URL', '"' + backendUrlValue.replace('"', '\\"') + '"'
     }
 
     signingConfigs {
@@ -46,4 +49,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    buildFeatures { buildConfig true }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.15.0'
+    implementation platform('com.google.firebase:firebase-bom:33.10.0')
+    implementation 'com.google.firebase:firebase-messaging'
 }

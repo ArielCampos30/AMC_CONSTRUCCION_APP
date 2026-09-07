@@ -1,0 +1,7 @@
+*.jks
+*.keystore
+app/google-services.json
+local.properties
+.gradle/
+**/build/
+gh-cli.zip

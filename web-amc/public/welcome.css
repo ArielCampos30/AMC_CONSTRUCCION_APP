@@ -1,0 +1,10 @@
+.amc-intro{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 35%,#204e75,#092b47 68%);transition:opacity .35s ease;cursor:pointer;pointer-events:none}
+.amc-intro.leaving{opacity:0}
+.intro-mark{text-align:center;color:#fff;padding:30px;animation:amc-arrive .85s ease both}
+.intro-mark img{width:clamp(145px,27vw,220px);aspect-ratio:1;border-radius:50%;object-fit:contain;filter:drop-shadow(0 16px 30px #0005)}
+.intro-mark strong{display:block;font:600 clamp(11px,2.6vw,15px)/1.6 'Segoe UI',sans-serif;letter-spacing:3px;margin-top:24px}
+.intro-mark span{display:block;color:#cfdae5;font:16px/1.6 'Segoe UI',sans-serif;margin-top:9px}
+.intro-line{width:75px;height:3px;margin:24px auto 0;background:#e4c57d;transform-origin:center;animation:amc-line 1s .2s ease both}
+@keyframes amc-arrive{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes amc-line{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.intro-mark,.intro-line{animation:none}.amc-intro{transition:none}}
