@@ -21,7 +21,7 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
   assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
   assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
-  assert.match(app,/\/api\/staff-chat\/messages/);
+  assert.match(app,/\/api\/staff-chat\/messages/);  assert.match(app,/min="\$\{required\?'0\.01':'0'\}" step="0\.01"/);
   assert.match(hub,/Coordinar visita/);
   assert.match(hub,/No tomar/);
   assert.match(css,/@media\(max-width:800px\)/);
