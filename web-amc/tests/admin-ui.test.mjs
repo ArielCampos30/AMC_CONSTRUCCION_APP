@@ -55,9 +55,11 @@ test('admin can classify a request as not taken without deleting it',async()=>{
 
 
 test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
-  const [app,steps]=await Promise.all([
+  const [app,steps,features,bridge]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/estimator-steps.js',import.meta.url),'utf8')
+    readFile(new URL('../public/estimator-steps.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
   ]);
   assert.match(app,/case'manual-admin':openClientDialog\('budget'\)/);
   assert.match(app,/Si el teléfono ya existe, AMC usará automáticamente la ficha guardada/);
@@ -65,4 +67,9 @@ test('quick budget starts with direct client data and exposes the four estimator
   assert.match(app,/Cliente existente encontrado/);
   assert.match(steps,/\['Cliente','Trabajo','Costos','Revisar'\]/);
   assert.match(steps,/Mano de obra estimada/);
+  assert.match(app,/description:'Presupuesto iniciado por Administración'/);
+  assert.match(app,/features\.openEditor\(request\.id\)/);
+  assert.match(features,/const chooser=quoteRequest\?'':/);
+  assert.match(bridge,/if\(new URLSearchParams\(location\.search\)\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(bridge,/nav\('add'\)/);
 });
