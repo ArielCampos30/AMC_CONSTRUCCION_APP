@@ -3,7 +3,7 @@ services:
     name: amc
     runtime: node
     plan: free
-    branch: amc-servidor-supabase
+    branch: main
     rootDir: web-amc
     buildCommand: npm install --omit=dev
     startCommand: node server.mjs
