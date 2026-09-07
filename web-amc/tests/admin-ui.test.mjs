@@ -94,7 +94,8 @@ test('notification, refresh and margin UI avoid duplicate work',async()=>{
   assert.match(app,/instantRequests=new Set\(\['\/api\/notices\/read'/);
   assert.equal((app.match(/const link=e\.target\.closest\('\[data-notice\]'\)/g)||[]).length,1);
   assert.match(app,/if\(!dirty&&page!=='cotizador'\)render\(\)/);
-  assert.match(bridge,/Precio actual al cliente/);
+  assert.match(bridge,/Precio final pendiente/);
+  assert.match(bridge,/Definí el precio final para calcular la rentabilidad/);
   assert.match(bridge,/Tu precio actual ya alcanza el margen objetivo/);
-  assert.match(bridge,/Ajustar precio final a/);
+  assert.match(bridge,/Usar .* como precio final/);
 });
