@@ -323,11 +323,14 @@ test('work date and team assignment use one clear source of truth',async()=>{
   assert.match(planning,/Equipo de trabajo:.*se administra desde la ficha de la obra/s);
   assert.match(planning,/active=\(s\.calendarBookings\|\|\[\]\)\.filter\(b=>b\.workId===w\.id/);
   assert.match(planning,/current=active\.find\(b=>b\.id===w\.calendarBookingId\)/);
-  assert.match(app,/Equipo previsto en presupuesto/);
-  assert.match(app,/Equipo asignado actualmente/);
+  assert.match(app,/Equipo previsto al presupuestar/);
+  assert.match(app,/Equipo de esta obra/);
   assert.match(app,/team\.length\?'Editar equipo':'Asignar equipo'/);
   assert.match(app,/Primero programá y confirmá la fecha de la obra/);
   assert.match(app,/actualMap=new Map\(actual\.map/);
+  assert.match(app,/Inicio programado:/);
+  assert.match(app,/Si necesitás cambiar la fecha, usá Reprogramar/);
+  const teamDialog=app.slice(app.indexOf('function openAssignTeamDialog'),app.indexOf('function openLinkClientDialog'));assert.doesNotMatch(teamDialog,/field\('Fecha/);
   assert.match(teamServer,/function workAssignments\(work\)/);
   assert.match(teamServer,/if\(!work\.start\)fail\(409,'Primero programá y confirmá la fecha de la obra/);
   assert.match(teamServer,/calendarBooking.*teamIds:rows\.map/s);
