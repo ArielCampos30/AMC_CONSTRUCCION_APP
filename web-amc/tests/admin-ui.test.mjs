@@ -305,7 +305,7 @@ test('calendar programming uses clear labels and returns to the exact work',asyn
   assert.match(planning,/Proponer al cliente · espera confirmación/);
   assert.match(planning,/Confirmada · fecha ya acordada/);
   assert.match(planning,/Tentativa · sólo interna/);
-  assert.match(planning,/status:r\?\.leadId\?'Confirmada':'Propuesta'/);
+  assert.match(planning,/status:w\.start\?'Confirmada':r\?\.leadId\?'Confirmada':'Propuesta'/);
   assert.match(planning,/type:'calendar-saved'/);
   assert.match(app,/navigate\('obra-admin\/'\+encodeURIComponent\(planningResult\.workId\)\)/);
   assert.match(app,/Obra programada\. La fecha quedó confirmada\./);
