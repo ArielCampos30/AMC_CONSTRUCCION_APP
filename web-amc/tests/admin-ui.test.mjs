@@ -144,6 +144,31 @@ test('client search filters live without reloading or rerendering the whole page
   assert.match(features,/if\(target\.id==='budget-client-search'\)/);
 });
 
+test('floating admin chat starts by type and sends messages without reload, spinner or sent toast',async()=>{
+  const [app,features,floating,team]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(features,/label:'Clientes'/);
+  assert.match(features,/label:'Empleados'/);
+  assert.match(features,/floatingEmployeeContacts/);
+  assert.match(features,/floatingClientContacts/);
+  assert.match(features,/conversations>1\?c\.conversations\+' conversaciones/);
+  assert.match(floating,/function showGroups\(\)/);
+  assert.match(floating,/chat-group-list/);
+  assert.match(floating,/submitCustom/);
+  assert.match(floating,/contact\.kind==='employee'/);
+  assert.match(app,/chatMutation=url==='\/api\/staff-chat\/messages'/);
+  assert.match(app,/\^\\\/api\\\/requests\\\/\[\^\/\]\+\\\/messages\$/);
+  assert.match(app,/if\(featureResult==='message-sent'\)\{dirty=false;return;\}/);
+  assert.match(app,/if\(teamResult==='message-sent'\)\{dirty=false;return;\}/);
+  assert.doesNotMatch(app,/toast\('Mensaje enviado\.'\)/);
+  assert.match(team,/return 'message-sent'/);
+  assert.match(features,/status\.textContent=''/);
+});
+
 test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
   const [app,steps,features,bridge]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),

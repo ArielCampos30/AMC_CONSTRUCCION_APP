@@ -136,6 +136,8 @@ test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
     '../public/estimator-steps.js',
     '../public/features-ui.js',
     '../public/client-directory.js',
+    '../public/floating-chat.js',
+    '../public/team-ui.js',
     '../public/amc-busy.js',
     '../public/app.js'
   ]){
