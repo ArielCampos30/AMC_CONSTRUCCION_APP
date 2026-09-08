@@ -236,6 +236,25 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.equal((bridge.match(/\bfetch\(/g)||[]).length,1);
 });
 
+test('pending PDF can be regenerated and returns to the exact quote',async()=>{
+  const [app,features,bridge]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/data-action="generate-pdf-admin"/);
+  assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|'','pdf'\)/);
+  assert.match(features,/quoteMode=''/);
+  assert.match(features,/generatePdf=1/);
+  assert.match(features,/amc:pdf-ready/);
+  assert.match(bridge,/async function generatePendingPdf\(quoteId\)/);
+  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
+  assert.match(bridge,/\/api\/quotes\/'\+quoteId\+'\/pdf/);
+  assert.match(bridge,/type:'amc:pdf-ready'/);
+  assert.match(bridge,/No pudimos generar el PDF/);
+  assert.doesNotMatch(app,/<span>PDF pendiente<\/span>/);
+});
+
 test('work detail is compact, accurate and uses the current client profile',async()=>{
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(app,/adminAgendaClient=id=>/);
