@@ -72,7 +72,7 @@ function adminWorkDetail(){
   <article class="panel">
    <div class="title-row"><h2>Cliente</h2><span class="status">${esc(displayStatus)}</span></div>
    <p><strong>${esc(clientName)}</strong><br><b>Teléfono:</b> ${esc(clientPhone||'Sin teléfono')}<br><b>Dirección:</b> ${esc(clientAddress)}</p>
-   <div class="work-admin-actions">${clientPhone?`<a href="tel:${esc(clientPhone.replace(/[^\\d+]/g,''))}">Llamar</a>`:''}<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clientAddress)}">Maps</a></div>
+   <div class="work-admin-actions">${clientPhone?`<a href="tel:${esc(clientPhone.replace(/[^\d+]/g,''))}">Llamar</a>`:''}<a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clientAddress)}">Maps</a></div>
   </article>
   <article class="panel">
    <h2>Planificación</h2>
