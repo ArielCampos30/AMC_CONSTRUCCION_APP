@@ -12,7 +12,7 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   const index=read('../public/index.html');
   const sw=read('../public/sw.js');
   const bridge=read('../public/presupuestos-bridge.js');
-  assert.match(html,/Estimación para presupuestar/);
+  assert.match(html,/Elegir estimación/);
   assert.match(html,/Precio base del trabajo:/);
   assert.match(html,/Movilidad:/);
   assert.match(html,/Materiales:/);
