@@ -38,11 +38,29 @@ test('agregar trabajo sincroniza el borrador y evita doble alta inmediata',()=>{
 });
 
 
-test('resumen interno no muestra una pérdida falsa antes del precio final',()=>{
+test('el precio final nace automáticamente de la suma de trabajos y sigue siendo editable',()=>{
   const html=read('../private/presupuestos-original.html');
-  assert.match(html,/hasFinalPrice \? money\(totals\.sale\) : 'Pendiente'/);
-  assert.match(html,/hasFinalPrice \? money\(totals\.sale - totals\.cost\) : '—'/);
-  assert.match(html,/button\.disabled=!hasFinalPrice\|\|!items\.length/);
+  const bridge=read('../public/presupuestos-bridge.js');
+  assert.match(html,/Subtotal de trabajos:/);
+  assert.match(bridge,/const workSubtotal=q=>/);
+  assert.match(bridge,/const commercialPrice=q=>/);
+  assert.match(bridge,/Precio final automático: coincide con la suma de los trabajos agregados/);
+  assert.match(bridge,/draft\.amcPriceManual=true/);
+  assert.match(bridge,/reset-client-price/);
+  assert.match(bridge,/Precio final restablecido al total calculado por trabajos/);
+});
+
+test('el cotizador integrado sigue el orden cliente trabajos subtotal mano de obra rentabilidad y precio final',()=>{
+  const html=read('../private/presupuestos-original.html');
+  const bridge=read('../public/presupuestos-bridge.js');
+  const steps=read('../public/estimator-steps.js');
+  assert.match(html,/2\. Trabajo a presupuestar/);
+  assert.match(html,/3\. Trabajos agregados/);
+  assert.match(bridge,/4\. Mano de obra estimada/);
+  assert.match(bridge,/5\. Rentabilidad interna/);
+  assert.match(bridge,/6\. Precio final al cliente/);
+  assert.match(steps,/7\. Guardar \/ enviar presupuesto/);
+  assert.match(bridge,/appRoot\.insertBefore\(banner,quoteView\).*appRoot\.insertBefore\(addView,quoteView\).*appRoot\.insertBefore\(worksCard,quoteView\).*appRoot\.insertBefore\(teamBox,quoteView\).*appRoot\.insertBefore\(profitBox,quoteView\).*appRoot\.insertBefore\(finalPriceBox,quoteView\)/s);
 });
 
 test('la vista cliente no expone la nota interna de Administración',()=>{
@@ -92,12 +110,14 @@ test('WhatsApp externo normaliza números argentinos',()=>{
   assert.match(bridge,/raw\.startsWith\('549'\)\?raw:raw\.startsWith\('54'\)\?'549'\+raw\.slice\(2\):'549'\+raw/);
 });
 
-test('la validación de precio define action antes del mensaje de guardar o enviar',()=>{
+test('guardar o enviar usa el precio comercial automático o editado',()=>{
   const bridge=read('../public/presupuestos-bridge.js');
   const action=bridge.indexOf("const registered=hasAccount(r),action=");
-  const validation=bridge.indexOf("Definí el precio final al cliente antes de '+action");
+  const validation=bridge.indexOf("Agregá trabajos con un importe válido antes de '+action");
   assert.ok(action>=0);
   assert.ok(validation>action);
+  assert.match(bridge,/total:clientTotal\(draft\)/);
+  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
 });
 
 test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
