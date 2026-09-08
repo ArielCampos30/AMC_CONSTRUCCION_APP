@@ -175,6 +175,10 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.match(busy,/amc-busy-ring/);
   assert.match(busy,/MIN_VISIBLE=420/);
   assert.match(busy,/amc-logo\.webp/);
+  assert.match(busy,/document\.createElement\('dialog'\)/);
+  assert.match(busy,/overlay\.showModal\(\)/);
+  assert.match(busy,/overlay\.close\(\)/);
+  assert.match(busy,/event=>event\.preventDefault\(\)/);
   assert.doesNotMatch(busy,/amc-busy-spinner/);
   assert.doesNotMatch(app,/function loadingLabel/);
   assert.doesNotMatch(app,/Enviando presupuesto…/);
@@ -182,6 +186,8 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.doesNotMatch(app,/dataset\.busy/);
   assert.match(app,/toast\('Se creó la obra\.'\)/);
   assert.match(bridge,/Se creó la obra\./);
+  assert.equal((app.match(/\bfetch\(/g)||[]).length,1);
+  assert.equal((bridge.match(/\bfetch\(/g)||[]).length,1);
 });
 
 test('work detail uses the current client profile and hides the internal admin placeholder',async()=>{
