@@ -75,19 +75,20 @@ function adminWorks(){const match=w=>adminWorkFilter==='Todas'||adminWorkFilter=
 function adminWorkDetail(){
  const id=page.slice('obra-admin/'.length),w=state.works.find(w=>w.id===id);
  if(!w)return empty('Obra no disponible','Volvé a Obras para elegir otra.');
- const r=adminRequest(w.solicitudId||w.requestId),contact=adminRequestContact(r),q=state.quotes.find(q=>q.id===(w.presupuestoId||w.quoteId)),team=(state.assignments||[]).filter(a=>a.type==='Trabajo'&&a.status!=='Cancelada'&&(a.workId===w.id||(!a.workId&&a.requestId===r.id))),
- stages=['Solicitud','Presupuesto','Obra creada','Programada','En curso','Cierre','Finalizada'],level=w.status==='Finalizado'?7:['Pendiente de cierre','Pendiente de conformidad'].includes(w.status)?6:w.status==='En ejecución'?5:w.status==='Trabajo programado'?4:3,
+ const r=adminRequest(w.solicitudId||w.requestId),contact=adminRequestContact(r),q=state.quotes.find(q=>q.id===(w.presupuestoId||w.quoteId)),team=(state.assignments||[]).filter(a=>a.type==='Trabajo'&&a.status!=='Cancelada'&&(a.workId===w.id||(!a.workId&&a.requestId===r.id))),closure=latestClosureFor(w.id),
+ stages=['Solicitud','Presupuesto','Obra creada','Programada','En curso','Finalizada'],level=w.status==='Finalizado'?6:w.status==='En ejecución'?5:w.status==='Trabajo programado'?4:3,
  internalAdminNote=/^Presupuesto iniciado por Administración\.?$/i.test(String(r.description||'')),
  workDescription=(q?.items||[]).map(x=>x.description).filter(Boolean).join(' · ')||(!internalAdminNote?r.description:'')||w.title,
  workTitle=(q?.items||[]).map(x=>x.description).filter(Boolean).join(' + ')||(!internalAdminNote?r.description:'')||w.title,
  clientName=contact.name||adminClient(w.userId).name||'Cliente',clientPhone=contact.phone||'',clientAddress=contact.address||contact.town||w.address||'Sin dirección',
- displayStatus=w.status==='Presupuesto aceptado'?'Obra creada':w.status==='Trabajo programado'?'Programada':w.status==='En ejecución'?'En curso':w.status==='Pendiente de cierre'?'Trabajo terminado · preparar cierre':w.status==='Pendiente de conformidad'?'Cierre enviado · esperando cliente':w.status==='Finalizado'?'Finalizada':w.status,
+ displayStatus=w.status==='Presupuesto aceptado'?'Obra creada':w.status==='Trabajo programado'?'Programada':w.status==='En ejecución'?'En curso':w.status==='Finalizado'?'Finalizada':w.status,
  estimatedTeam=(w.estimatedTeam||[]),estimatedCost=Number(w.internalCost??q?.internalCost??w.personnelCost??0),budget=Number(w.budget??q?.total??0),estimatedProfit=Number(w.grossMargin??q?.grossMargin??(budget-estimatedCost)),
  actualCost=Number(w.finalCost||0),hasActualCosts=Number(w.actualPersonnelCost||0)>0||Number(w.actualOtherCosts||0)>0||actualCost>0||w.status==='Finalizado',
  actualProfit=Number(w.realProfit??(budget-actualCost)),photos=(w.updates||[]).map(x=>x.image).filter(Boolean),notes=String(w.internalNotes||'').trim(),
  teamEstimate=estimatedTeam.length?estimatedTeam.map(x=>esc(x.name)+' · '+Number(x.days||0)+' día'+(Number(x.days||0)===1?'':'s')+' · '+money(x.dailyCost)+'/día').join('<br>'):'Sin equipo previsto al presupuestar.',
- teamAssigned=team.length?team.map(a=>esc(a.employeeName)+' · '+Number(a.estimatedDays||0)+' día'+(Number(a.estimatedDays||0)===1?'':'s')+' · '+money(a.dailyCost)+'/día').join('<br>'):'Sin equipo asignado',
- booking=(state.calendarBookings||[]).filter(b=>b.workId===w.id&&b.status!=='Cancelada').sort((a,b)=>String(b.updatedAt||b.date||'').localeCompare(String(a.updatedAt||a.date||'')))[0],bookingLabel=booking?(booking.status==='Propuesta'?'Propuesta enviada al cliente':booking.status==='Tentativa'?'Tentativa · sólo interna':booking.status==='Confirmada'?'Fecha confirmada':booking.status):'',planningDate=w.start?date(w.start)+(w.end&&w.end!==w.start?' a '+date(w.end):''):booking?date(booking.start)+(booking.end&&booking.end!==booking.start?' a '+date(booking.end):''):'Pendiente de programar';
+ teamAssigned=team.length?team.map(a=>esc(a.employeeName)+' · '+Number(a.estimatedDays||0)+' día'+(Number(a.estimatedDays||0)===1?'':'s')+' · '+money(a.dailyCost)+'/día · '+esc(a.status)).join('<br>'):'Sin equipo asignado',
+ booking=(state.calendarBookings||[]).filter(b=>b.workId===w.id&&b.status!=='Cancelada').sort((a,b)=>String(b.updatedAt||b.date||'').localeCompare(String(a.updatedAt||a.date||'')))[0],bookingLabel=booking?(booking.status==='Propuesta'?'Propuesta enviada al cliente':booking.status==='Tentativa'?'Tentativa · sólo interna':booking.status==='Confirmada'?'Fecha confirmada':booking.status):'',planningDate=w.start?date(w.start)+(w.end&&w.end!==w.start?' a '+date(w.end):''):booking?date(booking.start)+(booking.end&&booking.end!==booking.start?' a '+date(booking.end):''):'Pendiente de programar',
+ closureLabel=closure?.status||'Sin cierre registrado';
  return `<a href="#obras">← Volver a Obras</a>${heading('OBRA',esc(workTitle),esc(clientName)+' · '+esc(contact.town||w.address||'Sin localidad'))}
  <section class="admin-v3-detail work-admin-summary">
   <article class="panel">
@@ -98,10 +99,11 @@ function adminWorkDetail(){
   <article class="panel">
    <h2>Planificación</h2>
    <p><b>Trabajo:</b> ${esc(workDescription)}<br><b>Fecha:</b> ${planningDate}<br>${bookingLabel?`<b>Situación de la fecha:</b> ${esc(bookingLabel)}<br>`:''}<b>Equipo previsto al presupuestar (referencia):</b><br>${teamEstimate}<br><b>Equipo de esta obra:</b><br>${teamAssigned}</p>
-   <div class="work-admin-actions">${!['Pendiente de cierre','Pendiente de conformidad','Finalizado'].includes(w.status)?`<button data-action="program-admin" data-id="${w.id}">${w.start?'Reprogramar':'Programar'}</button>`:''}${w.start&&!['Pendiente de cierre','Pendiente de conformidad','Finalizado'].includes(w.status)?`<button data-action="assign-team-admin" data-id="${w.id}">${team.length?'Editar equipo':'Asignar equipo'}</button>`:''}${w.status==='Pendiente de cierre'?`<button class="primary" data-action="close-work-admin" data-id="${w.id}">Preparar cierre</button>`:''}${w.status==='Pendiente de conformidad'?'<a href="#cierre">Ver cierre enviado</a>':''}</div>
+   <div class="work-admin-actions">${w.status!=='Finalizado'?`<button data-action="program-admin" data-id="${w.id}">${w.start?'Reprogramar':'Programar'}</button>`:''}${w.start&&w.status!=='Finalizado'?`<button data-action="assign-team-admin" data-id="${w.id}">${team.length?'Editar equipo':'Asignar equipo'}</button>`:''}${closureNeedsAction(w)?`<button class="primary" data-action="close-work-admin" data-id="${w.id}">Registrar cierre</button>`:''}${closure&&!closureNeedsAction(w)?'<a href="#cierre">Ver cierre</a>':''}</div>
   </article>
  </section>
- <section class="panel work-admin-progress"><h2>Progreso</h2><ol class="admin-v3-timeline">${stages.map((x,i)=>`<li class="${i<level?'done':''}">${x}</li>`).join('')}</ol></section>
+ <section class="panel work-admin-progress"><h2>Progreso de la obra</h2><ol class="admin-v3-timeline">${stages.map((x,i)=>`<li class="${i<level?'done':''}">${x}</li>`).join('')}</ol>${w.status==='Finalizado'?'<p class="muted">El equipo quedó liberado al finalizar sus tareas. El cierre y la conformidad no cambian este estado.</p>':''}</section>
+ ${w.status==='Finalizado'?`<section class="panel"><div class="title-row"><h2>Cierre administrativo</h2><span class="status">${esc(closureLabel)}</span></div><p>La conformidad del cliente es un registro posterior. No reabre la obra ni mantiene ocupado al equipo.</p>${closureNeedsAction(w)?`<button class="primary" data-action="close-work-admin" data-id="${w.id}">Registrar cierre</button>`:'<a class="inline-action" href="#cierre">Ver historial de cierre →</a>'}</section>`:''}
  <section class="panel work-admin-finance">
   <div class="title-row"><h2>Resumen económico</h2>${q?`<a href="#presupuesto-admin/${encodeURIComponent(q.id)}">Ver presupuesto ${esc(q.number||'')} →</a>`:''}</div>
   <div class="work-admin-kpis">
