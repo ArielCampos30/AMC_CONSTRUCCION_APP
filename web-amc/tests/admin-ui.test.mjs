@@ -232,8 +232,24 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.doesNotMatch(app,/dataset\.busy/);
   assert.match(app,/toast\('Se creó la obra\.'\)/);
   assert.match(bridge,/Se creó la obra\./);
-  assert.equal((app.match(/\bfetch\(/g)||[]).length,1);
+  assert.equal((app.match(/\bfetch\(/g)||[]).length,2);
   assert.equal((bridge.match(/\bfetch\(/g)||[]).length,1);
+});
+
+test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
+  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.match(app,/function pdfFileName\(q\)/);
+  assert.match(app,/async function pdfBlob\(q\)/);
+  assert.match(app,/async function downloadQuotePdf\(q\)/);
+  assert.match(app,/async function shareQuotePdf\(q\)/);
+  assert.match(app,/new File\(\[blob\],name,\{type:'application\/pdf'\}\)/);
+  assert.match(app,/navigator\.canShare\?\.\(\{files:\[file\]\}\)/);
+  assert.match(app,/navigator\.share\(\{title:'Presupuesto AMC',text:q\?\.number\|\|'Presupuesto AMC',files:\[file\]\}\)/);
+  assert.match(app,/window\.AMCNative\?\.savePdf/);
+  assert.match(app,/data-action="download-pdf-admin"/);
+  assert.match(app,/data-action="download-quote-pdf"/);
+  assert.doesNotMatch(app,/navigator\.share\(\{title:'Presupuesto AMC',url/);
+  assert.doesNotMatch(app,/Enlace al PDF copiado/);
 });
 
 test('pending PDF can be regenerated and returns to the exact quote',async()=>{
