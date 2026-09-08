@@ -171,13 +171,29 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.match(app,/window\.AMCBusy\?\.stop\(\)/);
   assert.match(bridge,/window\.AMCBusy\?\.start\(\)/);
   assert.match(bridge,/window\.AMCBusy\?\.stop\(\)/);
-  assert.match(busy,/amc-busy-spinner/);
+  assert.match(busy,/amc-busy-logo-wrap/);
+  assert.match(busy,/amc-busy-ring/);
+  assert.match(busy,/MIN_VISIBLE=420/);
+  assert.match(busy,/amc-logo\.webp/);
+  assert.doesNotMatch(busy,/amc-busy-spinner/);
   assert.doesNotMatch(app,/function loadingLabel/);
   assert.doesNotMatch(app,/Enviando presupuesto…/);
   assert.doesNotMatch(app,/pendingOperations/);
   assert.doesNotMatch(app,/dataset\.busy/);
   assert.match(app,/toast\('Se creó la obra\.'\)/);
   assert.match(bridge,/Se creó la obra\./);
+});
+
+test('work detail uses the current client profile and hides the internal admin placeholder',async()=>{
+  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.match(app,/adminAgendaClient=id=>/);
+  assert.match(app,/adminRequestContact=r=>/);
+  assert.match(app,/contact=adminRequestContact\(r\)/);
+  assert.match(app,/clientAddress=contact\.address\|\|contact\.town/);
+  assert.match(app,/Teléfono:<\/b>/);
+  assert.match(app,/Dirección:<\/b>/);
+  assert.match(app,/internalAdminNote=\/\^Presupuesto iniciado por Administración/);
+  assert.match(app,/workDescription=\(q\?\.items\|\|\[\]\)/);
 });
 
 test('notification, refresh and margin UI avoid duplicate work',async()=>{
