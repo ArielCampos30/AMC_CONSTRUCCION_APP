@@ -371,7 +371,9 @@ test('notification, refresh and margin UI avoid duplicate work',async()=>{
   assert.match(app,/if\(activeRequests\.has\(key\)\)return activeRequests\.get\(key\)/);
   assert.match(app,/instantRequests=new Set\(\['\/api\/notices\/read'/);
   assert.equal((app.match(/const link=e\.target\.closest\('\[data-notice\]'\)/g)||[]).length,1);
-  assert.match(app,/if\(!dirty&&page!=='cotizador'\)render\(\)/);
+  assert.match(app,/clientStateSignature/);
+  assert.match(app,/state\.user\?\.role!=='client'\|\|changed/);
+  assert.match(app,/minimum=state\.user\.role==='client'&&!chatPage\?12000:5000/);
   assert.match(bridge,/Precio final automático/);
   assert.match(bridge,/Total calculado por trabajos/);
   assert.match(bridge,/El precio actual alcanza el margen objetivo/);
