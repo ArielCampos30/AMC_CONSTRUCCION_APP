@@ -37,6 +37,14 @@ test('agregar trabajo sincroniza el borrador y evita doble alta inmediata',()=>{
   assert.match(features,/data\.type==='amc:draft-updated'/);
 });
 
+
+test('resumen interno no muestra una pérdida falsa antes del precio final',()=>{
+  const html=read('../private/presupuestos-original.html');
+  assert.match(html,/hasFinalPrice \? money\(totals\.sale\) : 'Pendiente'/);
+  assert.match(html,/hasFinalPrice \? money\(totals\.sale - totals\.cost\) : '—'/);
+  assert.match(html,/button\.disabled=!hasFinalPrice\|\|!items\.length/);
+});
+
 test('Vista cliente usa un modal público y no navega a la vista legacy oculta',()=>{
   const html=read('../private/presupuestos-original.html');
   assert.match(html,/function openClientPreviewDialog/);

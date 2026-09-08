@@ -824,9 +824,15 @@ function renderQuote(){
     }));
   }
   const totals = quoteTotals();
-  $('#sum-sale').textContent = money(totals.sale);
+  const finalPrice = Number(draft.amcClientPrice);
+  const hasFinalPrice = Number.isFinite(finalPrice) && finalPrice > 0;
+  $('#sum-sale').textContent = hasFinalPrice ? money(totals.sale) : 'Pendiente';
   $('#sum-cost').textContent = money(totals.cost);
-  $('#sum-margin').textContent = money(totals.sale - totals.cost);
+  $('#sum-margin').textContent = hasFinalPrice ? money(totals.sale - totals.cost) : '—';
+  ['download-pdf','share-pdf','print-btn'].forEach(id=>{
+    const button=document.getElementById(id);
+    if(button)button.disabled=!hasFinalPrice||!items.length;
+  });
   renderClientPreview();
 }
 function renderClientPreview(){
