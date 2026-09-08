@@ -4,25 +4,140 @@
  const embedded=window.parent!==window&&new URLSearchParams(location.search).has('embed');
  if(embedded)window.alert=toast;
  if(embedded){const style=document.createElement('style');style.textContent='body{background:#fff!important}.app{max-width:none!important;margin:0!important;padding:12px!important}.app>.header{display:none!important}.tabs,.app>.header,#app-version,#view-home{display:none!important}.view{display:block!important}.view:not(#view-quote):not(#view-add){display:none!important}';document.head.append(style);}
- let session,requests=[];const banner=document.createElement('section');banner.style.cssText='padding:18px;margin:16px;background:#e8f0e6;border:1px solid #b8cbb1;border-radius:12px;color:#183f38';banner.innerHTML='<a href="/#inicio">← Volver a Inicio</a><h2 style="margin:10px 0">Pedidos conectados</h2><p id="connection-status">Conectando con tus solicitudes…</p><div id="suggested-rubrics"></div><label>Solicitud del cliente<select id="connected-request" style="display:block;width:100%;padding:12px;margin:8px 0"></select></label><button type="button" id="import-request" class="btn">Usar datos del pedido</button> <button type="button" id="send-connected" class="btn primary">Enviar este presupuesto al cliente</button><div id="external-delivery" hidden style="margin-top:12px"><label>Canal de entrega<select id="delivery-channel"><option>WhatsApp</option><option>PDF</option><option>Personalmente</option><option>Otro</option></select></label> <button type="button" id="share-whatsapp" class="btn">Compartir por WhatsApp</button> <button type="button" id="mark-delivered" class="btn">Marcar como entregado</button> <button type="button" id="accept-manual" class="btn primary" hidden>Marcar como aceptado</button></div><p id="delivery-help" style="font-size:13px">El cliente tiene 10 días corridos desde el envío para responder. Se envían la descripción de los trabajos, total final, condiciones y PDF. Tus costos internos no se comparten.</p>';
- const validityField=document.getElementById('q-validity');if(validityField){validityField.value=10;validityField.readOnly=true;validityField.title='Los presupuestos enviados por AMC tienen 10 días corridos para responder.';}draft.validity=10;
- document.body.prepend(banner);
- const teamBox=document.createElement('section');teamBox.className='panel';teamBox.style.cssText='margin:16px;padding:16px';teamBox.innerHTML='<h2>Mano de obra estimada</h2><p>Sólo calcula el costo interno. No asigna trabajos ni avisa al empleado.</p><div id="estimated-team-list"></div><div class="form-grid"><label>Empleado<select id="estimated-employee"><option value="">Elegí un empleado</option></select></label><button type="button" id="add-estimated-employee" class="btn">+ Agregar empleado</button><button type="button" id="add-manual-labor" class="btn">+ Mano de obra manual</button></div><strong id="estimated-team-total"></strong>';banner.after(teamBox);
- const priceBox=document.createElement('section');priceBox.className='panel';priceBox.style.cssText='margin:16px;padding:16px';priceBox.innerHTML='<h2>Rentabilidad interna</h2><label>Precio final al cliente<input id="final-client-price" type="text" inputmode="numeric" autocomplete="off" placeholder="$ 517.000"></label><div id="price-margin-summary" class="small muted"></div><div class="form-grid"><label>Margen objetivo (%)<input id="desired-margin" type="number" min="0" max="95" step="1" value="30"></label><div><span class="small muted" id="suggested-label">Precio necesario para lograr el margen</span><strong id="suggested-price" style="display:block"></strong></div><button type="button" id="use-suggested-price" class="btn"></button></div>';teamBox.after(priceBox);
+ let session,requests=[];
+ const appRoot=document.querySelector('.app');
+ const banner=document.createElement('section');
+ banner.id='amc-client-step';
+ banner.className='panel';
+ banner.style.cssText='margin:16px 12px;padding:14px 16px';
+ banner.innerHTML='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div class="small muted">1. Cliente</div><strong id="connected-client-summary">Elegí el cliente del presupuesto</strong><p id="connection-status" class="small muted" style="margin:4px 0 0">Conectando con tus solicitudes…</p></div><a href="/#inicio">← Volver a Inicio</a></div><div class="form-grid" style="margin-top:10px"><label>Cliente / solicitud<select id="connected-request"></select></label><div style="align-self:end"><button type="button" id="import-request" class="btn">Usar / cambiar cliente</button></div></div><div id="suggested-rubrics"></div><button type="button" id="send-connected" class="btn primary">Enviar este presupuesto al cliente</button><div id="external-delivery" hidden style="margin-top:12px"><label>Canal de entrega<select id="delivery-channel"><option>WhatsApp</option><option>PDF</option><option>Personalmente</option><option>Otro</option></select></label> <button type="button" id="share-whatsapp" class="btn">Compartir por WhatsApp</button> <button type="button" id="mark-delivered" class="btn">Marcar como entregado</button> <button type="button" id="accept-manual" class="btn primary" hidden>Marcar como aceptado</button></div><p id="delivery-help" class="small muted">El cliente tiene 10 días corridos desde el envío para responder.</p>';
+
+ const validityField=document.getElementById('q-validity');
+ if(validityField){
+   validityField.value=10;
+   validityField.readOnly=true;
+   validityField.title='Los presupuestos enviados por AMC tienen 10 días corridos para responder.';
+ }
+ draft.validity=10;
+
+ const teamBox=document.createElement('section');
+ teamBox.id='amc-labor-step';
+ teamBox.className='panel';
+ teamBox.style.cssText='margin:16px 12px;padding:16px';
+ teamBox.innerHTML='<h2>4. Mano de obra estimada</h2><p>Sólo calcula tu costo interno. No asigna trabajos ni avisa al empleado.</p><div id="estimated-team-list"></div><div class="form-grid"><label>Empleado<select id="estimated-employee"><option value="">Elegí un empleado</option></select></label><button type="button" id="add-estimated-employee" class="btn">+ Agregar empleado</button><button type="button" id="add-manual-labor" class="btn">+ Mano de obra manual</button></div><strong id="estimated-team-total"></strong>';
+
+ const profitBox=document.createElement('section');
+ profitBox.id='amc-profit-step';
+ profitBox.className='panel';
+ profitBox.style.cssText='margin:16px 12px;padding:16px';
+ profitBox.innerHTML='<h2>5. Rentabilidad interna</h2><p class="small muted">Primero revisá los trabajos y tus costos. AMC calcula la rentabilidad con el precio actual.</p><div id="price-margin-summary"></div><div class="form-grid"><label>Margen objetivo (%)<input id="desired-margin" type="number" min="0" max="95" step="1" value="30"></label><div><span class="small muted" id="suggested-label">Precio mínimo sugerido</span><strong id="suggested-price" style="display:block"></strong></div><button type="button" id="use-suggested-price" class="btn"></button></div>';
+
+ const finalPriceBox=document.createElement('section');
+ finalPriceBox.id='amc-final-price-step';
+ finalPriceBox.className='panel';
+ finalPriceBox.style.cssText='margin:16px 12px;padding:16px';
+ finalPriceBox.innerHTML='<h2>6. Precio final al cliente</h2><p>Se completa automáticamente con la suma de los trabajos agregados. Podés editarlo si querés redondear, hacer un descuento o cobrar un adicional.</p><div class="form-grid"><div><span class="small muted">Total calculado por trabajos</span><strong id="automatic-client-price" style="display:block;font-size:22px"></strong></div><label>Precio final editable<input id="final-client-price" type="text" inputmode="numeric" autocomplete="off" placeholder="$ 517.000"></label><div style="align-self:end"><button type="button" id="reset-client-price" class="btn">Usar total calculado</button></div></div><p id="final-price-mode" class="small muted"></p>';
+
+ const quoteView=document.getElementById('view-quote');
+ const addView=document.getElementById('view-add');
+ const worksCard=document.getElementById('quote-items')?.closest('.card');
+
+ if(embedded&&appRoot&&quoteView&&addView&&worksCard){
+   appRoot.insertBefore(banner,quoteView);
+   appRoot.insertBefore(addView,quoteView);
+   appRoot.insertBefore(worksCard,quoteView);
+   appRoot.insertBefore(teamBox,quoteView);
+   appRoot.insertBefore(profitBox,quoteView);
+   appRoot.insertBefore(finalPriceBox,quoteView);
+   const quoteLeft=quoteView.querySelector('.grid > div:first-child');
+   if(quoteLeft)quoteLeft.hidden=true;
+ }else{
+   document.body.prepend(banner);
+   banner.after(teamBox);
+   teamBox.after(profitBox);
+   profitBox.after(finalPriceBox);
+ }
+
  const teamCost=()=>((draft.amcEstimatedTeam||[]).reduce((sum,x)=>sum+(Number(x.days||0)*Number(x.dailyCost||0)),0));
+ const workSubtotal=q=>(q.items||[]).reduce((sum,item)=>sum+Number(item.clientCharge||0),0);
+ const usesManualPrice=q=>q.amcPriceManual===true||(q.amcPriceManual==null&&Number(q.amcClientPrice)>0);
+ const commercialPrice=q=>{
+   const override=Number(q.amcClientPrice);
+   return usesManualPrice(q)&&Number.isFinite(override)&&override>0?override:workSubtotal(q);
+ };
+
  const originalQuoteTotals=quoteTotals;
- // AMC keeps one commercial amount. amcClientPrice is a quote-level override only;
- // it never changes an individual tariff item.
- quoteTotals=function(q=draft){const total=originalQuoteTotals(q),team=q.amcEstimatedTeam||[],override=Number(q.amcClientPrice);const sale=Number.isFinite(override)&&override>0?override:0;if(!team.length)return {sale,cost:total.cost};const legacy=(q.items||[]).reduce((sum,it)=>{const d=it.details||{},workers=Math.max(1,Number(d.workers||1));return sum+(it.method==='m2'?Math.max(1,Number(d.m2Days||1))*workers*Number(db.settings.employeeDay||0):jornalTier(Number(d.hours||0)).days*workers*Number(db.settings.employeeDay||0));},0),personnel=team.reduce((sum,x)=>sum+(Number(x.days||0)*Number(x.dailyCost||0)),0);return {sale,cost:Math.max(0,total.cost-legacy)+personnel};};
+ quoteTotals=function(q=draft){
+   const total=originalQuoteTotals(q),team=q.amcEstimatedTeam||[],sale=commercialPrice(q);
+   if(!team.length)return {sale,cost:total.cost};
+   const legacy=(q.items||[]).reduce((sum,it)=>{
+     const d=it.details||{},workers=Math.max(1,Number(d.workers||1));
+     return sum+(it.method==='m2'
+       ?Math.max(1,Number(d.m2Days||1))*workers*Number(db.settings.employeeDay||0)
+       :jornalTier(Number(d.hours||0)).days*workers*Number(db.settings.employeeDay||0));
+   },0);
+   const personnel=team.reduce((sum,x)=>sum+(Number(x.days||0)*Number(x.dailyCost||0)),0);
+   return {sale,cost:Math.max(0,total.cost-legacy)+personnel};
+ };
+
  const clientTotal=q=>quoteTotals(q).sale;
- // The legacy PDF renderer reads q.total. Supplying this immutable snapshot keeps
- // the PDF, API payload, client preview and future work on the exact same amount.
  const quoteForDocument=q=>({...q,total:clientTotal(q)});
- function suggestedPrice(cost,margin){const ratio=Number(margin)/100;return ratio>=0&&ratio<1?Number(cost)/(1-ratio):0;}
- // Precio actual al cliente is shown only when an explicit final price exists.
- function renderSuggestedPrice(){const input=document.getElementById('final-client-price'),override=Number(draft.amcClientPrice),hasFinal=Number.isFinite(override)&&override>0;if(input&&document.activeElement!==input)input.value=hasFinal?AMCArs.format(override):'';const totals=quoteTotals(draft),goal=Number(document.getElementById('desired-margin').value||0),value=suggestedPrice(totals.cost,goal),gain=totals.sale-totals.cost,margin=hasFinal&&totals.sale?gain/totals.sale*100:0,button=document.getElementById('use-suggested-price'),summary=document.getElementById('price-margin-summary');document.getElementById('suggested-label').textContent='Precio mínimo sugerido para lograr '+goal+'% de margen';document.getElementById('suggested-price').textContent=money(value);summary.innerHTML=(hasFinal?'<p><strong>Precio final al cliente</strong><br>'+money(totals.sale)+'</p>':'<p><strong>Precio final pendiente</strong><br>Definí el precio final para calcular la rentabilidad.</p>')+'<p><strong>Costos estimados</strong><br>Mano de obra: '+money(teamCost())+'<br>Otros costos internos: '+money(Math.max(0,totals.cost-teamCost()))+'</p><p><strong>Costo total estimado</strong><br>'+money(totals.cost)+'</p>'+ (hasFinal?'<p><strong>Ganancia estimada</strong><br>'+money(gain)+'</p><p><strong>Margen estimado</strong><br>'+margin.toFixed(2)+'%</p>':'')+'<p><strong>Margen objetivo</strong><br>'+goal+'%</p>';const reached=hasFinal&&totals.sale>=value&&value>0;button.hidden=reached;button.disabled=!value||reached;button.textContent='Usar '+money(value)+' como precio final';if(!hasFinal)summary.insertAdjacentHTML('beforeend','<p><strong>Precio mínimo sugerido para alcanzar '+goal+'% de margen: '+money(value)+'.</strong></p>');else if(gain<0)summary.insertAdjacentHTML('beforeend','<p><strong>🔴 Este presupuesto deja una pérdida estimada de '+money(Math.abs(gain))+'.</strong></p>');else if(reached)summary.insertAdjacentHTML('beforeend','<p><strong>✓ Tu precio actual ya alcanza el margen objetivo del '+goal+' %.</strong></p>');else summary.insertAdjacentHTML('beforeend','<p><strong>⚠ Tu precio está por debajo del margen objetivo.</strong></p>');return value;}
- document.addEventListener('amc:draft-updated',event=>{renderSuggestedPrice();const item=event.detail?.item;if(item)toast('✓ '+item+' agregado al presupuesto.');});
- function renderEstimatedTeam(){const rows=draft.amcEstimatedTeam||[];document.getElementById('estimated-team-list').innerHTML=rows.map((x,i)=>'<div class="form-grid" data-team-row="'+i+'">'+(x.manual?'<label>Función<input data-team-field="name" value="'+esc(x.name)+'"></label>':'<strong>'+esc(x.name)+'</strong>')+'<label>Jornal diario<input type="number" min="0" data-team-field="dailyCost" value="'+Number(x.dailyCost||0)+'"></label><label>Días<input type="number" min="0" step=".5" data-team-field="days" value="'+Number(x.days||0)+'"></label><strong data-team-subtotal>'+money(Number(x.dailyCost||0)*Number(x.days||0))+'</strong><button type="button" data-remove-team="'+i+'">Quitar</button></div>').join('')||'<p>Sin mano de obra estimada.</p>';document.getElementById('estimated-team-total').textContent='Mano de obra: '+money(teamCost());saveDraft();}
+ function suggestedPrice(cost,margin){
+   const ratio=Number(margin)/100;
+   return ratio>=0&&ratio<1?Number(cost)/(1-ratio):0;
+ }
+
+ function renderSuggestedPrice(){
+   const input=document.getElementById('final-client-price');
+   const subtotal=workSubtotal(draft);
+   const totals=quoteTotals(draft);
+   const hasFinal=Number(totals.sale)>0;
+   const manual=usesManualPrice(draft);
+   const goal=Number(document.getElementById('desired-margin').value||0);
+   const suggested=suggestedPrice(totals.cost,goal);
+   const gain=totals.sale-totals.cost;
+   const margin=hasFinal&&totals.sale?gain/totals.sale*100:0;
+   const button=document.getElementById('use-suggested-price');
+   const summary=document.getElementById('price-margin-summary');
+   const autoNode=document.getElementById('automatic-client-price');
+   const modeNode=document.getElementById('final-price-mode');
+
+   if(autoNode)autoNode.textContent=money(subtotal);
+   if(input&&document.activeElement!==input)input.value=hasFinal?AMCArs.format(totals.sale):'';
+   if(modeNode)modeNode.textContent=manual
+     ?'Precio final editado manualmente. El subtotal calculado por trabajos queda como referencia.'
+     :'Precio final automático: coincide con la suma de los trabajos agregados.';
+
+   document.getElementById('suggested-label').textContent='Precio mínimo sugerido para lograr '+goal+'% de margen';
+   document.getElementById('suggested-price').textContent=money(suggested);
+
+   summary.innerHTML=
+     '<p><strong>Subtotal de trabajos</strong><br>'+money(subtotal)+'</p>'+
+     '<p><strong>Costos estimados</strong><br>Mano de obra: '+money(teamCost())+
+     '<br>Otros costos internos: '+money(Math.max(0,totals.cost-teamCost()))+'</p>'+
+     '<p><strong>Costo total estimado</strong><br>'+money(totals.cost)+'</p>'+
+     (hasFinal
+       ?'<p><strong>Precio actual para calcular rentabilidad</strong><br>'+money(totals.sale)+'</p>'+
+        '<p><strong>Ganancia estimada</strong><br>'+money(gain)+'</p>'+
+        '<p><strong>Margen estimado</strong><br>'+margin.toFixed(2)+'%</p>'
+       :'<p><strong>Precio actual</strong><br>Agregá al menos un trabajo con importe.</p>')+
+     '<p><strong>Margen objetivo</strong><br>'+goal+'%</p>';
+
+   const reached=hasFinal&&totals.sale>=suggested&&suggested>0;
+   button.hidden=reached;
+   button.disabled=!suggested||reached||!draft.items.length;
+   button.textContent='Usar '+money(suggested)+' como precio final';
+
+   if(hasFinal&&gain<0)summary.insertAdjacentHTML('beforeend','<p><strong>🔴 Este presupuesto deja una pérdida estimada de '+money(Math.abs(gain))+'.</strong></p>');
+   else if(reached)summary.insertAdjacentHTML('beforeend','<p><strong>✓ El precio actual alcanza el margen objetivo del '+goal+' %.</strong></p>');
+   else if(hasFinal)summary.insertAdjacentHTML('beforeend','<p><strong>⚠ El precio actual está por debajo del margen objetivo.</strong></p>');
+ }
+
+ document.addEventListener('amc:draft-updated',event=>{
+   renderSuggestedPrice();
+   const item=event.detail?.item;
+   if(item)toast('✓ '+item+' agregado. El precio final se actualizó automáticamente.');
+ }); function renderEstimatedTeam(){const rows=draft.amcEstimatedTeam||[];document.getElementById('estimated-team-list').innerHTML=rows.map((x,i)=>'<div class="form-grid" data-team-row="'+i+'">'+(x.manual?'<label>Función<input data-team-field="name" value="'+esc(x.name)+'"></label>':'<strong>'+esc(x.name)+'</strong>')+'<label>Jornal diario<input type="number" min="0" data-team-field="dailyCost" value="'+Number(x.dailyCost||0)+'"></label><label>Días<input type="number" min="0" step=".5" data-team-field="days" value="'+Number(x.days||0)+'"></label><strong data-team-subtotal>'+money(Number(x.dailyCost||0)*Number(x.days||0))+'</strong><button type="button" data-remove-team="'+i+'">Quitar</button></div>').join('')||'<p>Sin mano de obra estimada.</p>';document.getElementById('estimated-team-total').textContent='Mano de obra: '+money(teamCost());saveDraft();}
  teamBox.addEventListener('input',e=>{const row=e.target.closest('[data-team-row]'),field=e.target.dataset.teamField;if(!row||!field)return;const item=draft.amcEstimatedTeam[Number(row.dataset.teamRow)];item[field]=field==='name'?e.target.value:Number(e.target.value||0);row.querySelector('[data-team-subtotal]').textContent=money(Number(item.dailyCost||0)*Number(item.days||0));document.getElementById('estimated-team-total').textContent='Mano de obra: '+money(teamCost());renderQuote();saveDraft();renderSuggestedPrice();document.dispatchEvent(new Event('click'));});teamBox.addEventListener('click',e=>{if(e.target.dataset.removeTeam!==undefined){draft.amcEstimatedTeam.splice(Number(e.target.dataset.removeTeam),1);renderEstimatedTeam();renderQuote();renderSuggestedPrice();document.dispatchEvent(new Event('click'));}});
  document.getElementById('add-estimated-employee').onclick=()=>{const id=document.getElementById('estimated-employee').value,employee=session?.employees?.find(x=>x.id===id);if(!employee)return;if((draft.amcEstimatedTeam||[]).some(x=>x.employeeId===id)){status().textContent='Ese empleado ya está en el equipo estimado.';return;}draft.amcEstimatedTeam=[...(draft.amcEstimatedTeam||[]),{employeeId:id,name:employee.name,dailyCost:Number(employee.dailyCost||0),days:1}];renderEstimatedTeam();renderQuote();renderSuggestedPrice();};
  document.getElementById('add-manual-labor').onclick=()=>{draft.amcEstimatedTeam=[...(draft.amcEstimatedTeam||[]),{manual:true,name:'Ayudante',dailyCost:0,days:1}];renderEstimatedTeam();renderQuote();renderSuggestedPrice();document.querySelector('#estimated-team-list [data-team-row]:last-child input')?.focus();};
