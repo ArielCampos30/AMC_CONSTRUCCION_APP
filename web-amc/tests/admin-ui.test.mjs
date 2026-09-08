@@ -93,6 +93,11 @@ test('duplicate client phone uses a visible AMC notice instead of failing silent
   assert.match(app,/singleAction:true/);
   assert.match(app,/No se guardaron cambios|tel\[eé\]fono ya est/);
   assert.match(confirm,/cancelButton\.hidden=options\.singleAction===true/);
+  assert.match(confirm,/type="button"/);
+  assert.match(confirm,/confirmButton\.onclick=\(\)=>dialog\.close\('confirm'\)/);
+  assert.match(confirm,/cancelButton\.onclick=\(\)=>dialog\.close\('cancel'\)/);
+  assert.match(confirm,/justify-content:center/);
+  assert.doesNotMatch(confirm,/method="dialog"/);
 });
 
 test('admin can classify a request as not taken without deleting it',async()=>{
