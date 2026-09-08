@@ -56,8 +56,10 @@ test('server authorization isolates tenants, employee assignments, staff chat an
   for(const resource of [clientState.quotes[0],clientState.works[0]])for(const field of ['internalCost','grossMargin','internalNotes'])assert.equal(resource[field],undefined);
   assert.equal((await admin.call('/api/state')).works.find(x=>x.id===workA.id).internalCost,777);
 
-  await admin.call('/api/assignments',{employeeId:empA.id,requestId:requestA.id,type:'Trabajo',day:'2030-06-03',time:'10:00',address:'La Falda',instructions:'Trabajo A',idempotencyKey:'role-assign-a'},201);
-  await admin.call('/api/assignments',{employeeId:empB.id,requestId:requestB.id,type:'Trabajo',day:'2030-06-04',time:'10:00',address:'Valle Hermoso',instructions:'Trabajo B',idempotencyKey:'role-assign-b'},201);
+  await admin.call('/api/calendar-bookings',{kind:'Obra',status:'Confirmada',title:'Trabajo A',workId:workA.id,start:'2030-06-03',end:'2030-06-03',slot:'Día completo',teamIds:[],idempotencyKey:'role-date-a'},201);
+  await admin.call('/api/calendar-bookings',{kind:'Obra',status:'Confirmada',title:'Trabajo B',workId:workB.id,start:'2030-06-04',end:'2030-06-04',slot:'Día completo',teamIds:[],idempotencyKey:'role-date-b'},201);
+  await admin.call('/api/works/'+workA.id+'/assign-team',{members:[{employeeId:empA.id,dailyCost:0,estimatedDays:1}],time:'10:00',address:'La Falda',instructions:'Trabajo A',idempotencyKey:'role-assign-a'},201);
+  await admin.call('/api/works/'+workB.id+'/assign-team',{members:[{employeeId:empB.id,dailyCost:0,estimatedDays:1}],time:'10:00',address:'Valle Hermoso',instructions:'Trabajo B',idempotencyKey:'role-assign-b'},201);
   const employeeState=await employeeA.call('/api/state');
   assert.deepEqual(employeeState.works.map(x=>x.id),[workA.id]);
   assert.equal(employeeState.works[0].budget,undefined);assert.equal(employeeState.works[0].payments,undefined);assert.equal(employeeState.works[0].internalCost,undefined);
