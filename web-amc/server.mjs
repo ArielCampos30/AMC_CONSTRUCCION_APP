@@ -83,7 +83,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const lifecycle=quoteLifecycle({all,put,transaction,notify,notifyAdmins,clock});
  const verifyAdmin=(user,password)=>{requireAdmin(user);checkRate(user.id+':sensitive',5);if(typeof password!=='string'||password.length<8||password.length>200)fail(403,'Ingresá tu contraseña de administrador.');const [salt,hash]=user.password.split(':');if(!timingSafeEqual(Buffer.from(hash,'hex'),scryptSync(password,salt,64)))fail(403,'La contraseña de administrador no es correcta.');};
  const recovery=recoveryFeatures({db,all,put,transaction,requireAdmin,verifyAdmin,notifyAdmins,send,fail,text,sha,passwordHash,origin,clock,sendRecovery});
- const closure=closureFeatures({all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,now,id,sha});
+ const closure=closureFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,now,id,sha});
  const fieldwork=fieldworkFeatures({all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,sha});
  const team=teamFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,addUser,passwordHash,planning});
  const clientChatIds=user=>new Set(all('request',user.id).map(r=>r.id));
