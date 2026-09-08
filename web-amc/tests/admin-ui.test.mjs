@@ -57,6 +57,33 @@ test('request detail changes quote actions after a quote exists',async()=>{
   assert.match(hub,/!qs\.length&&r\.status!=='No tomada'/);
 });
 
+test('admin edits clients and employees with AMC dialogs instead of browser confirms',async()=>{
+  const [app,directory,team,bridge,index,server,features,planning,closure]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/index.html',import.meta.url),'utf8'),
+    readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/accounts-closure-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(directory,/data-action="edit-client"/);
+  assert.match(app,/function openEditClientDialog\(clientId\)/);
+  assert.match(app,/edit-client-form/);
+  assert.match(server,/\/api\\\/admin\\\/clients\\\/\[\^\/\]\+\\\/profile/);
+  assert.match(team,/Editar empleado/);
+  assert.match(index,/amc-confirm\.js/);
+  assert.match(server,/amc-confirm\.js/);
+  for(const source of [app,team,bridge,features,planning,closure]){
+    assert.doesNotMatch(source,/\bconfirm\(/);
+    assert.match(source,/AMCConfirm/);
+  }
+  assert.match(app,/currentClient=\(state\.agendaClients\|\|\[\]\)\.find|const client=\(state\.agendaClients\|\|\[\]\)\.find/);
+  assert.match(bridge,/const currentClient=r=>/);
+});
+
 test('admin can classify a request as not taken without deleting it',async()=>{
   const service=createApp({dbPath:':memory:',origin});
   service.addUser('owner@amc.test','Strong-Owner-2026!','AMC','admin');
