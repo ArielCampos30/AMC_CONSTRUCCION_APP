@@ -187,12 +187,12 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
         <div class="card" style="margin-top:14px">
           <div class="quote-head">
             <div>
-              <h2>Trabajos agregados</h2>
+              <h2>3. Trabajos agregados</h2>
               <div class="small muted">Podés ir sumando revoque, cerámico, arreglos varios, etc. y borrar cualquier error.</div>
             </div>
             <div class="actions"><button class="btn soft compact" type="button" onclick="document.querySelector('[data-view=add]').click()">+ Agregar trabajo</button></div>
           </div>
-          <div id="quote-items"></div>
+          <div id="quote-items"></div><div id="work-subtotal" class="big" style="margin-top:12px">Subtotal de trabajos: $0</div>
         </div>
       </div>
 
@@ -227,7 +227,7 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
   <section id="view-add" class="view">
     <div class="grid">
       <div class="card">
-        <h2>1. Buscar o escribir el trabajo</h2>
+        <h2>2. Trabajo a presupuestar</h2>
         <p class="small muted">Buscá con palabras simples o parciales: “cerámico”, “grueso”, “fino”, “durlock”, “pintura”, “pilar”, etc. Al elegir una opción, la lista se cierra sola.</p>
         <label>Buscar en el tarifario
           <input id="task-search" placeholder="Ej. revoque, cerámico, durlock, pintura...">
@@ -251,7 +251,7 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
         <div id="task-source" class="small muted" style="margin-top:8px">Elegí una tarifa o cargá el trabajo manualmente.</div>
 
         <div class="hr"></div>
-        <h3>2. Datos para comparar m² vs. jornal</h3>
+        <h3>Datos para comparar m² vs. jornal</h3>
         <div class="fields3" style="margin-top:10px">
           <label>¿Se mide claramente?<select id="measurable"><option value="yes">Sí</option><option value="no">No</option></select></label>
           <label>Incertidumbre<select id="uncertainty"><option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option></select></label>
@@ -266,7 +266,7 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font-size:11px}
       </div>
 
       <div class="card">
-        <h2>3. Estimación para presupuestar</h2>
+        <h2>Elegir estimación</h2>
         <p class="small muted">Esta ayuda interna compara alternativas. Ningún importe pasa al presupuesto hasta que elijas “Agregar esta opción al presupuesto”.</p>
         <div class="option-grid" style="margin-top:12px">
           <div id="opt-m2" class="option">
@@ -824,11 +824,13 @@ function renderQuote(){
     }));
   }
   const totals = quoteTotals();
-  const finalPrice = Number(draft.amcClientPrice);
-  const hasFinalPrice = Number.isFinite(finalPrice) && finalPrice > 0;
+  const hasFinalPrice = Number(totals.sale) > 0;
   $('#sum-sale').textContent = hasFinalPrice ? money(totals.sale) : 'Pendiente';
   $('#sum-cost').textContent = money(totals.cost);
   $('#sum-margin').textContent = hasFinalPrice ? money(totals.sale - totals.cost) : '—';
+  const subtotal=(draft.items||[]).reduce((sum,item)=>sum+Number(item.clientCharge||0),0);
+  const subtotalNode=document.getElementById('work-subtotal');
+  if(subtotalNode)subtotalNode.textContent='Subtotal de trabajos: '+money(subtotal);
   ['download-pdf','share-pdf','print-btn'].forEach(id=>{
     const button=document.getElementById(id);
     if(button)button.disabled=!hasFinalPrice||!items.length;
@@ -837,8 +839,8 @@ function renderQuote(){
 }
 function renderClientPreview(){
   const totals = quoteTotals();
-  const explicitFinal = Number(draft.amcClientPrice);
-  const hasExplicitFinal = Number.isFinite(explicitFinal) && explicitFinal > 0;
+  const finalPrice = Number(totals.sale);
+  const hasExplicitFinal = Number.isFinite(finalPrice) && finalPrice > 0;
   $('#client-preview').innerHTML = `
     <div class="client-sheet">
       <div class="brandline">
@@ -853,7 +855,7 @@ function renderClientPreview(){
       <div class="hr"></div>
       <strong>Trabajos incluidos</strong>
       <ul>${(draft.items||[]).map(it => `<li>${esc(it.clientDescription)}</li>`).join('')}</ul>
-      <div class="big">${hasExplicitFinal ? 'TOTAL FINAL: ' + money(explicitFinal) : 'PRECIO FINAL PENDIENTE'}</div>
+      <div class="big">${hasExplicitFinal ? 'TOTAL FINAL: ' + money(finalPrice) : 'PRECIO FINAL PENDIENTE'}</div>
       <div class="small muted">Validez: ${draft.validity || db.settings.validity} días · Forma de pago: ${esc(draft.payment || db.settings.payment)} · Materiales incluidos: ${esc(draft.materialsIncluded || 'No')}</div>
     </div>`;
 }
@@ -1090,7 +1092,7 @@ function openClientPreviewDialog(){
     document.head.append(style);
     dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   }
-  const finalPrice=Number(draft.amcClientPrice);
+  const finalPrice=Number(quoteTotals(draft).sale);
   const hasFinal=Number.isFinite(finalPrice)&&finalPrice>0;
   const hasItems=(draft.items||[]).length>0;
   dialog.innerHTML=`

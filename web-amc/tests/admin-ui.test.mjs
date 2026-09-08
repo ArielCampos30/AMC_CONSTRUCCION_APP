@@ -65,8 +65,8 @@ test('quick budget starts with direct client data and exposes the four estimator
   assert.match(app,/Si el teléfono ya existe, AMC usará automáticamente la ficha guardada/);
   assert.match(app,/data-use-existing/);
   assert.match(app,/Cliente existente encontrado/);
-  assert.match(steps,/\['Cliente','Trabajo','Costos','Revisar'\]/);
-  assert.match(steps,/Mano de obra estimada/);
+  assert.match(steps,/\['Cliente','Trabajo','Costos','Final'\]/);
+  assert.match(bridge,/4\. Mano de obra estimada/);
   assert.match(app,/description:'Presupuesto iniciado por Administración'/);
   assert.match(app,/features\.openEditor\(request\.id\)/);
   assert.match(features,/const chooser=quoteRequest\?'':/);
@@ -81,7 +81,8 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8')
   ]);
   assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\)/);
-  assert.match(bridge,/const sale=Number\.isFinite\(override\)&&override>0\?override:0/);
+  assert.match(bridge,/const workSubtotal=q=>/);
+  assert.match(bridge,/return usesManualPrice\(q\).*workSubtotal\(q\)/s);
   assert.doesNotMatch(bridge,/last\.clientCharge/);
   assert.match(app,/const preservingEstimator=page==='cotizador'\|\|!!document\.querySelector\('#amc-estimator'\)/);
   assert.match(directory,/class="client-view-action"/);
@@ -94,8 +95,8 @@ test('notification, refresh and margin UI avoid duplicate work',async()=>{
   assert.match(app,/instantRequests=new Set\(\['\/api\/notices\/read'/);
   assert.equal((app.match(/const link=e\.target\.closest\('\[data-notice\]'\)/g)||[]).length,1);
   assert.match(app,/if\(!dirty&&page!=='cotizador'\)render\(\)/);
-  assert.match(bridge,/Precio final pendiente/);
-  assert.match(bridge,/Definí el precio final para calcular la rentabilidad/);
-  assert.match(bridge,/Tu precio actual ya alcanza el margen objetivo/);
+  assert.match(bridge,/Precio final automático/);
+  assert.match(bridge,/Total calculado por trabajos/);
+  assert.match(bridge,/El precio actual alcanza el margen objetivo/);
   assert.match(bridge,/Usar .* como precio final/);
 });
