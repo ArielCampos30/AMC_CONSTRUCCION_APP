@@ -58,7 +58,7 @@ test('external quote delivery can be rejected and quote notices use exact deep l
     await admin.call('/api/quotes/'+revisedExternal.id+'/reject-manual',{});
     assert.equal((await admin.call('/api/state')).quotes.find(q=>q.id===revisedExternal.id).status,'Rechazado');
 
-    await client.call('/api/register',{email:'client@closing.test',password:'12345678',name:'Cliente AMC'});
+    await client.call('/api/register',{email:'client@closing.test',password:'Client-Test-2026!',name:'Cliente AMC'});
     const request=await client.call('/api/requests',{name:'Cliente AMC',phone:'3548000002',town:'Valle Hermoso',service:'Albañilería',description:'Revoque',type:'presupuesto'},201);
     const quote=await admin.call('/api/quotes',{requestId:request.id,externalId:'closing-account',version:'b'.repeat(64),number:'AMC-LINK',items:[{description:'Revoque'}],total:200000},201);
     assert.ok((await client.call('/api/state')).notices.some(n=>n.url==='/#presupuesto/'+quote.id));
