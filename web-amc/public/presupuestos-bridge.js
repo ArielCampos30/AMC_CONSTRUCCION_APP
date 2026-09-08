@@ -260,10 +260,36 @@ if(embedded){banner.style.margin='0 12px 16px';banner.querySelector('a').onclick
    status().textContent=saved?'Presupuesto '+(draft.number||'')+' cargado para editar.':'Presupuesto recuperado para editar. Revisá el detalle antes de volver a guardarlo.';
    return true;
  }
+ async function generatePendingPdf(quoteId){
+   const storedQuote=(session.quotes||[]).find(q=>q.id===quoteId);
+   if(!storedQuote)throw Error('No encontramos el presupuesto para generar el PDF.');
+   if(storedQuote.pdf){
+     if(embedded)window.parent.postMessage({type:'amc:pdf-ready',quoteId},location.origin);
+     return;
+   }
+   window.AMCBusy?.start();
+   try{
+     status().textContent='Generando PDF…';
+     const blob=await makePdf(quoteForDocument(draft)),
+           uploaded=await request('/api/upload',{mime:'application/pdf',base64:await blobToBase64(blob)}),
+           attached=await request('/api/quotes/'+quoteId+'/pdf',{pdfId:uploaded.id});
+     storedQuote.pdf=attached.pdf;
+     storedQuote.pdfPending=false;
+     status().textContent='PDF generado y vinculado al presupuesto.';
+     if(embedded)window.parent.postMessage({type:'amc:pdf-ready',quoteId,pdf:attached.pdf},location.origin);
+   }catch(error){
+     console.error('No se pudo generar el PDF pendiente.',error);
+     status().textContent='El presupuesto sigue guardado. El PDF no se pudo generar.';
+     await window.AMCConfirm(error.message||'No se pudo generar el PDF. El presupuesto sigue guardado.',{title:'No pudimos generar el PDF',confirmLabel:'Entendido',singleAction:true});
+   }finally{
+     window.AMCBusy?.stop();
+   }
+ }
  document.getElementById('import-request').onclick=()=>importRequest(true);select.addEventListener('change',syncDeliveryUi);
  const editParams=new URLSearchParams(location.search),editQuoteId=editParams.get('quote');
- if(editQuoteId)loadQuoteForEdit(editQuoteId);
- else if(editParams.get('solicitud'))importRequest(false);
+ const editLoaded=editQuoteId?loadQuoteForEdit(editQuoteId):false;
+ if(!editQuoteId&&editParams.get('solicitud'))importRequest(false);
+ if(editLoaded&&editParams.get('generatePdf')==='1')setTimeout(()=>generatePendingPdf(editQuoteId),0);
  document.getElementById('send-connected').onclick=async function(){this.disabled=true;let processing=false;try{const r=selectedRequest();if(!r)throw Error('Elegí el pedido que corresponde a este presupuesto.');if(draft.amcRequestId!==r.id)throw Error('Usá primero “Usar datos del pedido” para vincular correctamente el presupuesto.');const registered=hasAccount(r),action=registered?'enviar':'guardar';draft.validity=10;if(validityField)validityField.value=10;if(!persistCurrentSilently())throw Error('Agregá al menos un trabajo al presupuesto.');if(!(clientTotal(draft)>0))throw Error('Agregá trabajos con un importe válido antes de '+action+' el presupuesto.');if(!await window.AMCConfirm('¿'+(registered?'Enviar':'Guardar')+' el presupuesto '+draft.number+' para '+r.name+' por '+money(clientTotal(draft))+'?',{title:registered?'Enviar presupuesto':'Guardar presupuesto',confirmLabel:registered?'Enviar':'Guardar'}))return;window.AMCBusy?.start();processing=true;
  const totals=quoteTotals(draft),publicQuote={requestId:r.id,externalId:draft.id,number:draft.number,items:draft.items.map(it=>({description:it.clientDescription})),total:clientTotal(draft),validity:'10',payment:draft.payment||db.settings.payment,notes:draft.notes||'',estimatedTeam:draft.amcEstimatedTeam||[],personnelCost:teamCost(),internalCost:totals.cost,grossMargin:clientTotal(draft)-totals.cost};
  publicQuote.version=await contentVersion(publicQuote);const sent=await request('/api/quotes',publicQuote);if(!['Enviado','Guardado'].includes(sent.status))throw Error('No se pudo '+action+' este presupuesto.');draft.amcQuoteId=sent.id;persistCurrentSilently();let pdfPending=true;try{const blob=await makePdf(quoteForDocument(draft)),uploaded=await request('/api/upload',{mime:'application/pdf',base64:await blobToBase64(blob)});await request('/api/quotes/'+sent.id+'/pdf',{pdfId:uploaded.id});pdfPending=false;}catch(pdfError){console.error('El presupuesto quedó guardado, pero el PDF quedó pendiente.',pdfError);}syncDeliveryUi();status().textContent=registered?(pdfPending?'Presupuesto enviado. PDF pendiente de generar.':'Presupuesto enviado. El cliente ya puede verlo y responder desde su cuenta.'):(pdfPending?'Presupuesto guardado. PDF pendiente de generar.':'Presupuesto guardado. Compartilo o registrá su entrega.');if(embedded)window.parent.postMessage({type:registered?'amc:sent':'amc:saved',quoteId:sent.id,clientName:r.name,pdfPending},location.origin);

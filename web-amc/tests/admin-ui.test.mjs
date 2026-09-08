@@ -39,13 +39,13 @@ test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
   ]);
   assert.match(app,/data-action="editor" data-id="\$\{r\.id\}" data-quote="\$\{q\.id\}"/);
   assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
-  assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',selectedClient=''/);
+  assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',quoteMode='',selectedClient=''/);
   assert.match(features,/quoteEdit\?'&quote='/);
-  assert.match(features,/function openEditor\(requestId='',quoteId=''\)/);
+  assert.match(features,/function openEditor\(requestId='',quoteId='',mode=''\)/);
   assert.match(bridge,/function loadQuoteForEdit\(quoteId\)/);
   assert.match(bridge,/db\.quotes\|\|\[\]\)\.find\(q=>q\.id===storedQuote\.externalId\)/);
-  assert.match(bridge,/if\(editQuoteId\)loadQuoteForEdit\(editQuoteId\)/);
-  assert.match(bridge,/else if\(editParams\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(bridge,/const editLoaded=editQuoteId\?loadQuoteForEdit\(editQuoteId\):false/);
+  assert.match(bridge,/if\(!editQuoteId&&editParams\.get\('solicitud'\)\)importRequest\(false\)/);
 });
 
 test('request detail changes quote actions after a quote exists',async()=>{
@@ -185,7 +185,7 @@ test('quick budget starts with direct client data and exposes the four estimator
   assert.match(app,/description:'Presupuesto iniciado por Administración'/);
   assert.match(app,/features\.openEditor\(request\.id\)/);
   assert.match(features,/const chooser=quoteRequest\?'':/);
-  assert.match(bridge,/else if\(editParams\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(bridge,/if\(!editQuoteId&&editParams\.get\('solicitud'\)\)importRequest\(false\)/);
   assert.match(bridge,/nav\('add'\)/);
 });
 
@@ -234,6 +234,25 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.match(bridge,/Se creó la obra\./);
   assert.equal((app.match(/\bfetch\(/g)||[]).length,1);
   assert.equal((bridge.match(/\bfetch\(/g)||[]).length,1);
+});
+
+test('pending PDF can be regenerated and returns to the exact quote',async()=>{
+  const [app,features,bridge]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/data-action="generate-pdf-admin"/);
+  assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|'','pdf'\)/);
+  assert.match(features,/quoteMode=''/);
+  assert.match(features,/generatePdf=1/);
+  assert.match(features,/amc:pdf-ready/);
+  assert.match(bridge,/async function generatePendingPdf\(quoteId\)/);
+  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
+  assert.match(bridge,/\/api\/quotes\/'\+quoteId\+'\/pdf/);
+  assert.match(bridge,/type:'amc:pdf-ready'/);
+  assert.match(bridge,/No pudimos generar el PDF/);
+  assert.doesNotMatch(app,/<span>PDF pendiente<\/span>/);
 });
 
 test('work detail is compact, accurate and uses the current client profile',async()=>{

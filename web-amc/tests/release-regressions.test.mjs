@@ -110,6 +110,14 @@ test('WhatsApp externo normaliza números argentinos',()=>{
   assert.match(bridge,/raw\.startsWith\('549'\)\?raw:raw\.startsWith\('54'\)\?'549'\+raw\.slice\(2\):'549'\+raw/);
 });
 
+test('PDF pendiente conserva el presupuesto y permite reintento explícito',()=>{
+  const bridge=read('../public/presupuestos-bridge.js');
+  const app=read('../public/app.js');
+  assert.match(bridge,/storedQuote\.pdfPending=false/);
+  assert.match(bridge,/El presupuesto sigue guardado\. El PDF no se pudo generar\./);
+  assert.match(app,/Generar PDF/);
+});
+
 test('guardar o enviar usa el precio comercial automático o editado',()=>{
   const bridge=read('../public/presupuestos-bridge.js');
   const action=bridge.indexOf("const registered=hasAccount(r),action=");
