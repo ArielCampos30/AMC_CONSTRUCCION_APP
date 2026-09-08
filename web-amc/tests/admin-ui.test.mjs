@@ -81,7 +81,8 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8')
   ]);
   assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\)/);
-  assert.match(bridge,/const workSubtotal=q=>/);\n  assert.match(bridge,/return usesManualPrice\(q\).*workSubtotal\(q\)/s);
+  assert.match(bridge,/const workSubtotal=q=>/);
+  assert.match(bridge,/return usesManualPrice\(q\).*workSubtotal\(q\)/s);
   assert.doesNotMatch(bridge,/last\.clientCharge/);
   assert.match(app,/const preservingEstimator=page==='cotizador'\|\|!!document\.querySelector\('#amc-estimator'\)/);
   assert.match(directory,/class="client-view-action"/);
