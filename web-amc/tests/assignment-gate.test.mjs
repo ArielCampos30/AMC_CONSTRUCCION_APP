@@ -16,8 +16,8 @@ test('a work team is assigned from a programmed work, while a budget visit remai
  try{
   const admin=actor(),client=actor();
   await admin.call('/api/login',{email:'owner@amc.test',password:'Strong-Owner-2026!'});
-  await client.call('/api/register',{email:'gate@amc.test',password:'12345678',name:'Cliente'});
-  const employee=await admin.call('/api/employees',{email:'gate-worker@amc.test',password:'12345678',name:'Carlos',dailyCost:30000},201);
+  await client.call('/api/register',{email:'gate@amc.test',password:'Client-Test-2026!',name:'Cliente'});
+  const employee=await admin.call('/api/employees',{email:'gate-worker@amc.test',password:'Client-Test-2026!',name:'Carlos',dailyCost:30000},201);
   const request=await client.call('/api/requests',{name:'Cliente',phone:'3548000001',town:'La Falda',description:'Medir baño',service:'Albañilería',type:'presupuesto'},201);
   const base={employeeId:employee.id,requestId:request.id,day:'2030-08-01',time:'10:00',address:'La Falda',instructions:'Tomar medidas'};
   await admin.call('/api/assignments',{...base,type:'Trabajo',idempotencyKey:'gate-work-before'},409);
