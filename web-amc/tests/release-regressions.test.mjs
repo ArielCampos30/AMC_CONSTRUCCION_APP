@@ -120,6 +120,16 @@ test('guardar o enviar usa el precio comercial automático o editado',()=>{
   assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
 });
 
+test('editar presupuesto restaura el borrador persistido por externalId',()=>{
+  const bridge=read('../public/presupuestos-bridge.js');
+  const features=read('../public/features-ui.js');
+  assert.match(features,/&quote='\+encodeURIComponent\(quoteEdit\)/);
+  assert.match(bridge,/storedQuote\.externalId/);
+  assert.match(bridge,/draft=structuredClone\(saved\)/);
+  assert.match(bridge,/draft\.amcQuoteId=storedQuote\.id/);
+  assert.match(bridge,/Presupuesto .* cargado para editar/);
+});
+
 test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
   for(const path of [
     '../public/presupuestos-bridge.js',
