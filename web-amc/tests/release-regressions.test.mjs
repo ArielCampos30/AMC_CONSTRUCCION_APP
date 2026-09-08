@@ -135,6 +135,7 @@ test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
     '../public/presupuestos-bridge.js',
     '../public/estimator-steps.js',
     '../public/features-ui.js',
+    '../public/amc-busy.js',
     '../public/app.js'
   ]){
     execFileSync(process.execPath,['--check',fileURLToPath(new URL(path,import.meta.url))]);
