@@ -80,7 +80,7 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8')
   ]);
-  assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\*100\)\/100/);
+  assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\)/);
   assert.match(bridge,/const sale=Number\.isFinite\(override\)&&override>0\?override:0/);
   assert.doesNotMatch(bridge,/last\.clientCharge/);
   assert.match(app,/const preservingEstimator=page==='cotizador'\|\|!!document\.querySelector\('#amc-estimator'\)/);
