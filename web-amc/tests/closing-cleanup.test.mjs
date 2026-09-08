@@ -76,3 +76,41 @@ test('external quote delivery can be rejected and quote notices use exact deep l
     assert.equal(acceptedNotice.priority,'important');
   }finally{await new Promise(resolve=>service.server.close(resolve));}
 });
+
+
+test('external client work finalizes and releases the team without conformity',async()=>{
+  const service=createApp({dbPath:':memory:',origin});
+  service.addUser('owner-external@closing.test','Strong-Owner-2026!','AMC','admin');
+  await new Promise(resolve=>service.server.listen(0,'127.0.0.1',resolve));
+  const base='http://127.0.0.1:'+service.server.address().port;
+  const actor=()=>({cookie:'',csrf:'',async call(path,body,status=200){const response=await fetch(base+path,{method:body===undefined?'GET':'POST',headers:{Origin:origin,'Content-Type':'application/json',Cookie:this.cookie,'X-CSRF-Token':this.csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});const value=await response.json();assert.equal(response.status,status,JSON.stringify(value));if(response.headers.get('set-cookie'))this.cookie=response.headers.get('set-cookie').split(';')[0];if(value.csrf)this.csrf=value.csrf;return value;}});
+  try{
+    const admin=actor(),employee=actor();
+    await admin.call('/api/login',{email:'owner-external@closing.test',password:'Strong-Owner-2026!'});
+    const worker=await admin.call('/api/employees',{name:'Operario externo',email:'worker-external@closing.test',password:'Strong-Worker-2026!',dailyCost:50000},201);
+    await employee.call('/api/login',{email:'worker-external@closing.test',password:'Strong-Worker-2026!'});
+    const lead=await admin.call('/api/admin/clients',{name:'Cliente de la calle',phone:'3548555010',town:'La Falda'},201);
+    const request=await admin.call('/api/admin/requests',{leadId:lead.id,service:'Pintura',description:'Pintura exterior',idempotencyKey:'external-finish-request'},201);
+    const quote=await admin.call('/api/quotes',{requestId:request.id,externalId:'external-finish-quote',version:'e'.repeat(64),number:'AMC-EXT-FIN',items:[{description:'Pintura exterior'}],total:250000},201);
+    await admin.call('/api/quotes/'+quote.id+'/deliver',{channel:'Personalmente'});
+    const accepted=await admin.call('/api/quotes/'+quote.id+'/accept-manual',{},201);
+    const workId=accepted.workId;
+    const booking=await admin.call('/api/calendar-bookings',{kind:'Obra',status:'Confirmada',title:'Pintura exterior',workId,start:'2030-07-10',end:'2030-07-10',slot:'Mañana',teamIds:[],idempotencyKey:'external-finish-date'},201);
+    const assigned=await admin.call('/api/works/'+workId+'/assign-team',{members:[{employeeId:worker.id,dailyCost:50000,estimatedDays:1}],time:'09:30',address:'La Falda',instructions:'Realizar pintura exterior',idempotencyKey:'external-finish-team'},201);
+    const task=assigned.assignments[0];
+    await employee.call('/api/assignments/'+task.id+'/report',{status:'En el lugar',category:'Durante',text:'Comienzo de trabajo',photos:[],idempotencyKey:'external-finish-start'},201);
+    await employee.call('/api/assignments/'+task.id+'/report',{status:'Finalizada',category:'Después',text:'Trabajo terminado',photos:[],idempotencyKey:'external-finish-done'},201);
+    let state=await admin.call('/api/state');
+    const work=state.works.find(w=>w.id===workId);
+    assert.equal(work.status,'Finalizado');
+    assert.equal(state.requests.find(r=>r.id===request.id).status,'Cerrada');
+    assert.equal(state.calendarBookings.find(b=>b.id===booking.id).status,'Finalizada');
+    assert.equal(state.calendarEvents.some(e=>e.workId===workId),false);
+    await admin.call('/api/calendar-bookings',{kind:'Reserva',status:'Confirmada',title:'Nuevo trabajo posible',start:'2030-07-10',end:'2030-07-10',slot:'Mañana',teamIds:[worker.id],idempotencyKey:'external-team-released'},201);
+    const closure=await admin.call('/api/works/'+workId+'/closure',{summary:'Trabajo terminado y revisado en obra',photos:[],idempotencyKey:'external-internal-closure'},201);
+    assert.equal(closure.status,'Cerrado internamente');
+    assert.equal(closure.requiresConformity,false);
+    state=await admin.call('/api/state');
+    assert.equal(state.works.find(w=>w.id===workId).status,'Finalizado');
+  }finally{await new Promise(resolve=>service.server.close(resolve));}
+});
