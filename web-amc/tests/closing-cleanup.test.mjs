@@ -28,7 +28,7 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   assert.match(index,/aria-live="assertive"/);
   assert.match(sw,/visibilityState==='visible'/);
   assert.match(sw,/postMessage\(\{type:'AMC_NOTICE'/);
-  assert.match(sw,/\/assets\/amc-icon\.png/);
+  assert.match(sw,/\/assets\/amc-logo\.webp/);
   assert.match(bridge,/if\(embedded\)window\.alert=toast/);
   assert.match(bridge,/\.tabs,.app>\.header,#app-version,#view-home\{display:none!important\}/);
   assert.doesNotMatch(read('../public/pdf-logo.js'),/LOGO_JPG_B64|base64/);
