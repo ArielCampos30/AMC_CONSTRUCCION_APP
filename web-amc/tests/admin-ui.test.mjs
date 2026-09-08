@@ -96,7 +96,7 @@ test('quick budget starts with direct client data and exposes the four estimator
   assert.match(app,/description:'Presupuesto iniciado por Administración'/);
   assert.match(app,/features\.openEditor\(request\.id\)/);
   assert.match(features,/const chooser=quoteRequest\?'':/);
-  assert.match(bridge,/if\(new URLSearchParams\(location\.search\)\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(bridge,/else if\(editParams\.get\('solicitud'\)\)importRequest\(false\)/);
   assert.match(bridge,/nav\('add'\)/);
 });
 
