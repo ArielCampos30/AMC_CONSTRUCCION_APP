@@ -1,7 +1,7 @@
 name: Servidor AMC - SQLite y PostgreSQL
 on:
   push:
-    branches: [amc-servidor-supabase]
+    branches: [main, amc-servidor-supabase]
     paths: ['web-amc/**', '.github/workflows/servidor-amc.yml']
   pull_request:
     branches: [main]
