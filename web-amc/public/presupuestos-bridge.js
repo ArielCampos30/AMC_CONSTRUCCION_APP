@@ -280,7 +280,8 @@ if(embedded){banner.style.margin='0 12px 16px';banner.querySelector('a').onclick
    }catch(error){
      console.error('No se pudo generar el PDF pendiente.',error);
      status().textContent='El presupuesto sigue guardado. El PDF no se pudo generar.';
-     await window.AMCConfirm(error.message||'No se pudo generar el PDF. El presupuesto sigue guardado.',{title:'No pudimos generar el PDF',confirmLabel:'Entendido',singleAction:true});
+     if(embedded)window.parent.postMessage({type:'amc:pdf-error',quoteId,message:error.message||'No se pudo generar el PDF. El presupuesto sigue guardado.'},location.origin);
+     else await window.AMCConfirm(error.message||'No se pudo generar el PDF. El presupuesto sigue guardado.',{title:'No pudimos generar el PDF',confirmLabel:'Entendido',singleAction:true});
    }finally{
      window.AMCBusy?.stop();
    }
