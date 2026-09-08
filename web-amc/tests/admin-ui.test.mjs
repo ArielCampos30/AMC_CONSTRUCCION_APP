@@ -31,6 +31,23 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(worker,/AMC-offline-shell-v10/);
 });
 
+test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
+  const [app,features,bridge]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/data-action="editor" data-id="\$\{r\.id\}" data-quote="\$\{q\.id\}"/);
+  assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
+  assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',selectedClient=''/);
+  assert.match(features,/quoteEdit\?'&quote='/);
+  assert.match(features,/function openEditor\(requestId='',quoteId=''\)/);
+  assert.match(bridge,/function loadQuoteForEdit\(quoteId\)/);
+  assert.match(bridge,/db\.quotes\|\|\[\]\)\.find\(q=>q\.id===storedQuote\.externalId\)/);
+  assert.match(bridge,/if\(editQuoteId\)loadQuoteForEdit\(editQuoteId\)/);
+  assert.match(bridge,/else if\(editParams\.get\('solicitud'\)\)importRequest\(false\)/);
+});
+
 test('request detail changes quote actions after a quote exists',async()=>{
   const hub=await readFile(new URL('../public/project-hub.js',import.meta.url),'utf8');
   assert.match(hub,/latestQuote=qs\.at\(-1\)/);
