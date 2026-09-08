@@ -169,6 +169,22 @@ test('floating admin chat starts by type and sends messages without reload, spin
   assert.match(features,/status\.textContent=''/);
 });
 
+test('full admin chat never stacks the floating chat and blocks double send',async()=>{
+  const [app,features,floating]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/page\.startsWith\('chat-admin\/'\)\)\{features\.selectChat/);
+  assert.doesNotMatch(app,/page\.startsWith\('chat-admin\/'\)\)\{features\.openChat/);
+  assert.match(features,/fullPageChat=.*chat-admin/s);
+  assert.match(features,/floating\.close\?\.\(\)/);
+  assert.match(features,/form\.dataset\.sending==='1'/);
+  assert.match(features,/sendButton\.disabled=true/);
+  assert.match(features,/sendButton\.disabled=false/);
+  assert.match(floating,/body\.full-chat-page \.floating-chat-button\{display:none!important\}/);
+});
+
 test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
   const [app,steps,features,bridge]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
