@@ -85,7 +85,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const recovery=recoveryFeatures({db,all,put,transaction,requireAdmin,verifyAdmin,notifyAdmins,send,fail,text,sha,passwordHash,origin,clock,sendRecovery});
  const closure=closureFeatures({all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,now,id,sha});
  const fieldwork=fieldworkFeatures({all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,sha});
- const team=teamFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,addUser,passwordHash});
+ const team=teamFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,addUser,passwordHash,planning});
  const clientChatIds=user=>new Set(all('request',user.id).map(r=>r.id));
  const chatIds=user=>new Set(all('assignment',user.id).filter(t=>!['Cancelada','Finalizada'].includes(t.status)).map(t=>t.requestId));
  const chatOwn=(user,r)=>{if(user.role==='employee')fail(404,'Conversación no encontrada.');if(user.role==='client')own(user,r);if(user.role==='client'&&!clientChatIds(user).has(r.id))fail(403,'No podés acceder a esta conversación.');return own(user,r);};
