@@ -28,7 +28,7 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(css,/@media\(max-width:430px\)/);
   assert.doesNotMatch(css,/min-width:\s*(?:[4-9]\d\d|\d{4,})px/);
   assert.match(worker,/admin-v3\.css/);
-  assert.match(worker,/AMC-offline-shell-v9/);
+  assert.match(worker,/AMC-offline-shell-v10/);
 });
 
 test('admin can classify a request as not taken without deleting it',async()=>{
@@ -80,7 +80,7 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8')
   ]);
-  assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\*100\)\/100/);
+  assert.match(bridge,/draft\.amcClientPrice=Math\.round\(target\)/);
   assert.match(bridge,/const sale=Number\.isFinite\(override\)&&override>0\?override:0/);
   assert.doesNotMatch(bridge,/last\.clientCharge/);
   assert.match(app,/const preservingEstimator=page==='cotizador'\|\|!!document\.querySelector\('#amc-estimator'\)/);

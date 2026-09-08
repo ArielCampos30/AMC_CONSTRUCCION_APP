@@ -733,36 +733,61 @@ function resetTask(){
   $('#task-results').innerHTML = '';
   calcCompare();
 }
+let addItemBusy=false;
+function notifyDraftUpdated(item=''){
+  const detail={
+    client:draft.client||'',
+    count:(draft.items||[]).length,
+    item
+  };
+  document.dispatchEvent(new CustomEvent('amc:draft-updated',{detail}));
+  if(window.parent!==window&&new URLSearchParams(location.search).has('embed')){
+    window.parent.postMessage({type:'amc:draft-updated',...detail},location.origin);
+  }
+}
 function addItem(method){
+  if (addItemBusy) return;
   if (!compareState) calcCompare();
   const desc = $('#task-name').value.trim();
   const clientDesc = $('#client-desc').value.trim() || desc;
   if (!desc) { alert('Primero elegí o escribí un trabajo.'); return; }
-  const info = compareState[method];
-  draft.items.push({
-    id: 'it_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-    description: desc,
-    clientDescription: clientDesc,
-    method: method,
-    clientCharge: info.sale,
-    internalCost: info.cost,
-    details: {
-      quantity: clamp($('#qty').value),
-      unit: $('#task-unit').value,
-      unitPrice: clamp($('#task-price').value),
-      workers: Math.max(1, Math.ceil(clamp($('#workers').value) || 1)),
-      m2Days: Math.max(1, Math.ceil(clamp($('#m2-days').value) || 1)),
-      hours: clamp($('#hours').value),
-      travel: clamp($('#travel').value),
-      tools: clamp($('#tools').value),
-      materials: clamp($('#materials').value),
-      other: clamp($('#other').value)
-    }
-  });
-  saveDraft();
-  renderQuote();
-  resetTask();
-  nav('quote');
+  const info = compareState?.[method];
+  if (!info) { alert('No se pudo calcular esta opción. Revisá los datos del trabajo.'); return; }
+  addItemBusy=true;
+  const buttons=[$('#choose-m2'),$('#choose-jornal')].filter(Boolean);
+  buttons.forEach(button=>button.disabled=true);
+  try{
+    draft.items.push({
+      id: 'it_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      description: desc,
+      clientDescription: clientDesc,
+      method: method,
+      clientCharge: info.sale,
+      internalCost: info.cost,
+      details: {
+        quantity: clamp($('#qty').value),
+        unit: $('#task-unit').value,
+        unitPrice: clamp($('#task-price').value),
+        workers: Math.max(1, Math.ceil(clamp($('#workers').value) || 1)),
+        m2Days: Math.max(1, Math.ceil(clamp($('#m2-days').value) || 1)),
+        hours: clamp($('#hours').value),
+        travel: clamp($('#travel').value),
+        tools: clamp($('#tools').value),
+        materials: clamp($('#materials').value),
+        other: clamp($('#other').value)
+      }
+    });
+    saveDraft();
+    renderQuote();
+    resetTask();
+    notifyDraftUpdated(clientDesc);
+    nav('quote');
+  }finally{
+    setTimeout(()=>{
+      addItemBusy=false;
+      buttons.forEach(button=>button.disabled=false);
+    },450);
+  }
 }
 $('#choose-m2').addEventListener('click', () => addItem('m2'));
 $('#choose-jornal').addEventListener('click', () => addItem('jornal'));
@@ -778,14 +803,14 @@ function renderQuote(){
         <div class="quote-head">
           <div>
             <div class="quote-title">${esc(it.clientDescription)}</div>
-            <div class="small muted">${it.method === 'm2' ? 'Cobrado por m²/unidad' : 'Cobrado por jornal'} · Costo interno: ${money(it.internalCost)}</div>
+            <div class="small muted">${it.method === 'm2' ? 'Referencia por m²/unidad' : 'Referencia por jornal'} · Costo interno: ${money(it.internalCost)}</div>
           </div>
           <div class="actions">
             <button type="button" class="btn danger remove-item" data-i="${i}">Borrar</button>
           </div>
         </div>
         <div class="task-list">
-          <span class="task-chip">Cliente: ${money(it.clientCharge)}</span>
+          <span class="task-chip">Estimación elegida: ${money(it.clientCharge)}</span>
           <span class="task-chip">Método: ${it.method === 'm2' ? 'm²/unidad' : 'jornal'}</span>
           <span class="task-chip">Interno: ${money(it.internalCost)}</span>
         </div>
@@ -795,6 +820,7 @@ function renderQuote(){
       draft.items.splice(Number(b.dataset.i), 1);
       saveDraft();
       renderQuote();
+      notifyDraftUpdated();
     }));
   }
   const totals = quoteTotals();
@@ -852,6 +878,7 @@ $('#new-quote').addEventListener('click', () => {
   loadDraftToForm();
   renderQuote();
   resetTask();
+  notifyDraftUpdated();
   nav('quote');
 });
 
@@ -1044,7 +1071,63 @@ function renderPrintSheet(q = draft){
       ${db.settings.phone ? `<p><strong>Contacto:</strong> ${esc(db.settings.phone)}</p>` : ''}
     </div>`;
 }
-$('#open-print').addEventListener('click', () => { renderPrintSheet(draft); nav('print'); });
+function openClientPreviewDialog(){
+  renderClientPreview();
+  let dialog=$('#amc-client-preview-dialog');
+  if(!dialog){
+    dialog=document.createElement('dialog');
+    dialog.id='amc-client-preview-dialog';
+    dialog.style.cssText='width:min(760px,calc(100vw - 24px));max-height:92dvh;overflow:auto;border:1px solid #cfe1dc;border-radius:18px;padding:0;background:#fff;color:#173d39;box-shadow:0 24px 70px #173d3940';
+    document.body.append(dialog);
+    const style=document.createElement('style');
+    style.textContent='#amc-client-preview-dialog::backdrop{background:#173d3966}.amc-preview-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid #cfe1dc;position:sticky;top:0;background:#fff;z-index:2}.amc-preview-head h2{margin:0}.amc-preview-body{padding:18px}.amc-preview-actions{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 18px}@media(max-width:430px){.amc-preview-actions button{flex:1 1 45%}}';
+    document.head.append(style);
+    dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+  }
+  const finalPrice=Number(draft.amcClientPrice);
+  const hasFinal=Number.isFinite(finalPrice)&&finalPrice>0;
+  const hasItems=(draft.items||[]).length>0;
+  dialog.innerHTML=`
+    <div class="amc-preview-head">
+      <h2>Vista del cliente</h2>
+      <button type="button" class="btn" data-preview-close>Cerrar</button>
+    </div>
+    <div class="amc-preview-body">
+      <div class="client-sheet">
+        <div class="brandline">
+          <img src="${LOGO_PNG}" alt="Logo AMC">
+          <div>
+            <div style="font-size:21px;font-weight:900">${esc(db.settings.company)}</div>
+            <div class="muted">Presupuesto ${esc(draft.number)} · ${esc(draft.date)}</div>
+          </div>
+        </div>
+        ${draft.client?`<p><strong>Cliente:</strong> ${esc(draft.client)}</p>`:''}
+        ${draft.location?`<p><strong>Localidad:</strong> ${esc(draft.location)}</p>`:''}
+        <div class="hr"></div>
+        <strong>Trabajos incluidos</strong>
+        <ul>${hasItems?draft.items.map(it=>`<li>${esc(it.clientDescription)}</li>`).join(''):'<li>Sin trabajos cargados.</li>'}</ul>
+        <div class="big">${hasFinal?'TOTAL FINAL: '+money(finalPrice):'PRECIO FINAL PENDIENTE'}</div>
+        <div class="small muted">Validez: ${draft.validity||db.settings.validity} días · Forma de pago: ${esc(draft.payment||db.settings.payment)} · Materiales incluidos: ${esc(draft.materialsIncluded||'No')}</div>
+        ${draft.notes?`<p><strong>Observaciones:</strong> ${esc(draft.notes)}</p>`:''}
+        ${!hasFinal?'<p class="notice">Definí el precio final antes de generar un documento para el cliente.</p>':''}
+      </div>
+    </div>
+    <div class="amc-preview-actions">
+      <button type="button" class="btn primary" data-preview-pdf ${!hasFinal||!hasItems?'disabled':''}>Descargar PDF</button>
+      <button type="button" class="btn soft" data-preview-share ${!hasFinal||!hasItems?'disabled':''}>Compartir PDF</button>
+      <button type="button" class="btn" data-preview-print ${!hasFinal||!hasItems?'disabled':''}>Imprimir</button>
+    </div>`;
+  dialog.querySelector('[data-preview-close]').onclick=()=>dialog.close();
+  dialog.querySelector('[data-preview-pdf]').onclick=()=>downloadPdf(draft);
+  dialog.querySelector('[data-preview-share]').onclick=()=>sharePdf(draft);
+  dialog.querySelector('[data-preview-print]').onclick=()=>{
+    renderPrintSheet(draft);
+    dialog.close();
+    setTimeout(()=>window.print(),0);
+  };
+  dialog.showModal();
+}
+$('#open-print').addEventListener('click', openClientPreviewDialog);
 $('#print-btn').addEventListener('click', () => { renderPrintSheet(draft); window.print(); });
 $('#download-pdf').addEventListener('click', () => downloadPdf(draft));
 $('#share-pdf').addEventListener('click', () => sharePdf(draft));

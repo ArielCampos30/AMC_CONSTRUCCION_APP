@@ -21,7 +21,7 @@ test('PWA release metadata, safe cache and iPhone install help are present',()=>
  const manifest=JSON.parse(read('web-amc/public/manifest.webmanifest')),html=read('web-amc/public/index.html'),sw=read('web-amc/public/sw.js'),ios=read('web-amc/public/ios-install.js');
  assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/');assert.equal(manifest.start_url,'/');assert.ok(manifest.icons.length>=2);
  assert.match(html,/apple-touch-icon/);assert.match(html,/apple-mobile-web-app-capable/);assert.match(html,/ios-install\.js/);
- assert.match(ios,/Agregar a pantalla de inicio/);assert.match(ios,/amc-ios-install-dismissed/);assert.doesNotMatch(sw,/api\//);assert.match(sw,/AMC-offline-shell-v9/);assert.match(sw,/amc-theme\.css/);
+ assert.match(ios,/Agregar a pantalla de inicio/);assert.match(ios,/amc-ios-install-dismissed/);assert.doesNotMatch(sw,/api\//);assert.match(sw,/AMC-offline-shell-v10/);assert.match(sw,/amc-theme\.css/);
 });
 
 test('health checks the database without exposing internals',async()=>{
