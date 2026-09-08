@@ -1199,8 +1199,17 @@ function wrapText(s, max = 82){
   if (line) lines.push(line);
   return lines;
 }
+async function getPdfLogoForDocument(){
+  if(typeof globalThis.loadPdfLogo==='function')return globalThis.loadPdfLogo();
+  const response=await fetch('/assets/amc-logo-pdf.jpg',{cache:'force-cache'});
+  if(!response.ok)throw Error('No se pudo cargar el logo oficial de AMC.');
+  const bytes=new Uint8Array(await response.arrayBuffer());
+  let binary='';
+  for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+  return binary;
+}
 async function makePdf(q){
-  const image=await loadPdfLogo();
+  const image=await getPdfLogoForDocument(),logoW=Number(globalThis.LOGO_W)||260,logoH=Number(globalThis.LOGO_H)||260;
   const W=595,H=842,L=42,R=553,CW=511,BOTTOM=755;
   const blue='0.035 0.40 0.37',ink='0.12 0.18 0.24',muted='0.38 0.44 0.49',rule='0.82 0.87 0.90';
   const pages=[];let commands=[],y=0;
@@ -1269,7 +1278,7 @@ async function makePdf(q){
   if(db.settings.phone){ensure(40);paragraph('Contacto AMC: '+db.settings.phone,10.5);}
   pages.push(commands);
   const streams=pages.map((cmd,i)=>{commands=cmd;line(L,788,R);txt('AMC · Construcciones y Arreglos',L,805,8.5,false,muted);txt(`Página ${i+1} de ${pages.length}`,470,805,8.5,false,muted);return commands.join('\n');});
-  const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';objects[5]=`<< /Type /XObject /Subtype /Image /Width ${LOGO_W} /Height ${LOGO_H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>\nstream\n${image}\nendstream`;
+  const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';objects[5]=`<< /Type /XObject /Subtype /Image /Width ${logoW} /Height ${logoH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.length} >>\nstream\n${image}\nendstream`;
   let next=6;const ids=streams.map(()=>({page:next++,content:next++}));objects[2]=`<< /Type /Pages /Kids [${ids.map(x=>x.page+' 0 R').join(' ')}] /Count ${ids.length} >>`;
   streams.forEach((stream,i)=>{objects[ids[i].page]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Im1 5 0 R >> >> /Contents ${ids[i].content} 0 R >>`;objects[ids[i].content]=`<< /Length ${bytesFromBinary(stream).length} >>\nstream\n${stream}\nendstream`;});
   let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=bytesFromBinary(pdf).length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`;}
