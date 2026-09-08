@@ -157,6 +157,29 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
   assert.match(directory,/class="client-view-action"/);
 });
 
+test('mutating actions use one shared spinner without floating loading messages',async()=>{
+  const [app,bridge,index,server,busy]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/index.html',import.meta.url),'utf8'),
+    readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../public/amc-busy.js',import.meta.url),'utf8')
+  ]);
+  assert.match(index,/amc-busy\.js/);
+  assert.match(server,/amc-busy\.js/);
+  assert.match(app,/window\.AMCBusy\?\.start\(\)/);
+  assert.match(app,/window\.AMCBusy\?\.stop\(\)/);
+  assert.match(bridge,/window\.AMCBusy\?\.start\(\)/);
+  assert.match(bridge,/window\.AMCBusy\?\.stop\(\)/);
+  assert.match(busy,/amc-busy-spinner/);
+  assert.doesNotMatch(app,/function loadingLabel/);
+  assert.doesNotMatch(app,/Enviando presupuesto…/);
+  assert.doesNotMatch(app,/pendingOperations/);
+  assert.doesNotMatch(app,/dataset\.busy/);
+  assert.match(app,/toast\('Se creó la obra\.'\)/);
+  assert.match(bridge,/Se creó la obra\./);
+});
+
 test('notification, refresh and margin UI avoid duplicate work',async()=>{
   const [app,bridge]=await Promise.all([readFile(new URL('../public/app.js',import.meta.url),'utf8'),readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')]);
   assert.match(app,/const activeRequests=new Map\(\)/);
