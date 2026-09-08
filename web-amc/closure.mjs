@@ -16,7 +16,7 @@ export function closureFeatures({db,all,get,put,transaction,requireAdmin,safeFil
    const c=get('closure',m[1]);if(user.role!=='client'||c.userId!==user.id||c.requiresConformity===false)fail(404,'Cierre no encontrado.');
    if(!['Conforme','Observaciones'].includes(b.status))fail(400,'Respuesta inválida.');if(c.status===b.status){send(res,200,{ok:true});return true;}if(c.status!=='Pendiente de conformidad')fail(409,'Este cierre ya fue respondido.');
    if(b.status==='Observaciones'&&!text(b.message,4000))fail(400,'Detallá qué querés que AMC revise.');
-   transaction(()=>{put('closure',c.userId,{...c,status:b.status,message:text(b.message,4000),repliedAt:now()});const w=get('work',c.workId);put('work',w.userId,{...w,status:'Finalizado',closureId:c.id,closureStatus:b.status});if(b.status==='Conforme')notify(c.userId,'Gracias por revisar el cierre','La obra ya estaba finalizada; tu conformidad quedó registrada. Podés dejar una reseña.','/#resenas');notifyAdmins('Respuesta al cierre de obra',user.name+' · '+b.status);});
+   transaction(()=>{put('closure',c.userId,{...c,status:b.status,message:text(b.message,4000),repliedAt:now()});const w=get('work',c.workId);put('work',w.userId,{...w,status:'Finalizado',closureId:c.id,closureStatus:b.status});if(b.status==='Conforme')notify(c.userId,'Gracias por revisar el cierre','La obra ya estaba finalizada; tu conformidad quedó registrada. Podés dejar una reseña.','/#resenas');notifyAdmins('Respuesta al cierre de obra',user.name+' · '+b.status,'/#cierre');});
    send(res,200,{ok:true});return true;
   }
   if(method==='POST'&&(m=p.match(/^\/api\/closures\/([^/]+)\/close-without-reply$/))){
