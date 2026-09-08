@@ -196,10 +196,10 @@ if(embedded){banner.style.margin='0 12px 16px';banner.querySelector('a').onclick
      :(draft.client||'Elegí el cliente del presupuesto');
  }
  function syncDeliveryUi(){
-   const r=selectedRequest(),registered=hasAccount(r),saved=!!draft.amcQuoteId;
+   const r=selectedRequest(),registered=hasAccount(r),saved=!!draft.amcQuoteId,savedQuote=(session.quotes||[]).find(q=>q.id===draft.amcQuoteId),delivered=savedQuote?.status==='Entregado';
    document.getElementById('send-connected').textContent=registered?'Enviar presupuesto al cliente':'Guardar presupuesto';
    deliveryBox.hidden=registered||!saved;
-   document.getElementById('accept-manual').hidden=registered||!saved;
+   document.getElementById('accept-manual').hidden=registered||!delivered;
    if(r){
      deliveryHelp.textContent=registered
        ?'El cliente lo recibirá dentro de AMC. Los costos internos no se comparten.'
