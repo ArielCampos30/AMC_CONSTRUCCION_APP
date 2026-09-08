@@ -286,7 +286,9 @@ test('admin budget detail opens the exact quote and only one overflow menu stays
   assert.match(app,/Datos internos/);
   assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)\)html=adminQuoteDetail\(\)/);
   assert.match(app,/href="#presupuesto-admin\/\$\{encodeURIComponent\(q\.id\)\}"/);
-  assert.match(app,/document\.querySelectorAll\('\.admin-v3-actions details\[open\]'\)/);
+  assert.match(app,/const actionMenu=e\.target\.closest\('\.admin-v3-actions details'\)/);
+  assert.match(app,/if\(!actionMenu\)document\.querySelectorAll\('\.admin-v3-actions details\[open\]'\)/);
+  assert.match(app,/detail\.removeAttribute\('open'\)/);
   assert.match(app,/if\(detail!==current\)detail\.removeAttribute\('open'\)/);
 });
 
