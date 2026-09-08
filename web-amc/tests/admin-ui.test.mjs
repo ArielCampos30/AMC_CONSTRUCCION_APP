@@ -15,7 +15,7 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
   assert.match(app,/\['Gestión'.*'Chat'.*'Clientes'.*'Empleados'/s);
-  assert.match(app,/\['Herramientas'.*'Tarifario'.*'Estadísticas'/s);
+  assert.match(app,/\['Herramientas'.*'Tarifario y cotizador'.*'Resumen diario'/s);
   assert.match(app,/\['Sistema'.*'Configuración'.*'Respaldos'/s);
   assert.match(app,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
   assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
