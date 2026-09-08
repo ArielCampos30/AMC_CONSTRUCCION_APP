@@ -236,7 +236,7 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.equal((bridge.match(/\bfetch\(/g)||[]).length,1);
 });
 
-test('work detail uses the current client profile and hides the internal admin placeholder',async()=>{
+test('work detail is compact, accurate and uses the current client profile',async()=>{
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(app,/adminAgendaClient=id=>/);
   assert.match(app,/adminRequestContact=r=>/);
@@ -246,6 +246,20 @@ test('work detail uses the current client profile and hides the internal admin p
   assert.match(app,/Dirección:<\/b>/);
   assert.match(app,/internalAdminNote=\/\^Presupuesto iniciado por Administración/);
   assert.match(app,/workDescription=\(q\?\.items\|\|\[\]\)/);
+  assert.match(app,/workTitle=\(q\?\.items\|\|\[\]\)/);
+  assert.match(app,/displayStatus=w\.status==='Presupuesto aceptado'\?'Obra creada'/);
+  assert.match(app,/Resumen económico/);
+  assert.match(app,/Costo estimado/);
+  assert.match(app,/Ganancia estimada/);
+  assert.match(app,/hasActualCosts\?/);
+  assert.match(app,/photos\.length\?/);
+  assert.match(app,/notes\?/);
+  assert.match(app,/Registrar o revisar costos reales/);
+  assert.match(app,/#presupuesto-admin\/\$\{encodeURIComponent\(q\.id\)\}/);
+  assert.doesNotMatch(app,/<h2>Costos reales de personal<\/h2>/);
+  assert.doesNotMatch(app,/Todavía no hay fotos de avance/);
+  assert.doesNotMatch(app,/Sin notas internas\./);
+  assert.doesNotMatch(app,/href="#solicitud\/\$\{encodeURIComponent\(r\.id\)\}">Ver<\/a>/);
 });
 
 test('notification, refresh and margin UI avoid duplicate work',async()=>{

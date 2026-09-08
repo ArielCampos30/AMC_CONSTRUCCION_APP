@@ -6,3 +6,15 @@ body.admin-v3 .footer-note{padding-bottom:85px}.admin-v3-attention{display:grid;
 @media(max-width:430px){.admin-v3-attention{gap:8px}.admin-v3-attention a{min-height:124px;padding:12px}.admin-v3-attention strong{font-size:25px}.admin-v3-attention span{font-size:13px}.admin-v3-kpis{gap:7px}.admin-v3-kpis article{padding:11px 8px}.admin-v3-kpis strong{font-size:16px}.admin-v3-card{padding:13px}.admin-v3-card .title-row{display:grid}.admin-v3-actions .primary{flex:1;justify-content:center}.admin-v3-quick{display:grid;grid-template-columns:1fr 1fr}.admin-v3-quick a,.admin-v3-quick button{font-size:12px;padding:9px 6px}}
 
 .admin-v3-highlight{outline:3px solid #2f8f83;box-shadow:0 0 0 6px rgba(47,143,131,.16);transition:outline-color .4s,box-shadow .4s}.pdf-pending{display:inline-flex;margin-top:10px}
+
+.work-admin-summary .panel{margin:0}.work-admin-summary p{line-height:1.7;margin-bottom:12px}
+.work-admin-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.work-admin-actions a,.work-admin-actions button{width:auto;margin:0}
+.work-admin-progress{margin-top:12px}.work-admin-progress h2{margin-bottom:6px}
+.work-admin-finance{margin-top:12px}.work-admin-finance>.title-row{align-items:center}.work-admin-finance>.title-row a{font-size:13px}
+.work-admin-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.work-admin-kpis>div{padding:15px;border:1px solid var(--admin-line);border-radius:12px;background:var(--admin-soft)}
+.work-admin-kpis small{display:block;color:#60777d}.work-admin-kpis strong{display:block;margin-top:4px;font-size:22px}
+.work-admin-real-costs{margin-top:16px;border-top:1px solid var(--admin-line);padding-top:14px}
+.work-admin-real-costs>summary{cursor:pointer;font-weight:750;color:#155b54}.work-admin-real-costs form{margin-top:14px}
+@media(max-width:800px){.work-admin-kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.work-admin-kpis{grid-template-columns:1fr}.work-admin-kpis strong{font-size:20px}}
