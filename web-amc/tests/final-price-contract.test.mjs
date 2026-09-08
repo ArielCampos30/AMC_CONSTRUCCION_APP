@@ -6,6 +6,10 @@ import {createApp} from '../server.mjs';
 test('one final customer price is sent, documented and carried into the work',async()=>{
  const bridge=readFileSync(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8');
  assert.match(bridge,/const clientTotal=q=>quoteTotals\(q\)\.sale/);
+ assert.match(bridge,/const workSubtotal=q=>/);
+ assert.match(bridge,/const commercialPrice=q=>/);
+ assert.match(bridge,/amcPriceManual=true/);
+ assert.match(bridge,/reset-client-price/);
  assert.match(bridge,/const quoteForDocument=q=>\(\{\.\.\.q,total:clientTotal\(q\)\}\)/);
  assert.match(bridge,/total:clientTotal\(draft\)/);
  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
