@@ -45,6 +45,12 @@ test('resumen interno no muestra una pérdida falsa antes del precio final',()=>
   assert.match(html,/button\.disabled=!hasFinalPrice\|\|!items\.length/);
 });
 
+test('la vista cliente no expone la nota interna de Administración',()=>{
+  const bridge=read('../public/presupuestos-bridge.js');
+  assert.match(bridge,/internalAdminNote=\/\^Presupuesto iniciado por Administración/);
+  assert.match(bridge,/draft\.notes=internalAdminNote\?'':/);
+});
+
 test('Vista cliente usa un modal público y no navega a la vista legacy oculta',()=>{
   const html=read('../private/presupuestos-original.html');
   assert.match(html,/function openClientPreviewDialog/);
