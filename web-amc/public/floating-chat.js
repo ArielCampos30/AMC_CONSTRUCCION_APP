@@ -16,6 +16,7 @@ export function createFloatingChat({allowed,renderChat,mounted,label,contacts,cu
  return {sync,open,close,isOpen:()=>!!dialog?.open,kind:()=>contacts(group).find(c=>c.id===view)?.kind||''};
 }
 const style=document.createElement('style');style.textContent=`
+body.full-chat-page .floating-chat-button{display:none!important}
 .floating-chat-button{position:fixed;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:45;border:0;border-radius:50%;width:56px;height:56px;display:grid;place-items:center;background:#0d6661;color:#fff;box-shadow:0 4px 18px #0003;padding:11px}
 .floating-chat-unread{position:absolute;top:1px;right:1px;width:14px;height:14px;background:#43d878;border:2px solid white;border-radius:50%}
 #amc-chat-dialog{padding:0;border:1px solid #bdd5d0;border-radius:18px;box-sizing:border-box;width:min(340px,calc(100vw - 40px));height:min(480px,70dvh);max-height:calc(100dvh - 110px);margin:auto 16px calc(88px + env(safe-area-inset-bottom)) auto;overflow:hidden;color:var(--ink);background:#f1f7f5}
