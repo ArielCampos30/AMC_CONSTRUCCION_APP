@@ -23,12 +23,12 @@ test('server authorization isolates tenants, employee assignments, staff chat an
  try{
   const admin=actor(),clientA=actor(),clientB=actor(),employeeA=actor(),employeeB=actor();
   await admin.call('/api/login',{email:'owner@roles.test',password:'Strong-Owner-2026!'});
-  await clientA.call('/api/register',{email:'a@roles.test',name:'Cliente A',password:'12345678'});
-  await clientB.call('/api/register',{email:'b@roles.test',name:'Cliente B',password:'12345678'});
-  const empA=await admin.call('/api/employees',{email:'ea@roles.test',name:'Empleado A',password:'12345678'},201);
-  const empB=await admin.call('/api/employees',{email:'eb@roles.test',name:'Empleado B',password:'12345678'},201);
-  await employeeA.call('/api/login',{email:'ea@roles.test',password:'12345678'});
-  await employeeB.call('/api/login',{email:'eb@roles.test',password:'12345678'});
+  await clientA.call('/api/register',{email:'a@roles.test',name:'Cliente A',password:'Client-Test-2026!'});
+  await clientB.call('/api/register',{email:'b@roles.test',name:'Cliente B',password:'Client-Test-2026!'});
+  const empA=await admin.call('/api/employees',{email:'ea@roles.test',name:'Empleado A',password:'Client-Test-2026!'},201);
+  const empB=await admin.call('/api/employees',{email:'eb@roles.test',name:'Empleado B',password:'Client-Test-2026!'},201);
+  await employeeA.call('/api/login',{email:'ea@roles.test',password:'Client-Test-2026!'});
+  await employeeB.call('/api/login',{email:'eb@roles.test',password:'Client-Test-2026!'});
 
   const requestA=await clientA.call('/api/requests',{name:'Cliente A',phone:'1',town:'La Falda',description:'Trabajo A',service:'Pintura',type:'presupuesto'},201);
   const requestB=await clientB.call('/api/requests',{name:'Cliente B',phone:'2',town:'Valle Hermoso',description:'Trabajo B',service:'Albañilería',type:'presupuesto'},201);
