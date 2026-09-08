@@ -25,3 +25,22 @@ test('programming a work keeps calendar dates and work status in sync',async()=>
   const fresh=await a.call('/api/calendar-bookings',{...payload,status:'Confirmada',start:'2030-02-14',end:'2030-02-15',teamIds:[employee.id],idempotencyKey:'work-calendar-fresh'},201);task=JSON.parse(app.db.prepare("SELECT body FROM docs WHERE kind='assignment' AND owner=?").get(employee.id).body);assert.equal(task.day,'2030-02-14');assert.equal(task.schedulePending,false);stored=JSON.parse(app.db.prepare('SELECT body FROM docs WHERE id=?').get(work.id).body);assert.equal(stored.calendarBookingId,fresh.id);
  }finally{await new Promise(r=>app.server.close(r));}
 });
+
+
+test('agenda and team use the same availability rules',async()=>{
+ const origin='http://localhost:4180',app=createApp({dbPath:':memory:',origin}),admin=app.addUser('schedule-admin@amc.test','Schedule-Admin-2026!','AMC','admin'),client=app.addUser('schedule-client@amc.test','Schedule-Client-2026!','Cliente','client');
+ const addRequest=(id,name)=>app.db.prepare('INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?)').run(id,'request',client.id,JSON.stringify({id,userId:client.id,name,phone:'3548000000',town:'La Falda',service:'Pintura',description:'Visita',status:'Nueva',date:new Date().toISOString()}));
+ addRequest('schedule-request-a','Cliente A');addRequest('schedule-request-b','Cliente B');
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port,actor=()=>({cookie:'',csrf:'',async call(p,b,status=200){const r=await fetch(base+p,{method:b===undefined?'GET':'POST',headers:{Origin:origin,'Content-Type':'application/json',Cookie:this.cookie,'X-CSRF-Token':this.csrf},...(b===undefined?{}:{body:JSON.stringify(b)})});const v=await r.json();assert.equal(r.status,status,JSON.stringify(v));if(r.headers.get('set-cookie'))this.cookie=r.headers.get('set-cookie').split(';')[0];if(v.csrf)this.csrf=v.csrf;return v;}});
+ try{
+  const a=actor();await a.call('/api/login',{email:admin.email,password:'Schedule-Admin-2026!'});const employee=await a.call('/api/employees',{name:'Operario agenda',email:'schedule-worker@amc.test',password:'Schedule-Worker-2026!',dailyCost:50000},201);
+  const reserve=await a.call('/api/calendar-bookings',{kind:'Reserva',status:'Confirmada',title:'Otro compromiso',start:'2030-04-10',end:'2030-04-10',slot:'Mañana',teamIds:[employee.id],idempotencyKey:'schedule-reserve'},201);
+  await a.call('/api/requests/schedule-request-a/appointment',{day:'2030-04-10',time:'10:00',duration:60,address:'La Falda'},409);
+  await a.call('/api/assignments',{employeeId:employee.id,requestId:'schedule-request-b',type:'Visita para presupuesto',day:'2030-04-10',time:'10:00',address:'La Falda',instructions:'Medir',idempotencyKey:'schedule-assignment-conflict'},409);
+  await a.call('/api/calendar-bookings/'+reserve.id+'/cancel',{});
+  await a.call('/api/requests/schedule-request-a/appointment',{day:'2030-04-10',time:'10:00',duration:60,address:'La Falda'});
+  await a.call('/api/assignments',{employeeId:employee.id,requestId:'schedule-request-a',type:'Visita para presupuesto',day:'2030-04-10',time:'10:00',address:'La Falda',instructions:'Medir',idempotencyKey:'schedule-assignment-ok'},201);
+  const events=(await a.call('/api/state')).calendarEvents.filter(e=>e.requestId==='schedule-request-a'&&e.start==='2030-04-10');assert.equal(events.length,1);assert.equal(events[0].source,'appointment');assert.deepEqual(events[0].teamIds,[employee.id]);
+  await a.call('/api/assignments',{employeeId:employee.id,requestId:'schedule-request-b',type:'Visita para presupuesto',day:'2030-04-10',time:'10:00',address:'La Falda',instructions:'Otra visita',idempotencyKey:'schedule-double-book'},409);
+ }finally{await new Promise(r=>app.server.close(r));}
+});
