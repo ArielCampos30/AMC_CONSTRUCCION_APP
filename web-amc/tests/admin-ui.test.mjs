@@ -123,6 +123,27 @@ test('admin can classify a request as not taken without deleting it',async()=>{
 });
 
 
+test('client search filters live without reloading or rerendering the whole page',async()=>{
+  const [app,directory,features]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(directory,/id="client-search-input"/);
+  assert.match(directory,/id="client-search-results"/);
+  assert.match(directory,/id="client-directory"/);
+  assert.doesNotMatch(directory,/id="client-search"/);
+  assert.match(app,/e\.target\.id==='client-search-input'.*directory\.search\(e\.target\.value\).*refreshClientDirectory\(true\)/s);
+  assert.match(app,/e\.target\.id==='budget-client-search'.*features\.change\(e\.target\)/s);
+  assert.match(app,/case'clients-filter':directory\.setFilter\(b\.dataset\.value\);refreshClientDirectory\(\)/);
+  assert.doesNotMatch(app,/f\.id==='client-search'/);
+  assert.doesNotMatch(app,/location\.reload\(/);
+  assert.doesNotMatch(app,/location\.assign\(/);
+  assert.match(app,/data-action="retry-app"/);
+  assert.match(app,/location\.hash=target\.hash\|\|'#avisos'/);
+  assert.match(features,/if\(target\.id==='budget-client-search'\)/);
+});
+
 test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
   const [app,steps,features,bridge]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
