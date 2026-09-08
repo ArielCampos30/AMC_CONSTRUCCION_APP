@@ -31,6 +31,15 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(worker,/AMC-offline-shell-v10/);
 });
 
+test('request detail changes quote actions after a quote exists',async()=>{
+  const hub=await readFile(new URL('../public/project-hub.js',import.meta.url),'utf8');
+  assert.match(hub,/latestQuote=qs\.at\(-1\)/);
+  assert.match(hub,/Presupuesto guardado/);
+  assert.match(hub,/Editar presupuesto/);
+  assert.match(hub,/Ver presupuesto/);
+  assert.match(hub,/!qs\.length&&r\.status!=='No tomada'/);
+});
+
 test('admin can classify a request as not taken without deleting it',async()=>{
   const service=createApp({dbPath:':memory:',origin});
   service.addUser('owner@amc.test','Strong-Owner-2026!','AMC','admin');
