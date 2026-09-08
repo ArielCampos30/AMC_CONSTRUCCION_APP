@@ -211,8 +211,57 @@ if(embedded){banner.style.margin='0 12px 16px';banner.querySelector('a').onclick
  try{session=await request('/api/state',null,'GET');if(session.user?.role!=='admin')throw Error('Ingresá con tu cuenta de AMC.');requests=session.requests;document.getElementById('estimated-employee').innerHTML='<option value="">Elegí un empleado</option>'+session.employees.filter(x=>x.active).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');renderEstimatedTeam();renderQuote();renderSuggestedPrice();select.innerHTML='<option value="">Elegí un pedido</option>'+requests.map(r=>`<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.service)} · ${esc(r.status)}</option>`).join('');const q=window.AMCOnline?window.AMCOnline.selectedRequest():new URLSearchParams(location.search).get('solicitud');if(q)select.value=q;else if(draft.amcRequestId)select.value=draft.amcRequestId;status().textContent='Conectado como '+session.user.name+'.';syncDeliveryUi();}catch(e){status().textContent=e.message;document.getElementById('send-connected').disabled=true;return;}
  const visitInfo=document.createElement('div');banner.append(visitInfo);function showRubrics(){const r=requests.find(x=>x.id===select.value),rubrics=r?.rubrics||[];document.getElementById('suggested-rubrics').innerHTML=rubrics.length?'<p><strong>Rubros sugeridos:</strong> '+rubrics.map(x=>'<button type="button" data-rubric="'+esc(x)+'">'+esc(x)+'</button>').join(' ')+' <button type="button" data-rubric="">Ver todo el tarifario</button></p>':'';}document.getElementById('suggested-rubrics').onclick=e=>{if(e.target.dataset.rubric===undefined)return;const category=document.getElementById('tariff-cat');if(category){category.value=e.target.dataset.rubric;category.dispatchEvent(new Event('change'));nav('add');document.getElementById('tariff-search')?.focus();}}; function showVisitInfo(){const sheets=(session.visitSheets||[]).filter(x=>x.requestId===select.value);visitInfo.innerHTML=sheets.length?'<details><summary>Fichas de visita del equipo · sólo AMC</summary>'+sheets.map(x=>'<h3>'+esc(x.employeeName)+' · '+esc(x.day)+'</h3><p><strong>Trabajo:</strong> '+esc(x.scope)+'</p><p><strong>Medidas:</strong> '+esc(x.measurements)+'</p><p><strong>Materiales:</strong> '+esc(x.materials)+'</p><p><strong>Acceso:</strong> '+esc(x.access)+'</p><p><strong>Observaciones:</strong> '+esc(x.observations)+'</p>').join('')+'</details>':'';}select.addEventListener('change',()=>{showVisitInfo();showRubrics();});showVisitInfo();showRubrics();
  function importRequest(confirmExisting=true){const r=requests.find(x=>x.id===select.value);if(!r){status().textContent='Elegí una solicitud.';return;}if(confirmExisting&&draft.items?.length&&!confirm('Se va a crear un nuevo borrador. Guardá el actual si querés conservarlo. ¿Continuar?'))return;draft=newDraft();draft.validity=10;draft.amcRequestId=r.id;draft.client=r.name;draft.phone=r.phone;draft.location=r.town;draft.address=r.address||'';const requestDescription=String(r.description||'').trim(),internalAdminNote=/^Presupuesto iniciado por Administración\.?$/i.test(requestDescription);draft.notes=internalAdminNote?'':'El cliente solicitó: '+(r.services||[r.service]).join(', ')+(requestDescription?'. '+requestDescription:'');draft.amcSuggestedRubrics=r.rubrics||[];draft.amcEstimatedTeam=[];delete draft.amcClientPrice;draft.amcPriceManual=false;delete draft.amcQuoteId;saveDraft();loadDraftToForm();renderEstimatedTeam();renderQuote();renderSuggestedPrice();syncDeliveryUi();notifyDraftUpdated();nav('add');document.getElementById('tariff-search')?.focus();status().textContent='Cliente cargado. Agregá los trabajos y continuá con los costos.';}
+ function loadQuoteForEdit(quoteId){
+   const storedQuote=(session.quotes||[]).find(q=>q.id===quoteId);
+   if(!storedQuote){status().textContent='No encontramos ese presupuesto guardado.';return false;}
+   const r=requests.find(x=>x.id===storedQuote.requestId);
+   if(!r){status().textContent='No encontramos la solicitud de este presupuesto.';return false;}
+   let saved=(db.quotes||[]).find(q=>q.id===storedQuote.externalId);
+   if(saved){
+     draft=structuredClone(saved);
+   }else{
+     draft=newDraft();
+     draft.id=storedQuote.externalId||draft.id;
+     draft.number=storedQuote.number||draft.number;
+     draft.items=(storedQuote.items||[]).map((it,index)=>({
+       id:'recovered_'+index,
+       taskName:it.description||'Trabajo',
+       clientDescription:it.description||'Trabajo',
+       method:'recovered',
+       clientCharge:index===0?Number(storedQuote.total||0):0,
+       internalCost:index===0?Number(storedQuote.internalCost||0):0,
+       details:{}
+     }));
+     draft.amcClientPrice=Number(storedQuote.total||0);
+     draft.amcPriceManual=true;
+     draft.amcEstimatedTeam=storedQuote.estimatedTeam||[];
+   }
+   draft.amcRequestId=r.id;
+   draft.amcQuoteId=storedQuote.id;
+   draft.client=r.name||draft.client;
+   draft.phone=r.phone||draft.phone;
+   draft.location=r.town||draft.location;
+   draft.address=r.address||draft.address||'';
+   draft.validity=10;
+   if(!(Number(clientTotal(draft))>0)&&Number(storedQuote.total)>0){
+     draft.amcClientPrice=Number(storedQuote.total);
+     draft.amcPriceManual=true;
+   }
+   saveDraft();
+   loadDraftToForm();
+   select.value=r.id;
+   renderEstimatedTeam();
+   renderQuote();
+   renderSuggestedPrice();
+   syncDeliveryUi();
+   notifyDraftUpdated();
+   status().textContent=saved?'Presupuesto '+(draft.number||'')+' cargado para editar.':'Presupuesto recuperado para editar. Revisá el detalle antes de volver a guardarlo.';
+   return true;
+ }
  document.getElementById('import-request').onclick=()=>importRequest(true);select.addEventListener('change',syncDeliveryUi);
- if(new URLSearchParams(location.search).get('solicitud'))importRequest(false);
+ const editParams=new URLSearchParams(location.search),editQuoteId=editParams.get('quote');
+ if(editQuoteId)loadQuoteForEdit(editQuoteId);
+ else if(editParams.get('solicitud'))importRequest(false);
  document.getElementById('send-connected').onclick=async function(){this.disabled=true;try{const r=selectedRequest();if(!r)throw Error('Elegí el pedido que corresponde a este presupuesto.');if(draft.amcRequestId!==r.id)throw Error('Usá primero “Usar datos del pedido” para vincular correctamente el presupuesto.');const registered=hasAccount(r),action=registered?'enviar':'guardar';draft.validity=10;if(validityField)validityField.value=10;if(!persistCurrentSilently())throw Error('Agregá al menos un trabajo al presupuesto.');if(!(clientTotal(draft)>0))throw Error('Agregá trabajos con un importe válido antes de '+action+' el presupuesto.');if(!confirm('¿'+(registered?'Enviar':'Guardar')+' el presupuesto '+draft.number+' para '+r.name+' por '+money(clientTotal(draft))+'?'))return;
  const totals=quoteTotals(draft),publicQuote={requestId:r.id,externalId:draft.id,number:draft.number,items:draft.items.map(it=>({description:it.clientDescription})),total:clientTotal(draft),validity:'10',payment:draft.payment||db.settings.payment,notes:draft.notes||'',estimatedTeam:draft.amcEstimatedTeam||[],personnelCost:teamCost(),internalCost:totals.cost,grossMargin:clientTotal(draft)-totals.cost};
  publicQuote.version=await contentVersion(publicQuote);const sent=await request('/api/quotes',publicQuote);if(!['Enviado','Guardado'].includes(sent.status))throw Error('No se pudo '+action+' este presupuesto.');draft.amcQuoteId=sent.id;persistCurrentSilently();let pdfPending=true;try{const blob=await makePdf(quoteForDocument(draft)),uploaded=await request('/api/upload',{mime:'application/pdf',base64:await blobToBase64(blob)});await request('/api/quotes/'+sent.id+'/pdf',{pdfId:uploaded.id});pdfPending=false;}catch(pdfError){console.error('El presupuesto quedó guardado, pero el PDF quedó pendiente.',pdfError);}syncDeliveryUi();status().textContent=registered?(pdfPending?'Presupuesto enviado. PDF pendiente de generar.':'Presupuesto enviado. El cliente ya puede verlo y responder desde su cuenta.'):(pdfPending?'Presupuesto guardado. PDF pendiente de generar.':'Presupuesto guardado. Compartilo o registrá su entrega.');if(embedded)window.parent.postMessage({type:registered?'amc:sent':'amc:saved',quoteId:sent.id,clientName:r.name,pdfPending},location.origin);
