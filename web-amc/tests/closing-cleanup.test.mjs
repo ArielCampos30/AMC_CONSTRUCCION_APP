@@ -107,6 +107,11 @@ test('external client work finalizes and releases the team without conformity',a
     assert.equal(state.calendarBookings.find(b=>b.id===booking.id).status,'Finalizada');
     assert.equal(state.calendarEvents.some(e=>e.workId===workId),false);
     await admin.call('/api/calendar-bookings',{kind:'Reserva',status:'Confirmada',title:'Nuevo trabajo posible',start:'2030-07-10',end:'2030-07-10',slot:'Mañana',teamIds:[worker.id],idempotencyKey:'external-team-released'},201);
+    const followUp=await admin.call('/api/assignments',{employeeId:worker.id,requestId:request.id,type:'Urgencia',day:'2030-07-11',time:'10:00',address:'La Falda',instructions:'Revisar un retoque sin reabrir la obra terminada',idempotencyKey:'external-follow-up'},201);
+    await employee.call('/api/assignments/'+followUp.id+'/report',{status:'En el lugar',category:'Durante',text:'Revisión de retoque',photos:[],idempotencyKey:'external-follow-up-start'},201);
+    assert.equal((await admin.call('/api/state')).works.find(w=>w.id===workId).status,'Finalizado');
+    await employee.call('/api/assignments/'+followUp.id+'/report',{status:'Finalizada',category:'Después',text:'Retoque revisado',photos:[],idempotencyKey:'external-follow-up-done'},201);
+    assert.equal((await admin.call('/api/state')).works.find(w=>w.id===workId).status,'Finalizado');
     const closure=await admin.call('/api/works/'+workId+'/closure',{summary:'Trabajo terminado y revisado en obra',photos:[],idempotencyKey:'external-internal-closure'},201);
     assert.equal(closure.status,'Cerrado internamente');
     assert.equal(closure.requiresConformity,false);
