@@ -109,7 +109,7 @@ test('admin can classify a request as not taken without deleting it',async()=>{
   try{
     const admin=actor(),client=actor();
     await admin.call('/api/login',{email:'owner@amc.test',password:'Strong-Owner-2026!'});
-    await client.call('/api/register',{email:'cliente@amc.test',password:'12345678',name:'Cliente'});
+    await client.call('/api/register',{email:'cliente@amc.test',password:'Client-Test-2026!',name:'Cliente'});
     const request=await client.call('/api/requests',{name:'Cliente',phone:'3548000000',town:'La Falda',description:'Trabajo de prueba',service:'Albañilería',type:'presupuesto'},201);
     await admin.call('/api/requests/'+request.id+'/status',{status:'No tomada'},400);
     await admin.call('/api/requests/'+request.id+'/status',{status:'No tomada',reason:'Fuera de zona',comment:'Fuera del radio actual.'});
