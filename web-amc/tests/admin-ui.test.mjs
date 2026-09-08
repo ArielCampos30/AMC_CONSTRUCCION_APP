@@ -39,13 +39,13 @@ test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
   ]);
   assert.match(app,/data-action="editor" data-id="\$\{r\.id\}" data-quote="\$\{q\.id\}"/);
   assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
-  assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',selectedClient=''/);
+  assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',quoteMode='',selectedClient=''/);
   assert.match(features,/quoteEdit\?'&quote='/);
-  assert.match(features,/function openEditor\(requestId='',quoteId=''\)/);
+  assert.match(features,/function openEditor\(requestId='',quoteId='',mode=''\)/);
   assert.match(bridge,/function loadQuoteForEdit\(quoteId\)/);
   assert.match(bridge,/db\.quotes\|\|\[\]\)\.find\(q=>q\.id===storedQuote\.externalId\)/);
-  assert.match(bridge,/if\(editQuoteId\)loadQuoteForEdit\(editQuoteId\)/);
-  assert.match(bridge,/else if\(editParams\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(bridge,/const editLoaded=editQuoteId\?loadQuoteForEdit\(editQuoteId\):false/);
+  assert.match(bridge,/if\(!editQuoteId&&editParams\.get\('solicitud'\)\)importRequest\(false\)/);
 });
 
 test('request detail changes quote actions after a quote exists',async()=>{
@@ -185,7 +185,7 @@ test('quick budget starts with direct client data and exposes the four estimator
   assert.match(app,/description:'Presupuesto iniciado por Administración'/);
   assert.match(app,/features\.openEditor\(request\.id\)/);
   assert.match(features,/const chooser=quoteRequest\?'':/);
-  assert.match(bridge,/else if\(editParams\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(bridge,/if\(!editQuoteId&&editParams\.get\('solicitud'\)\)importRequest\(false\)/);
   assert.match(bridge,/nav\('add'\)/);
 });
 
