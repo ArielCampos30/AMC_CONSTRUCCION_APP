@@ -313,6 +313,29 @@ test('calendar programming uses clear labels and returns to the exact work',asyn
   assert.match(app,/Propuesta enviada al cliente/);
 });
 
+test('work date and team assignment use one clear source of truth',async()=>{
+  const [app,planning,teamServer,teamUi]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../team.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(planning,/Equipo de trabajo:.*se administra desde la ficha de la obra/s);
+  assert.match(planning,/active=\(s\.calendarBookings\|\|\[\]\)\.filter\(b=>b\.workId===w\.id/);
+  assert.match(planning,/current=active\.find\(b=>b\.id===w\.calendarBookingId\)/);
+  assert.match(app,/Equipo previsto en presupuesto/);
+  assert.match(app,/Equipo asignado actualmente/);
+  assert.match(app,/team\.length\?'Editar equipo':'Asignar equipo'/);
+  assert.match(app,/Primero programá y confirmá la fecha de la obra/);
+  assert.match(app,/actualMap=new Map\(actual\.map/);
+  assert.match(teamServer,/function workAssignments\(work\)/);
+  assert.match(teamServer,/if\(!work\.start\)fail\(409,'Primero programá y confirmá la fecha de la obra/);
+  assert.match(teamServer,/calendarBooking.*teamIds:rows\.map/s);
+  assert.match(teamServer,/schedulePending/);
+  assert.match(teamUi,/A reprogramar/);
+  assert.match(teamUi,/Fecha pendiente de reprogramación/);
+});
+
 test('work detail is compact, accurate and uses the current client profile',async()=>{
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(app,/adminAgendaClient=id=>/);
