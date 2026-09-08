@@ -1,5 +1,5 @@
 // Operations share the existing authorization, storage and transaction boundary.
-export function featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha}){
+export function featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning}){
  const key=(value,prefix,user)=>{if(!/^[a-zA-Z0-9_-]{8,100}$/.test(value||''))fail(400,'Falta una referencia válida de la operación.');return prefix+sha(user+':'+value);};
  const old=(kind,k)=>{const row=db.prepare('SELECT body FROM docs WHERE kind=? AND id=?').get(kind,k);return row?JSON.parse(row.body):null;};
  const paid=w=>w.payments.reduce((n,p)=>n+p.amount,0);
@@ -17,7 +17,7 @@ export function featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdm
   if(method==='POST'&&(match=p.match(/^\/api\/requests\/([^/]+)\/appointment$/))){
    requireAdmin(user);const r=get('request',match[1]);if(r.status==='No tomada'||all('work').some(w=>w.requestId===r.id))fail(409,'La visita de presupuesto ya no corresponde a este trabajo.');const duration=Number(b.duration);if(!validDate(b.day)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(b.time||'')||![30,60,90,120,180,240].includes(duration)||!text(b.address,500))fail(400,'Completá fecha, hora, duración y dirección.');
    const start=new Date(b.day+'T'+b.time+':00-03:00').getTime(),end=start+duration*60000;if(start<Date.now())fail(400,'La visita debe programarse para una fecha futura.');const visitId='visit-'+r.id;
-   if(all('appointment').some(v=>v.id!==visitId&&['Confirmada','Cambio solicitado'].includes(v.status)&&start<Date.parse(v.endsAt)&&end>Date.parse(v.startsAt)))fail(409,'Ese horario se superpone con otra visita. Elegí otra hora.');
+   planning.validateAppointment(b.day,b.time,duration,r.id,visitId);
    const previous=old('appointment',visitId);const event={status:'Confirmada',date:now(),day:b.day,time:b.time,duration,address:text(b.address,500)};
    const result=transaction(()=>{const v=put('appointment',r.userId,{id:visitId,userId:r.userId,requestId:r.id,clientName:r.name,service:r.service,...event,startsAt:new Date(start).toISOString(),endsAt:new Date(end).toISOString(),note:text(b.note,2000),history:[...(previous?.history||[]),event]});put('request',r.userId,{...r,status:'Visita confirmada'});notify(r.userId,previous?'Visita reprogramada':'Visita confirmada',b.day+' a las '+b.time+' · '+text(b.address,500),'/#agenda');return v;});send(res,200,result);return true;
   }
