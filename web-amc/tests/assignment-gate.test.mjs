@@ -11,7 +11,7 @@ async function fixture(){
  return {actor,close:()=>new Promise(resolve=>app.server.close(resolve))};
 }
 
-test('a work assignment requires an accepted quote and work, while a budget visit does not',async()=>{
+test('a work team is assigned from a programmed work, while a budget visit remains independent',async()=>{
  const {actor,close}=await fixture();
  try{
   const admin=actor(),client=actor();
@@ -25,7 +25,13 @@ test('a work assignment requires an accepted quote and work, while a budget visi
   await admin.call('/api/assignments/'+visit.id+'/cancel',{});
   const quote=await admin.call('/api/quotes',{requestId:request.id,externalId:'gate-quote',version:'8'.repeat(64),number:'GATE-1',items:[{description:'Albañilería'}],total:100000},201);
   await client.call('/api/quotes/'+quote.id+'/reply',{status:'Aceptado'});
-  const work=await admin.call('/api/assignments',{...base,type:'Trabajo',idempotencyKey:'gate-work-after'},201);
-  assert.equal(work.type,'Trabajo');
+  const work=(await admin.call('/api/state')).works.find(x=>x.requestId===request.id);
+  await admin.call('/api/works/'+work.id+'/assign-team',{members:[{employeeId:employee.id,dailyCost:30000,estimatedDays:1}],time:'10:00',address:'La Falda',instructions:'Tomar medidas',idempotencyKey:'gate-team-before-date'},409);
+  await admin.call('/api/calendar-bookings',{kind:'Obra',status:'Confirmada',title:'Albañilería',workId:work.id,start:'2030-08-01',end:'2030-08-01',slot:'Día completo',teamIds:[],idempotencyKey:'gate-work-date'},201);
+  const assigned=await admin.call('/api/works/'+work.id+'/assign-team',{members:[{employeeId:employee.id,dailyCost:30000,estimatedDays:1}],time:'10:00',address:'La Falda',instructions:'Tomar medidas',idempotencyKey:'gate-work-team'},201);
+  assert.equal(assigned.assignments.length,1);
+  assert.equal(assigned.assignments[0].type,'Trabajo');
+  assert.equal(assigned.assignments[0].workId,work.id);
+  await admin.call('/api/assignments',{...base,type:'Trabajo',idempotencyKey:'gate-generic-work-after'},409);
  }finally{await close();}
 });
