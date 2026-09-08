@@ -292,6 +292,27 @@ test('admin budget detail opens the exact quote and only one overflow menu stays
   assert.match(app,/if\(detail!==current\)detail\.removeAttribute\('open'\)/);
 });
 
+test('calendar programming uses clear labels and returns to the exact work',async()=>{
+  const [app,planning]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(planning,/Qué estás agendando/);
+  assert.match(planning,/Obra · trabajo con presupuesto aceptado/);
+  assert.match(planning,/Reserva · apartar una fecha/);
+  assert.match(planning,/Bloqueo · no disponible/);
+  assert.match(planning,/Cómo queda la fecha/);
+  assert.match(planning,/Proponer al cliente · espera confirmación/);
+  assert.match(planning,/Confirmada · fecha ya acordada/);
+  assert.match(planning,/Tentativa · sólo interna/);
+  assert.match(planning,/status:r\?\.leadId\?'Confirmada':'Propuesta'/);
+  assert.match(planning,/type:'calendar-saved'/);
+  assert.match(app,/navigate\('obra-admin\/'\+encodeURIComponent\(planningResult\.workId\)\)/);
+  assert.match(app,/Obra programada\. La fecha quedó confirmada\./);
+  assert.match(app,/Situación de la fecha/);
+  assert.match(app,/Propuesta enviada al cliente/);
+});
+
 test('work detail is compact, accurate and uses the current client profile',async()=>{
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(app,/adminAgendaClient=id=>/);
