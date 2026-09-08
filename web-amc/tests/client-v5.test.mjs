@@ -1,4 +1,27 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createApp} from '../server.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createApp} from '../server.mjs';import {createClientV5} from '../public/client-v5.js';
 test('client v5 exposes only simple navigation, friendly workflow and camera actions',async()=>{const [app,ui,css,sw]=await Promise.all([readFile(new URL('../public/app.js',import.meta.url),'utf8'),readFile(new URL('../public/client-v5.js',import.meta.url),'utf8'),readFile(new URL('../public/client-v5.css',import.meta.url),'utf8'),readFile(new URL('../public/sw.js',import.meta.url),'utf8')]);assert.match(app,/\['inicio','Inicio'.*mis-trabajos-cliente.*chat-cliente.*\['perfil','Perfil'/s);assert.match(app,/Elegir de galería.*Sacar foto.*capture="environment"/s);assert.match(ui,/¿Qué está pasando con mi trabajo\?/);assert.match(ui,/Activos.*Finalizados/s);assert.match(ui,/Solicitud enviada.*AMC revisando.*Presupuesto.*Trabajo programado.*En curso.*Finalizado/s);assert.match(css,/@media\(max-width:390px\)/);assert.doesNotMatch(sw,/\/api\//);});
 test('admin creates offline client, detects normalized duplicate and starts its request without account',async()=>{const origin='http://localhost:4180',app=createApp({dbPath:':memory:',origin});app.addUser('owner@amc.test','Strong-Owner-2026!','AMC','admin');await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port,actor=()=>({cookie:'',csrf:'',async call(p,b,status=200){const r=await fetch(base+p,{method:b===undefined?'GET':'POST',headers:{Origin:origin,'Content-Type':'application/json',Cookie:this.cookie,'X-CSRF-Token':this.csrf},...(b===undefined?{}:{body:JSON.stringify(b)})});const x=await r.json();assert.equal(r.status,status,JSON.stringify(x));if(r.headers.get('set-cookie'))this.cookie=r.headers.get('set-cookie').split(';')[0];if(x.csrf)this.csrf=x.csrf;return x;}});try{const admin=actor();await admin.call('/api/login',{email:'owner@amc.test',password:'Strong-Owner-2026!'});const lead=await admin.call('/api/admin/clients',{name:'María Pérez',phone:'+54 9 3548-40-6698',town:'La Falda',address:'Centro',note:'Consulta presencial'},201);assert.equal(lead.email,undefined);assert.equal((await admin.call('/api/state')).agendaClients.find(x=>x.id===lead.id).hasAccount,0);const duplicate=await admin.call('/api/admin/clients',{name:'Maria',phone:'03548 406698',town:'La Falda'});assert.equal(duplicate.duplicate.id,lead.id);const request=await admin.call('/api/admin/requests',{leadId:lead.id,service:'Albañilería',description:'Reparar pared',idempotencyKey:'lead-request-01'},201);assert.equal(request.leadId,lead.id);assert.equal(request.name,'María Pérez');assert.ok((await admin.call('/api/state')).requests.some(x=>x.id===request.id));const client=actor();await client.call('/api/register',{email:'maria@amc.test',password:'12345678',name:'María Pérez'});await client.call('/api/profile',{name:'María Pérez',phone:'3548406698',town:'La Falda'});const account=(await client.call('/api/state')).user;await admin.call('/api/admin/clients/'+lead.id+'/link-account',{userId:account.id});const linked=await admin.call('/api/state');assert.equal(linked.agendaClients.some(x=>x.id===lead.id),false);assert.equal(linked.agendaClients.find(x=>x.id===account.id).linkedLeadId,lead.id);assert.equal(linked.requests.find(x=>x.id===request.id).userId,account.id);}finally{await new Promise(r=>app.server.close(r));}});
 
+
+
+test('client home prioritizes actions and detail keeps the whole project in one place',()=>{
+ const state={user:{id:'client-1',role:'client'},requests:[{id:'r1',userId:'client-1',name:'Ana',town:'La Falda',address:'Centro',service:'Pintura',services:['Pintura'],description:'Pintar living',status:'Presupuesto aceptado',date:'2030-01-01'}],quotes:[{id:'q1',requestId:'r1',status:'Aceptado',number:'AMC-1',total:300000,items:[{description:'Pintura interior'}],date:'2030-01-02'}],works:[{id:'w1',requestId:'r1',quoteId:'q1',title:'Pintura interior',status:'Trabajo programado',start:'2030-01-10',end:'2030-01-12',budget:300000,payments:[{amount:100000,date:'2030-01-03'}],updates:[]}],closures:[],dateProposals:[{id:'p1',requestId:'r1',status:'Propuesta',start:'2030-01-10',end:'2030-01-12',slot:'Día completo',revision:'rev-1'}],appointments:[{id:'v1',requestId:'r1',status:'Realizada',day:'2030-01-02',time:'10:00',address:'Centro'}],chatUnread:{r1:2}};
+ const ui=createClientV5({getState:()=>state,esc:v=>String(v??'').replace(/[&<>"]/g,''),money:n=>'$ '+n,date:v=>String(v||''),heading:(a,b,c='')=>'<h1>'+b+'</h1><p>'+c+'</p>',empty:(a,b)=>'<p>'+a+' '+b+'</p>',thumb:()=>'<span>foto</span>'});
+ const home=ui.home(),detail=ui.detail('r1');
+ assert.match(home,/Necesitan tu atención/);
+ assert.match(home,/Confirmar o cambiar fecha/);
+ assert.match(detail,/Qué sigue/);
+ assert.match(detail,/Confirmá la fecha propuesta/);
+ assert.match(detail,/class="date-reply"/);
+ assert.match(detail,/Visita/);
+ assert.match(detail,/Presupuesto/);
+ assert.match(detail,/Pagos y saldo/);
+ assert.match(detail,/Comprobantes/);
+ assert.match(detail,/Adicionales/);
+ assert.match(detail,/Hablar con AMC/);
+ state.dateProposals=[];state.works[0].status='Finalizado';state.closures=[{id:'c1',workId:'w1',status:'Pendiente de conformidad',summary:'Trabajo terminado',date:'2030-01-13'}];
+ const finished=ui.detail('r1');
+ assert.match(finished,/Trabajo finalizado/);
+ assert.match(finished,/Revisar cierre/);
+ assert.match(finished,/La obra ya está finalizada/);
+});
