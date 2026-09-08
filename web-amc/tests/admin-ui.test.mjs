@@ -28,7 +28,7 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(css,/@media\(max-width:430px\)/);
   assert.doesNotMatch(css,/min-width:\s*(?:[4-9]\d\d|\d{4,})px/);
   assert.match(worker,/admin-v3\.css/);
-  assert.match(worker,/AMC-offline-shell-v9/);
+  assert.match(worker,/AMC-offline-shell-v10/);
 });
 
 test('admin can classify a request as not taken without deleting it',async()=>{
