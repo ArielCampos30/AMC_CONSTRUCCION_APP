@@ -47,10 +47,16 @@ test('external quote delivery can be rejected and quote notices use exact deep l
     const leadRequest=await admin.call('/api/admin/requests',{leadId:lead.id,service:'Pintura',description:'Entrega externa',idempotencyKey:'closing-lead'},201);
     const external=await admin.call('/api/quotes',{requestId:leadRequest.id,externalId:'closing-external',version:'a'.repeat(64),number:'AMC-EXT',items:[{description:'Pintura'}],total:100000},201);
     await admin.call('/api/quotes/'+external.id+'/reject-manual',{},409);
+    await admin.call('/api/quotes/'+external.id+'/accept-manual',{},409);
     await admin.call('/api/quotes/'+external.id+'/deliver',{channel:'PDF'});
-    await admin.call('/api/quotes/'+external.id+'/reject-manual',{});
-    await admin.call('/api/quotes/'+external.id+'/reject-manual',{});
-    assert.equal((await admin.call('/api/state')).quotes.find(q=>q.id===external.id).status,'Rechazado');
+    const revisedExternal=await admin.call('/api/quotes',{requestId:leadRequest.id,externalId:'closing-external',version:'d'.repeat(64),number:'AMC-EXT',items:[{description:'Pintura revisada'}],total:110000},201);
+    let externalState=await admin.call('/api/state');assert.equal(externalState.quotes.find(q=>q.id===external.id).status,'Reemplazado');assert.equal(externalState.quotes.find(q=>q.id===revisedExternal.id).status,'Guardado');
+    await admin.call('/api/quotes/'+external.id+'/deliver',{channel:'PDF'},409);
+    await admin.call('/api/quotes/'+revisedExternal.id+'/accept-manual',{},409);
+    await admin.call('/api/quotes/'+revisedExternal.id+'/deliver',{channel:'PDF'});
+    await admin.call('/api/quotes/'+revisedExternal.id+'/reject-manual',{});
+    await admin.call('/api/quotes/'+revisedExternal.id+'/reject-manual',{});
+    assert.equal((await admin.call('/api/state')).quotes.find(q=>q.id===revisedExternal.id).status,'Rechazado');
 
     await client.call('/api/register',{email:'client@closing.test',password:'12345678',name:'Cliente AMC'});
     const request=await client.call('/api/requests',{name:'Cliente AMC',phone:'3548000002',town:'Valle Hermoso',service:'Albañilería',description:'Revoque',type:'presupuesto'},201);
