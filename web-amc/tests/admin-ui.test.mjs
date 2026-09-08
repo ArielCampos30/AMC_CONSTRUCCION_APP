@@ -84,6 +84,17 @@ test('admin edits clients and employees with AMC dialogs instead of browser conf
   assert.match(bridge,/const currentClient=r=>/);
 });
 
+test('duplicate client phone uses a visible AMC notice instead of failing silently',async()=>{
+  const [app,confirm]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/amc-confirm.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/Teléfono ya registrado/);
+  assert.match(app,/singleAction:true/);
+  assert.match(app,/No se guardaron cambios|tel\[eé\]fono ya est/);
+  assert.match(confirm,/cancelButton\.hidden=options\.singleAction===true/);
+});
+
 test('admin can classify a request as not taken without deleting it',async()=>{
   const service=createApp({dbPath:':memory:',origin});
   service.addUser('owner@amc.test','Strong-Owner-2026!','AMC','admin');

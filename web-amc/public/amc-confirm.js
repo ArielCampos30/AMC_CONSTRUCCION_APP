@@ -27,6 +27,7 @@
       body.textContent=String(message||'');
       confirmButton.textContent=options.confirmLabel||'Confirmar';
       cancelButton.textContent=options.cancelLabel||'Cancelar';
+      cancelButton.hidden=options.singleAction===true;
       const finish=()=>{
         dialog.removeEventListener('close',finish);
         resolve(dialog.returnValue==='confirm');
