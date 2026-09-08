@@ -2,7 +2,7 @@
 const AMC_PDF_LOGO_URL='/assets/amc-logo-pdf.jpg';
 var LOGO_W=260,LOGO_H=260;
 let amcPdfLogoPromise;
-async function loadPdfLogo(){
+globalThis.loadPdfLogo=async function loadPdfLogo(){
   if(!amcPdfLogoPromise)amcPdfLogoPromise=fetch(AMC_PDF_LOGO_URL,{cache:'force-cache'}).then(async response=>{
     if(!response.ok)throw Error('No se pudo cargar el logo oficial de AMC.');
     const bytes=new Uint8Array(await response.arrayBuffer());
@@ -11,4 +11,4 @@ async function loadPdfLogo(){
     return binary;
   });
   return amcPdfLogoPromise;
-}
+};
