@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createApp} from '../server.mjs';
 
 test('one final customer price is sent, documented and carried into the work',async()=>{
- const bridge=readFileSync(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8');
+ const bridge=readFileSync(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),generation=readFileSync(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8');
  assert.match(bridge,/const clientTotal=q=>quoteTotals\(q\)\.sale/);
  assert.match(bridge,/const workSubtotal=q=>/);
  assert.match(bridge,/const commercialPrice=q=>/);
@@ -12,7 +12,8 @@ test('one final customer price is sent, documented and carried into the work',as
  assert.match(bridge,/reset-client-price/);
  assert.match(bridge,/const quoteForDocument=q=>\(\{\.\.\.q,total:clientTotal\(q\)\}\)/);
  assert.match(bridge,/total:clientTotal\(draft\)/);
- assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
+ assert.match(bridge,/createAndAttach\(\{quoteId:sent\.id,document:quoteForDocument\(draft\),makePdf,blobToBase64,request\}\)/);
+ assert.match(generation,/makePdf\(document\)/);
  const origin='http://localhost:4180',app=createApp({dbPath:':memory:',origin});
  app.addUser('admin@total.test','Strong-Admin-2026!','AMC','admin');
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
