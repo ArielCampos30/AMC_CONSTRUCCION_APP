@@ -1,29 +1,68 @@
-# AMC Construcciones y Arreglos — App Android
+# AMC Construcciones y Arreglos
 
-Aplicación Android para presupuestos de AMC Construcciones y Arreglos.
+Aplicación conectada para administrar clientes, solicitudes, presupuestos, obras y equipo de AMC desde Web, Android y PWA/iPhone.
 
-## Funciones
-- Presupuestos con varios trabajos acumulados.
-- Comparación y recomendación entre cobro por m²/unidad y por jornal.
-- Tarifario base editable.
-- **Mis trabajos:** crear, editar y eliminar tareas propias con rubro, unidad y precio.
-- Costos internos separados del presupuesto del cliente.
-- Guardado de presupuestos en el teléfono.
-- PDF profesional con logo AMC.
-- Guardar PDF en Descargas/AMC Presupuestos.
-- Compartir PDF por WhatsApp, Gmail u otras apps.
-- Respaldo e importación de datos.
+## Qué incluye
+
+- Administración: clientes, solicitudes, presupuestos, obras, calendario, empleados, tareas, chat, reseñas y cierre.
+- Clientes: solicitud de trabajos y visitas, presupuesto, aceptación/rechazo, seguimiento de obra, pagos, comprobantes, adicionales y chat.
+- Equipo: trabajos asignados, chat interno, fotos e informes, con copia offline automática de las asignaciones.
+- Presupuestos PDF con descarga y compartir nativo en Android.
+- Notificaciones Web Push y Firebase/Android.
+- Seguridad por sesión HttpOnly + CSRF, aislamiento por rol y doble factor TOTP opcional para Administrador.
+- Respaldo cifrado verificable y restauración en una base vacía.
+- Backup externo preparado para Supabase Storage con retención configurable.
+- Pruebas automáticas en SQLite y PostgreSQL más recorrido real con Chrome.
+
+## Producción
+
+- Repositorio: `ArielCampos30/AMC_CONSTRUCCION_APP`
+- Rama: `main`
+- Backend/Web: `web-amc`
+- Producción: `https://amc-o0xb.onrender.com`
+- Render mantiene el auto-deploy desactivado; sólo se despliega manualmente después de que CI queda verde.
+
+La base de producción es PostgreSQL externa mediante `AMC_DATABASE_URL`. Render no debe usar SQLite local para producción.
+
+## Desarrollo y pruebas
+
+```bash
+cd web-amc
+npm ci
+npm test
+npm start
+```
+
+Para la suite PostgreSQL, definir `AMC_TEST_DATABASE_URL` apuntando exclusivamente a una base descartable. GitHub Actions ejecuta ambos motores y un smoke test de Chrome.
 
 ## Android
+
 - `applicationId`: `com.amc.construcciones`
-- Versión inicial: `1.0.0`
-- Android mínimo: 10 (API 29)
-- Target: Android 15 (API 35)
+- Android mínimo: API 29
+- Target: API 35
+- La WebView de release sólo confía en el origen AMC y los enlaces externos se abren fuera de la app.
+- Los datos de WebView no entran en el backup automático de Android.
+- La firma release y `google-services.json` se reconstruyen únicamente en CI mediante GitHub Secrets.
 
-## Actualizaciones
-Para actualizar la aplicación sin perder datos hay que mantener:
-1. el mismo `applicationId`;
-2. la misma clave de firma;
-3. instalar el APK nuevo encima del anterior, sin desinstalar.
+Para actualizar sin romper la identidad de Android hay que mantener el mismo `applicationId` y la misma clave de firma.
 
-Antes de cada actualización importante conviene exportar un respaldo desde la app.
+## Respaldo
+
+Backup cifrado local/verificación:
+
+```bash
+cd web-amc
+AMC_BACKUP_PASSWORD='...' node backup-cli.mjs export respaldo.amcbak
+AMC_BACKUP_PASSWORD='...' node backup-cli.mjs verify respaldo.amcbak
+```
+
+Backup externo preparado para Supabase Storage:
+
+```bash
+AMC_BACKUP_PASSWORD='...' \
+AMC_SUPABASE_URL='https://PROYECTO.supabase.co' \
+AMC_SUPABASE_SERVICE_ROLE_KEY='...' \
+node backup-supabase.mjs
+```
+
+Las contraseñas, claves de servicio y credenciales de base nunca se guardan en Git.
