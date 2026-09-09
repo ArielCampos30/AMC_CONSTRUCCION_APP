@@ -1,34 +1,121 @@
-name: AMC Producción - Salud
+name: AMC Producción - Monitor
+
 on:
   push:
     branches: [main]
     paths: ['.github/workflows/production-smoke.yml']
   workflow_dispatch:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '*/15 * * * *'
 
 permissions:
   contents: read
+  issues: write
+
+concurrency:
+  group: amc-production-monitor
+  cancel-in-progress: false
 
 jobs:
   production-health:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     steps:
-      - name: Salud de servidor y base
+      - name: Comprobar producción, base, errores y respaldo
+        id: monitor
+        continue-on-error: true
+        shell: bash
         run: |
-          curl -fsS --retry 3 --retry-all-errors --max-time 25             -D /tmp/health-headers.txt             https://amc-o0xb.onrender.com/healthz             -o /tmp/health.json
-          grep -q '"ok":true' /tmp/health.json
-          grep -q '"database":"available"' /tmp/health.json
-          grep -qi '^x-request-id:' /tmp/health-headers.txt
-          cat /tmp/health.json
-      - name: Carga pública limpia
+          set -uo pipefail
+          : > /tmp/amc-monitor.txt
+
+          fail_monitor() {
+            printf '%s\n' "$1" > /tmp/amc-monitor.txt
+            exit 1
+          }
+
+          ok=0
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 60 \
+              -D /tmp/health-headers.txt \
+              https://amc-o0xb.onrender.com/healthz \
+              -o /tmp/health.json; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          [ "$ok" = "1" ] || fail_monitor "Producción no respondió correctamente en /healthz después de 3 intentos."
+
+          node <<'NODE' || exit 1
+          const fs=require('fs');
+          let h;
+          try{h=JSON.parse(fs.readFileSync('/tmp/health.json','utf8'));}catch{
+            fs.writeFileSync('/tmp/amc-monitor.txt','/healthz devolvió una respuesta inválida.');
+            process.exit(1);
+          }
+          const problems=[];
+          if(h.ok!==true)problems.push('El servidor no informa estado saludable.');
+          if(h.database!=='available')problems.push('La base de datos no está disponible.');
+          if(Number(h.errors5xx15m||0)>=5)problems.push('Se detectaron '+Number(h.errors5xx15m)+' errores 5xx en los últimos 15 minutos.');
+          if(h.backupStatus==='failed')problems.push('El último intento de respaldo automático falló.');
+          if(typeof h.backupAgeHours==='number'&&h.backupAgeHours>30)problems.push('El último respaldo correcto tiene '+h.backupAgeHours+' horas.');
+          if(problems.length){
+            fs.writeFileSync('/tmp/amc-monitor.txt',problems.join('\n'));
+            process.exit(1);
+          }
+          console.log(JSON.stringify(h));
+          NODE
+
+          grep -qi '^x-request-id:' /tmp/health-headers.txt || fail_monitor "La respuesta de salud no incluye X-Request-ID."
+
+          if ! curl -fsS --retry 2 --retry-all-errors --max-time 45 \
+            https://amc-o0xb.onrender.com/ \
+            -o /tmp/index.html; then
+            fail_monitor "La portada pública de AMC no respondió."
+          fi
+          grep -q 'id="boot-loader"' /tmp/index.html || fail_monitor "La portada respondió, pero no contiene la aplicación AMC esperada."
+
+          if ! curl -fsS --retry 2 --retry-all-errors --max-time 45 \
+            https://amc-o0xb.onrender.com/api/config \
+            -o /tmp/config.json; then
+            fail_monitor "La configuración pública de AMC no respondió."
+          fi
+          grep -q '"version":"' /tmp/config.json || fail_monitor "La configuración pública no informa versión."
+
+          echo "Producción saludable." > /tmp/amc-monitor.txt
+
+      - name: Abrir alerta si el monitor falla
+        if: steps.monitor.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          curl -fsS --retry 3 --retry-all-errors --max-time 25             https://amc-o0xb.onrender.com/             -o /tmp/index.html
-          grep -q 'id="boot-loader"' /tmp/index.html
-          ! grep -q 'Cargando tus espacios' /tmp/index.html
-      - name: Versión pública
+          title="🚨 AMC Producción - alerta de monitor"
+          issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,title --jq '.[] | select(.title=="🚨 AMC Producción - alerta de monitor") | .number' | head -1)"
+          {
+            echo "El monitor automático detectó un problema en AMC Producción."
+            echo
+            echo '```'
+            cat /tmp/amc-monitor.txt
+            echo '```'
+            echo
+            echo "Momento UTC: $(date -u +'%Y-%m-%d %H:%M:%S')"
+            echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > /tmp/issue-body.md
+          if [ -z "$issue" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file /tmp/issue-body.md
+          fi
+          exit 1
+
+      - name: Cerrar alerta al recuperarse
+        if: steps.monitor.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          curl -fsS --retry 3 --retry-all-errors --max-time 25             https://amc-o0xb.onrender.com/api/config             -o /tmp/config.json
-          grep -q '"version":"' /tmp/config.json
-          cat /tmp/config.json
+          issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,title --jq '.[] | select(.title=="🚨 AMC Producción - alerta de monitor") | .number' | head -1)"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body "✅ AMC volvió a responder correctamente. El monitor cerró esta alerta automáticamente."
+            gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --reason completed
+          fi

@@ -406,4 +406,7 @@ test('Respaldos abre una pantalla de sistema y no cae en Inicio',async()=>{
   assert.match(app,/Retención:<\/strong> 30 días/);
   assert.match(app,/No necesitás descargar, subir ni confirmar nada/);
   assert.match(app,/Una restauración se hace sólo ante una falla o pérdida real de datos/);
+  assert.match(app,/Último respaldo correcto/);
+  assert.match(app,/Errores del servidor en los últimos 15 minutos/);
+  assert.match(app,/backupStatus/);
 });
