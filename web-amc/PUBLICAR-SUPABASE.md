@@ -16,9 +16,26 @@ El doble factor TOTP necesita además `AMC_2FA_KEY`, un secreto de servidor larg
 
 ## Archivos
 
-Actualmente la ruta principal de fotos/PDF sigue siendo la tabla `files` de PostgreSQL para conservar compatibilidad. El servidor ya elimina de forma conservadora uploads nuevos que quedaron huérfanos durante más de siete días.
+Actualmente la tabla `files` de PostgreSQL sigue siendo la copia compatible de fotos/PDF. Object Storage se activa de forma gradual y nunca expone una clave privilegiada al navegador o a la APK.
 
-La migración completa de archivos a Object Storage queda separada para no poner en riesgo los archivos existentes. Antes de retirar BYTEA debe hacerse dual-write, migración verificada y fallback de lectura.
+Variables del servicio Web para la etapa de Storage:
+
+- `AMC_SUPABASE_URL`
+- `AMC_SUPABASE_FILES_KEY`: clave secreta de servidor independiente de la del job de backup.
+- `AMC_FILES_BUCKET` (por defecto `amc-files`)
+- `AMC_FILE_STORAGE_MODE`: `off`, `mirror` o `prefer-storage`
+
+Modos:
+
+- `off`: comportamiento anterior; sólo PostgreSQL.
+- `mirror`: cada upload aceptado se escribe primero en el bucket privado y luego en PostgreSQL. Las lecturas siguen saliendo de PostgreSQL.
+- `prefer-storage`: mantiene dual-write y sirve desde Object Storage; si un objeto viejo todavía no fue migrado o Storage falla al leer, usa PostgreSQL como fallback.
+
+El bucket `amc-files` debe permanecer privado, con máximo de 5 MB y sólo JPEG/PNG/WebP/PDF. Los clientes no reciben la clave de Storage ni acceden directamente al bucket: siguen usando `/media/:id`, donde AMC conserva su autorización por rol, cliente, empleado, obra y conversación.
+
+La limpieza de uploads huérfanos conserva el plazo de siete días. Cuando Storage está activo, elimina primero la copia externa y sólo después borra la copia PostgreSQL, de modo que un fallo externo no deje a la base sin su archivo recuperable.
+
+La migración de archivos históricos sigue separada. No retirar BYTEA hasta completar dual-write, una migración verificada, lectura `prefer-storage`, comparación de conteos/tamaños y una prueba de recuperación.
 
 ## Backup externo preparado
 
