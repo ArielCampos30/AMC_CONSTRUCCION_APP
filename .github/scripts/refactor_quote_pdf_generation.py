@@ -96,3 +96,39 @@ new_test="""test('pending PDF can be regenerated and returns to the exact quote'
 });"""
 if old_test not in t: raise SystemExit('No se encontró el test de PDF pendiente')
 test.write_text(t.replace(old_test,new_test,1))
+
+final_price=Path('web-amc/tests/final-price-contract.test.mjs')
+f=final_price.read_text()
+old_fp=" const bridge=readFileSync(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8');\n"
+new_fp=" const bridge=readFileSync(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),generation=readFileSync(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8');\n"
+if old_fp not in f: raise SystemExit('No se encontró lectura del bridge en final-price-contract')
+f=f.replace(old_fp,new_fp,1)
+old_fp_assert=" assert.match(bridge,/makePdf\\(quoteForDocument\\(draft\\)\\)/);\n"
+new_fp_assert=" assert.match(bridge,/quotePdfGeneration\\.createAndAttach\\(\\{quoteId:sent\\.id,document:quoteForDocument\\(draft\\),makePdf,blobToBase64,request\\}\\)/);\n assert.match(generation,/makePdf\\(document\\)/);\n"
+if old_fp_assert not in f: raise SystemExit('No se encontró aserción PDF en final-price-contract')
+final_price.write_text(f.replace(old_fp_assert,new_fp_assert,1))
+
+reg=Path('web-amc/tests/release-regressions.test.mjs')
+r=reg.read_text()
+old_reg="""test('guardar o enviar usa el precio comercial automático o editado',()=>{
+  const bridge=read('../public/presupuestos-bridge.js');
+  const action=bridge.indexOf("const registered=hasAccount(r),action=");
+  const validation=bridge.indexOf("Agregá trabajos con un importe válido antes de '+action");
+  assert.ok(action>=0);
+  assert.ok(validation>action);
+  assert.match(bridge,/total:clientTotal\(draft\)/);
+  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
+});"""
+new_reg="""test('guardar o enviar usa el precio comercial automático o editado',()=>{
+  const bridge=read('../public/presupuestos-bridge.js');
+  const generation=read('../public/quote-pdf-generation.js');
+  const action=bridge.indexOf("const registered=hasAccount(r),action=");
+  const validation=bridge.indexOf("Agregá trabajos con un importe válido antes de '+action");
+  assert.ok(action>=0);
+  assert.ok(validation>action);
+  assert.match(bridge,/total:clientTotal\(draft\)/);
+  assert.match(bridge,/document:quoteForDocument\(draft\)/);
+  assert.match(generation,/makePdf\(document\)/);
+});"""
+if old_reg not in r: raise SystemExit('No se encontró test de precio comercial en release-regressions')
+reg.write_text(r.replace(old_reg,new_reg,1))
