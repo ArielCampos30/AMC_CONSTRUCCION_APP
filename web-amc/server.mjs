@@ -10,6 +10,7 @@ import {authRoutes} from './auth-routes.mjs';
 import {notificationFeatures} from './notifications.mjs';
 import {mediaStorageFeatures} from './media-storage.mjs';
 import {mediaAccessFeatures} from './media-access.mjs';
+import {createMediaUploadParser} from './media-upload-parser.mjs';
 import {createSupabaseFileStore} from './storage-supabase.mjs';
 import {createSystemHealth} from './system-health.mjs';
 import http from 'node:http';
@@ -87,7 +88,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const {notify,notifyAdmins,markNoticeRead,markNoticesForRoute,route:notificationRoutes}=notifications;
  const readRaw=async(req,limit=7*1024*1024)=>{let chunks=[],size=0;for await(const chunk of req){size+=chunk.length;if(size>limit)fail(413,'El archivo es demasiado grande.');chunks.push(chunk);}return Buffer.concat(chunks);};
  const readBody=async req=>{try{return JSON.parse((await readRaw(req)).toString()||'{}');}catch{fail(400,'Datos inválidos.');}};
- const readMultipart=async req=>{const type=req.headers['content-type']||'',match=/boundary=(?:"([^"]+)"|([^;]+))/i.exec(type);if(!match)fail(400,'Formulario de archivo inválido.');const boundary=Buffer.from('--'+(match[1]||match[2])),raw=await readRaw(req,7*1024*1024),parts={};let start=raw.indexOf(boundary)+boundary.length;while(start>=boundary.length){if(raw[start]===45&&raw[start+1]===45)break;if(raw[start]===13&&raw[start+1]===10)start+=2;const headEnd=raw.indexOf(Buffer.from('\r\n\r\n'),start);if(headEnd<0)break;const head=raw.subarray(start,headEnd).toString('utf8'),name=/name="([^"]+)"/i.exec(head)?.[1],mime=/content-type:\s*([^\r\n]+)/i.exec(head)?.[1]?.trim(),next=raw.indexOf(boundary,headEnd+4);if(next<0)break;let end=next;if(raw[end-2]===13&&raw[end-1]===10)end-=2;if(name)parts[name]={body:raw.subarray(headEnd+4,end),mime};start=next+boundary.length;}if(!parts.file?.body?.length)fail(400,'No se recibió la foto.');return {mime:text(parts.file.mime),bytes:parts.file.body,thumbnail:parts.thumbnail?.body||null};};
+ const readMultipart=createMediaUploadParser({readRaw,text,fail});
  const rate=new Map();
  const checkRate=(key,limit)=>{const t=Date.now(),r=rate.get(key)||{count:0,end:t+900000};if(r.end<t){r.count=0;r.end=t+900000;}r.count++;rate.set(key,r);if(r.count>limit)fail(429,'Demasiados intentos. Probá en unos minutos.');if(rate.size>10000)for(const [k,v]of rate)if(v.end<t)rate.delete(k);};
  const mediaStorage=mediaStorageFeatures({db,all,put,transaction,objectStore,text,fail,id,now});
