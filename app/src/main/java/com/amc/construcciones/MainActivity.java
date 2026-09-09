@@ -23,8 +23,6 @@ import android.widget.Toast;
 import androidx.core.content.FileProvider;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import com.google.firebase.messaging.FirebaseMessaging;
 import java.io.File;
 import java.io.OutputStream;
@@ -44,7 +42,6 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         setContentView(webView);
-        ViewCompat.setOnApplyWindowInsetsListener(webView,(view,insets)->{androidx.core.graphics.Insets bars=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(0,bars.top,0,bars.bottom);return insets;});
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);

@@ -7,7 +7,7 @@ export const chatViewport={
   log.scrollTop=follow?log.scrollHeight:top;
   log.addEventListener('scroll',()=>{top=log.scrollTop;follow=log.scrollHeight-log.clientHeight-top<90;},{passive:true});
   log.querySelectorAll('img').forEach(img=>img.addEventListener('load',bottom,{once:true}));
-  resize=new ResizeObserver(bottom);resize.observe(log);requestAnimationFrame(()=>{bottom();if(opening)log.scrollIntoView({block:'center'});});
+  resize=new ResizeObserver(bottom);resize.observe(log);requestAnimationFrame(()=>{bottom();if(opening&&!log.closest('#amc-chat-dialog'))log.scrollIntoView({block:'center'});});
  }
 };
 const previewUrls=new WeakMap();
