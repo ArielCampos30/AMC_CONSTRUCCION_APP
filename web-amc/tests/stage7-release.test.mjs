@@ -31,5 +31,5 @@ test('PWA release metadata, safe cache and iPhone install help are present',()=>
 
 test('health checks the database and exposes only operational metadata',async()=>{
  const app=createApp({dbPath:':memory:',origin:'http://localhost'});await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
- try{const response=await fetch('http://127.0.0.1:'+app.server.address().port+'/health');assert.equal(response.status,200);const body=await response.json();assert.equal(body.ok,true);assert.equal(body.database,'available');assert.equal(body.driver,'sqlite');assert.equal(typeof body.databaseMs,'number');assert.equal(typeof body.version,'string');assert.equal(typeof body.uptimeSeconds,'number');assert.ok(response.headers.get('x-request-id'));}finally{await new Promise(resolve=>app.server.close(resolve));}
+ try{const response=await fetch('http://127.0.0.1:'+app.server.address().port+'/health');assert.equal(response.status,200);const body=await response.json();assert.equal(body.ok,true);assert.equal(body.database,'available');assert.ok(['sqlite','postgresql'].includes(body.driver));assert.equal(typeof body.databaseMs,'number');assert.equal(typeof body.version,'string');assert.equal(typeof body.uptimeSeconds,'number');assert.ok(response.headers.get('x-request-id'));}finally{await new Promise(resolve=>app.server.close(resolve));}
 });
