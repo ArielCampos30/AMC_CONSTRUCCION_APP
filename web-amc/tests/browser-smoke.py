@@ -58,6 +58,9 @@ try:
     wait("return document.body.innerText.includes('Estado de AMC')")
     status=js("return document.body.innerText")
     assert "Versión:" in status and "Base:" in status
+    go(BASE+"/#perfil")
+    wait("return document.body.innerText.includes('Seguridad en dos pasos')")
+    assert "doble factor" in js("return document.body.innerText").lower()
     call("DELETE",prefix+"/cookie")
     login("cliente@amc.test","Cliente-Prueba-2026!","client-v5")
     text=js("return document.body.innerText")
