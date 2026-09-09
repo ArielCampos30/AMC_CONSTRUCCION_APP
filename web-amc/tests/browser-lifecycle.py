@@ -232,8 +232,12 @@ try:
     # 5. Empleado real: entra a su panel, ve sólo su trabajo y lo finaliza.
     clear_session()
     login(EMPLOYEE_EMAIL,EMPLOYEE_PASSWORD,"employee-v4")
+    go(BASE+"/#inicio-empleado")
+    wait("return document.body.innerText.includes('PRÓXIMO TRABAJO') && document.body.innerText.includes('Ruta 38 123')")
     go(BASE+"/#mis-trabajos")
-    wait("return document.body.innerText.includes('Pintura') || document.body.innerText.includes('Ruta 38 123')")
+    wait("return !!document.querySelector('[data-action=\"employee-filter\"][data-value=\"Pendientes\"]')")
+    js("document.querySelector('[data-action=\"employee-filter\"][data-value=\"Pendientes\"]').click();return true;")
+    wait("return document.body.innerText.includes('Ruta 38 123') && document.body.innerText.includes('Empleado')===false")
     employee_state=api("/api/state",None,"GET")
     task=next((x for x in employee_state.get("assignments",[]) if x.get("id")==assignment_id),None)
     assert task,employee_state
