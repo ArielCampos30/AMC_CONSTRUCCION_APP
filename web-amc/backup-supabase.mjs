@@ -11,6 +11,14 @@ const cleanBase=value=>String(value||'').replace(/\/$/,'');
 const safeSegment=value=>encodeURIComponent(String(value||'').replace(/^\/+|\/+$/g,''));
 export const backupObjectPath=(date=new Date())=>'daily/amc-'+date.toISOString().replace(/[:.]/g,'-')+'.amcbak';
 
+function writeBackupMonitor(db,patch){
+ let previous={id:'backup-status',status:'unknown',lastSuccessAt:null,lastAttemptAt:null};
+ try{const row=db.prepare("SELECT body FROM docs WHERE kind='monitor' AND id='backup-status'").get();if(row)previous={...previous,...JSON.parse(row.body)};}catch{}
+ const body={...previous,...patch,id:'backup-status'};
+ db.prepare("INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body,owner=excluded.owner").run(body.id,'monitor','',JSON.stringify(body));
+ return body;
+}
+
 function storageConfig(env=process.env){
  return {
   base:cleanBase(required('AMC_SUPABASE_URL',env.AMC_SUPABASE_URL)),
@@ -60,17 +68,22 @@ function backupDate(name){
 }
 
 export async function runExternalBackup({env=process.env,date=new Date()}={}){
- const config=storageConfig(env),dir=mkdtempSync(path.join(tmpdir(),'amc-external-backup-')),file=path.join(dir,'backup.amcbak'),object=backupObjectPath(date);
+ const dir=mkdtempSync(path.join(tmpdir(),'amc-external-backup-')),file=path.join(dir,'backup.amcbak'),object=backupObjectPath(date),attemptAt=date.toISOString();
  let app;
  try{
-  const localSource=env.AMC_DB_PATH||fileURLToPath(new URL('./data/amc.sqlite',import.meta.url));if(!process.env.AMC_DATABASE_URL&&!existsSync(localSource))throw Error('No se encontró la base de origen. No se creó ningún respaldo externo.');
+  const localSource=env.AMC_DB_PATH||fileURLToPath(new URL('./data/amc.sqlite',import.meta.url));if(!env.AMC_DATABASE_URL&&!existsSync(localSource))throw Error('No se encontró la base de origen. No se creó ningún respaldo externo.');
   app=createApp({dbPath:localSource});
-  const result=exportBackup(app.db,file,config.password);verifyBackup(file,config.password);
+  writeBackupMonitor(app.db,{status:'running',lastAttemptAt:attemptAt});
+  const config=storageConfig(env),result=exportBackup(app.db,file,config.password);verifyBackup(file,config.password);
   const target=config.base+'/storage/v1/object/'+safeSegment(config.bucket)+'/'+object.split('/').map(safeSegment).join('/');
   await uploadFile(target,{Authorization:'Bearer '+config.key,apikey:config.key},file);
   const cutoff=date.getTime()-config.retentionDays*86400000,old=(await listObjects(config,'daily')).filter(x=>backupDate(x.name)<cutoff).map(x=>'daily/'+x.name);
-  const removed=await deleteObjects(config,old);
-  return {records:result.records,object,bytes:statSync(file).size,removed};
+  const removed=await deleteObjects(config,old),bytes=statSync(file).size;
+  writeBackupMonitor(app.db,{status:'ok',lastAttemptAt:attemptAt,lastSuccessAt:new Date().toISOString(),records:result.records,bytes,removed,error:''});
+  return {records:result.records,object,bytes,removed};
+ }catch(error){
+  try{if(app)writeBackupMonitor(app.db,{status:'failed',lastAttemptAt:attemptAt,lastFailureAt:new Date().toISOString(),error:String(error?.message||'Error').slice(0,180)});}catch{}
+  throw error;
  }finally{
   try{app?.server.close();}catch{}
   rmSync(dir,{recursive:true,force:true});
