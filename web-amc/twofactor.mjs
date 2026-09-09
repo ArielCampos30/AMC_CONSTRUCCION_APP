@@ -3,7 +3,7 @@ import {createCipheriv,createDecipheriv,createHash,createHmac,randomBytes,timing
 const ALPHABET='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const clean=value=>String(value||'').toUpperCase().replace(/[^A-Z2-7]/g,'');
 export function base32Encode(bytes){let bits=0,value=0,out='';for(const byte of bytes){value=(value<<8)|byte;bits+=8;while(bits>=5){out+=ALPHABET[(value>>>(bits-5))&31];bits-=5;}}if(bits)out+=ALPHABET[(value<<(5-bits))&31];return out;}
-function base32Decode(input){const value=clean(input);let bits=0,buffer=0,out=[];for(const char of value){const n=ALPHABET.indexOf(char);if(n<0)throw Error('Secreto 2FA inválido.');buffer=(buffer<<5)|n;bits+=5;if(bits>=8){out.push((buffer>>>(bits-8))&255);bits-=8;}}return Buffer.from(out);}
+function base32Decode(input){const value=clean(input);let bits=0,buffer=0,out=[];for(const char of value){const n=ALPHABET.indexOf(char);if(n<0)throw Error('Secreto 2FA inválido.');buffer=(buffer<<5)|n;bits+=5;while(bits>=8){bits-=8;out.push((buffer>>>bits)&255);buffer=bits?buffer&((1<<bits)-1):0;}}return Buffer.from(out);}
 const codeAt=(secret,time)=>{const counter=Math.floor(time/30000),msg=Buffer.alloc(8);msg.writeBigUInt64BE(BigInt(counter));const digest=createHmac('sha1',base32Decode(secret)).update(msg).digest(),offset=digest[digest.length-1]&15,n=(digest.readUInt32BE(offset)&0x7fffffff)%1000000;return String(n).padStart(6,'0');};
 export const totpCode=(secret,time=Date.now())=>codeAt(secret,time);
 const safeEqual=(a,b)=>{const aa=Buffer.from(String(a)),bb=Buffer.from(String(b));return aa.length===bb.length&&timingSafeEqual(aa,bb);};
