@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {createApp} from '../server.mjs';
+import {readFile} from 'node:fs/promises';import test from 'node:test';import assert from 'node:assert/strict';import {createApp} from '../server.mjs';
 const origin='http://localhost:4180';
 test('multipart image upload stores binary and thumbnail while legacy JSON remains compatible',async()=>{const app=createApp({dbPath:':memory:',origin});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';try{let r=await fetch(base+'/api/register',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:'media@test.test',name:'Media',password:'Client-Test-2026!'})});let data=await r.json();assert.equal(r.status,200);cookie=r.headers.get('set-cookie').split(';')[0];csrf=data.csrf;const jpeg=Buffer.from([255,216,255,224,0,1,2,3,255,217]),thumb=Buffer.from([255,216,255,224,9,8,7,255,217]),form=new FormData();form.append('file',new Blob([jpeg],{type:'image/jpeg'}),'foto.jpg');form.append('thumbnail',new Blob([thumb],{type:'image/jpeg'}),'miniatura.jpg');r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:form});data=await r.json();assert.equal(r.status,201,JSON.stringify(data));assert.equal(data.mime,'image/jpeg');assert.equal(data.size,jpeg.length);r=await fetch(base+data.url+'?thumb=1',{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),thumb);r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,'Content-Type':'application/json'},body:JSON.stringify({mime:'image/jpeg',base64:jpeg.toString('base64')})});assert.equal(r.status,201); }finally{await new Promise(r=>app.server.close(r));}});
 
@@ -33,4 +33,22 @@ test('dual-write mirrors accepted uploads and prefer-storage serves the external
   app.db.prepare('UPDATE files SET body=? WHERE id=?').run(Buffer.from([255,216,255,224,9,9,9,255,217]),data.id);
   r=await fetch(base+data.url,{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),jpeg);
  }finally{await new Promise(r=>app.server.close(r));}
+});
+
+
+test('almacenamiento de media queda modularizado sin duplicar upload y GC en server',async()=>{
+ const [server,storage]=await Promise.all([
+  readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../media-storage.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(server,/from '.\/media-storage\.mjs'/);
+ assert.match(server,/mediaStorageFeatures\(\{db,all,put,transaction,objectStore,text,fail,id,now\}\)/);
+ assert.match(server,/mediaStorage\.upload\(user,b\)/);
+ assert.match(storage,/const safeFile=/);
+ assert.match(storage,/const cleanupOrphanFiles=async/);
+ assert.match(storage,/const upload=async\(user,b\)/);
+ assert.match(storage,/objectStore\.upload/);
+ assert.match(storage,/fileUpload/);
+ assert.doesNotMatch(server,/const safeFile=\(user,key,mime\)=>/);
+ assert.doesNotMatch(server,/const cleanupOrphanFiles=async/);
 });
