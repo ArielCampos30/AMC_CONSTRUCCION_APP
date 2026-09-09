@@ -20,6 +20,8 @@ services:
         sync: false
       - key: AMC_ADMIN_PASSWORD
         sync: false
+      - key: AMC_2FA_KEY
+        sync: false
       - key: AMC_FIREBASE_CREDENTIALS_JSON
         sync: false
       - key: AMC_ORIGIN
