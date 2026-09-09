@@ -1,4 +1,4 @@
-import {mkdtempSync,rmSync,statSync,createReadStream} from 'node:fs';
+import {mkdtempSync,rmSync,statSync,createReadStream,existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -63,7 +63,8 @@ export async function runExternalBackup({env=process.env,date=new Date()}={}){
  const config=storageConfig(env),dir=mkdtempSync(path.join(tmpdir(),'amc-external-backup-')),file=path.join(dir,'backup.amcbak'),object=backupObjectPath(date);
  let app;
  try{
-  app=createApp({dbPath:env.AMC_DB_PATH||':memory:'});
+  const localSource=env.AMC_DB_PATH||fileURLToPath(new URL('./data/amc.sqlite',import.meta.url));if(!process.env.AMC_DATABASE_URL&&!existsSync(localSource))throw Error('No se encontró la base de origen. No se creó ningún respaldo externo.');
+  app=createApp({dbPath:localSource});
   const result=exportBackup(app.db,file,config.password);verifyBackup(file,config.password);
   const target=config.base+'/storage/v1/object/'+safeSegment(config.bucket)+'/'+object.split('/').map(safeSegment).join('/');
   await uploadFile(target,{Authorization:'Bearer '+config.key,apikey:config.key},file);
