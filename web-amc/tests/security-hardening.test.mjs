@@ -13,10 +13,13 @@ test('production security headers, cookies and origin checks are enforced',async
 });
 
 test('security hardening keeps account throttling and a bounded session count in source',async()=>{
- const source=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(source,/login-account:/);
- assert.match(source,/checkRate\(accountRate,12\)/);
- assert.match(source,/sessions\.slice\(8\)/);
+ const [source,auth]=await Promise.all([
+  readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../auth-routes.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(auth,/login-account:/);
+ assert.match(auth,/checkRate\(accountRate,12\)/);
+ assert.match(auth,/sessions\.slice\(8\)/);
  assert.match(source,/weakPasswords/);
  assert.match(source,/snapshotAll=user\?\.role==='admin'/);
  assert.match(source,/X-Request-ID/);
