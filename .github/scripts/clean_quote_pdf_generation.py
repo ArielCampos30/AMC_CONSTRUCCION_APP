@@ -2,7 +2,7 @@ from pathlib import Path
 import subprocess
 
 # Restore server exactly from staging so this refactor does not create a noisy line-ending diff.
-subprocess.run(['git','checkout','staging','--','web-amc/server.mjs'],check=True)
+subprocess.run(['git','checkout','origin/staging','--','web-amc/server.mjs'],check=True)
 
 module=Path('web-amc/public/quote-pdf-generation.js')
 module.write_text("""export async function createAndAttach({quoteId,document,makePdf,blobToBase64,request}){
