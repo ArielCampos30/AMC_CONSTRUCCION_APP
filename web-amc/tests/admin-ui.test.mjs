@@ -14,9 +14,6 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   ]);
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
-  assert.match(app,/\['Gestión'.*'Chat'.*'Clientes'.*'Empleados'/s);
-  assert.match(app,/\['Herramientas'.*'Tarifario y cotizador'.*'Resumen diario'/s);
-  assert.match(app,/\['Sistema'.*'Configuración'.*'Respaldos'/s);
   assert.match(app,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
   assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
   assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
@@ -29,6 +26,10 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.doesNotMatch(css,/min-width:\s*(?:[4-9]\d\d|\d{4,})px/);
   assert.match(worker,/admin-v3\.css/);
   assert.match(worker,/AMC-offline-shell-v10/);
+  const system=await readFile(new URL('../public/admin-system-ui.js',import.meta.url),'utf8');
+  assert.match(system,/\['Gestión'.*'Chat'.*'Clientes'.*'Empleados'/s);
+  assert.match(system,/\['Herramientas'.*'Tarifario y cotizador'.*'Resumen diario'/s);
+  assert.match(system,/\['Sistema'.*'Configuración'.*'Respaldos'/s);
 });
 
 test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
@@ -398,15 +399,18 @@ test('notification, refresh and margin UI avoid duplicate work',async()=>{
 
 
 test('Respaldos abre una pantalla de sistema y no cae en Inicio',async()=>{
-  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
-  assert.match(app,/function adminBackups\(\)/);
-  assert.match(app,/page==='respaldos'\)html=adminBackups\(\)/);
-  assert.match(app,/Respaldo automático/);
-  assert.match(app,/03:00 \(hora de Argentina\)/);
-  assert.match(app,/Retención:<\/strong> 30 días/);
-  assert.match(app,/No necesitás descargar, subir ni confirmar nada/);
-  assert.match(app,/Una restauración se hace sólo ante una falla o pérdida real de datos/);
-  assert.match(app,/Último respaldo correcto/);
-  assert.match(app,/Errores del servidor en los últimos 15 minutos/);
-  assert.match(app,/backupStatus/);
+  const [app,system]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-system-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/page==='respaldos'\)html=adminSystem\.backups\(\)/);
+  assert.match(system,/const backups=\(\)=>/);
+  assert.match(system,/Respaldo automático/);
+  assert.match(system,/03:00 \(hora de Argentina\)/);
+  assert.match(system,/Retención:<\/strong> 30 días/);
+  assert.match(system,/No necesitás descargar, subir ni confirmar nada/);
+  assert.match(system,/Una restauración se hace sólo ante una falla o pérdida real de datos/);
+  assert.match(system,/Último respaldo correcto/);
+  assert.match(system,/Errores del servidor en los últimos 15 minutos/);
+  assert.match(system,/backupStatus/);
 });
