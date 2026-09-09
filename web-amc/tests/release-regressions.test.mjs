@@ -121,12 +121,14 @@ test('PDF pendiente conserva el presupuesto y permite reintento explícito',()=>
 
 test('guardar o enviar usa el precio comercial automático o editado',()=>{
   const bridge=read('../public/presupuestos-bridge.js');
+  const generation=read('../public/quote-pdf-generation.js');
   const action=bridge.indexOf("const registered=hasAccount(r),action=");
   const validation=bridge.indexOf("Agregá trabajos con un importe válido antes de '+action");
   assert.ok(action>=0);
   assert.ok(validation>action);
   assert.match(bridge,/total:clientTotal\(draft\)/);
-  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
+  assert.match(bridge,/document:quoteForDocument\(draft\)/);
+  assert.match(generation,/makePdf\(document\)/);
 });
 
 test('editar presupuesto restaura el borrador persistido por externalId',()=>{
