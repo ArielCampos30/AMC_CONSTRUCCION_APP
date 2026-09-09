@@ -46,20 +46,25 @@ test('client, admin and employee notices become read when their related content 
 });
 
 test('notice UI updates counters, visual state and browser notifications without a page reload',async()=>{
- const [app,features,worker]=await Promise.all([
+ const [app,features,worker,notices]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
   readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/sw.js',import.meta.url),'utf8')
+  readFile(new URL('../public/sw.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/notice-ui.js',import.meta.url),'utf8')
  ]);
- assert.match(app,/function applyNoticeRead\(ids=\[\]\)/);
- assert.match(app,/function syncVisibleNotices\(\)/);
- assert.match(app,/api\('\/api\/notices\/read',\{route\}\)/);
+ assert.match(app,/from '.\/notice-ui\.js'/);
+ assert.match(app,/createNoticeUI\(\{getState:\(\)=>state,getPage:\(\)=>page,api,esc,date,heading,btn,empty,sound\}\)/);
+ assert.match(notices,/function applyRead\(ids=\[\]\)/);
+ assert.match(notices,/async function syncVisible\(\)/);
+ assert.match(notices,/api\('\/api\/notices\/read',\{route\}\)/);
  assert.match(app,/queueMicrotask\(syncVisibleNotices\)/);
- assert.match(app,/data-notice-state/);
- assert.match(app,/Pendiente/);
- assert.match(app,/Leído/);
+ assert.match(notices,/data-notice-state/);
+ assert.match(notices,/Pendiente/);
+ assert.match(notices,/Leído/);
  assert.match(app,/onNoticesRead:applyNoticeRead/);
  assert.match(features,/onNoticesRead\(result\.noticeIds\|\|\[\]\)/);
  assert.match(worker,/AMC_NOTICE_READ/);
  assert.match(worker,/getNotifications\(\)/);
+ assert.doesNotMatch(app,/function applyNoticeRead\(ids=\[\]\)/);
+ assert.doesNotMatch(app,/function syncVisibleNotices\(\)/);
 });
