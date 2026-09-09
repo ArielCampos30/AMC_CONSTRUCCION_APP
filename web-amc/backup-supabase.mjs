@@ -1,6 +1,7 @@
 import {mkdtempSync,rmSync,statSync,createReadStream} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 import https from 'node:https';
 import {createApp} from './server.mjs';
 import {exportBackup,verifyBackup} from './secure-backup.mjs';
@@ -75,6 +76,6 @@ export async function runExternalBackup({env=process.env,date=new Date()}={}){
  }
 }
 
-if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  runExternalBackup().then(result=>console.log('Respaldo externo verificado:',result.records,'registros ·',result.bytes,'bytes ·',result.object,'· antiguos eliminados:',result.removed)).catch(error=>{console.error(error.message);process.exitCode=1;});
 }
