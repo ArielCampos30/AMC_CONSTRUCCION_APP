@@ -1,26 +1,57 @@
-# AMC Construcciones v1.0
+# AMC Construcciones — operación y release
 
-## Ejecutar y probar
+## Validación previa a desplegar
 
-- Backend local con SQLite: `cd web-amc`, `npm ci` y `npm test` o `npm start`.
-- PostgreSQL de pruebas: definir `AMC_TEST_DATABASE_URL` apuntando exclusivamente a una base descartable y ejecutar `npm test`.
-- Producción necesita `AMC_DATABASE_URL`, `AMC_ADMIN_EMAIL`, `AMC_ADMIN_PASSWORD` y las variables privadas de correo/push que se usen. Nunca guardar sus valores en Git.
-- Salud: `GET /health` comprueba proceso y base de datos; no devuelve credenciales.
+La rama de producción es `main`. Antes de cualquier deploy deben quedar verdes:
+
+1. auditoría de dependencias;
+2. suite completa con SQLite;
+3. suite completa con PostgreSQL real;
+4. recorrido de Chrome con login Administrador y Cliente, carga inicial y controles básicos de accesibilidad;
+5. workflows Android cuando se modifica código Android.
+
+El servicio Render tiene auto-deploy desactivado. Un push a `main` no publica por sí solo.
+
+## Variables de producción
+
+Obligatorias o según la función usada:
+
+- `AMC_DATABASE_URL`: PostgreSQL de producción.
+- `AMC_2FA_KEY`: secreto de servidor de al menos 24 caracteres para cifrar el TOTP Administrador.
+- `AMC_FIREBASE_CREDENTIALS_JSON`: Firebase Cloud Messaging Android.
+- credenciales Web Push/correo configuradas por el servidor.
+- `AMC_ADMIN_EMAIL` y `AMC_ADMIN_PASSWORD`: sólo para crear el primer Administrador si la base todavía no tiene uno; retirarlas después del alta.
+
+Nunca guardar valores de secretos en Git, logs, documentación o screenshots.
+
+## Salud y diagnóstico
+
+- `GET /healthz` valida proceso y consulta a la base.
+- Las respuestas incluyen `X-Request-ID`.
+- Los logs del servidor registran método, ruta, estado y duración, sin cuerpo privado.
+- Administración → Más → Estado de AMC muestra versión desplegada, motor, cantidad de registros/archivos y dispositivos.
 
 ## Android release
 
-El workflow **Compilar APK AMC** genera `AMC_Construcciones_v1.0.0.apk` y `AMC_Construcciones_v1.0.0.aab`, verifica sus firmas y los publica como artifact. Requiere estos GitHub Secrets: `AMC_KEYSTORE_B64`, `AMC_STORE_PASSWORD`, `AMC_KEY_ALIAS`, `AMC_KEY_PASSWORD` y `AMC_GOOGLE_SERVICES_B64`. Este último contiene el `google-services.json` codificado en Base64; el archivo se reconstruye sólo durante CI.
+El workflow **Compilar APK AMC** genera y firma APK/AAB. Requiere los GitHub Secrets de firma y `AMC_GOOGLE_SERVICES_B64`. Mantener el JKS original y sus contraseñas en dos ubicaciones privadas fuera del repositorio.
 
-El propietario debe conservar el archivo JKS original y sus contraseñas en dos ubicaciones privadas fuera del repositorio. Obtener el SHA-256 con `keytool -list -v -keystore amc-release.jks -alias ALIAS`. Si la APK de prueba anterior estaba firmada con debug, Android exige una migración única: confirmar primero que los datos importantes están en el servidor, desinstalar la prueba e instalar la release. No se cambia `com.amc.construcciones`.
+La WebView release sólo carga `BuildConfig.AMC_BACKEND_URL`; enlaces HTTP externos, teléfono, mail y geolocalización salen de la WebView. Los backups Android están deshabilitados para proteger sesiones.
 
-## Publicación y recuperación
+## Respaldo y recuperación
 
-Antes de producción crear un backup de PostgreSQL del proveedor o con `pg_dump`, verificar que el archivo exista y conservar la revisión desplegada anterior. Para volver atrás, desplegar el commit anterior. Restaurar la base sólo si una migración afectó datos y después de detener escrituras; las migraciones de v1.0 son compatibles e idempotentes.
+`secure-backup.mjs` usa AES-256-GCM y valida cada frame. El backup contiene cuentas, documentos, configuración y archivos, pero no restaura sesiones ni dispositivos.
 
-## Instalación
+`backup-supabase.mjs` crea primero un backup cifrado, lo verifica y recién después lo sube a un bucket privado de Supabase Storage. Por defecto conserva 30 días; el valor se controla con `AMC_BACKUP_RETENTION_DAYS`.
 
-- Android: descargar el artifact del workflow, extraer el ZIP e instalar el APK. Ante una firma debug incompatible, usar la migración única descrita arriba.
-- Web: abrir `https://amc-o0xb.onrender.com`.
-- iPhone: abrir esa dirección en Safari, tocar **Compartir** y **Agregar a pantalla de inicio**.
+Nunca restaurar sobre producción con datos. La herramienta de restauración exige una base vacía. Para rollback de código, volver al commit anterior; restaurar base solamente si una migración de datos realmente lo requiere.
 
-Funciones principales: solicitudes, presupuestos, clientes, obras, empleados, chat y fotos, equipos de varios empleados, seguimiento y acceso Android/Web/PWA/iPhone.
+## Publicación
+
+Después de CI verde:
+
+1. disparar manualmente el deploy de Render;
+2. esperar estado `live`;
+3. comprobar `/healthz`;
+4. abrir producción en Chrome y verificar ingreso, navegación y versión;
+5. probar un flujo de negocio breve;
+6. si Android cambió, instalar el APK release generado y verificar notificación, deep-link, cámara y PDF.
