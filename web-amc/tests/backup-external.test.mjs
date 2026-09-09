@@ -10,6 +10,10 @@ test('external backup names are timestamped and the script keeps secrets in envi
  for(const key of ['AMC_SUPABASE_URL','AMC_SUPABASE_SERVICE_ROLE_KEY','AMC_BACKUP_PASSWORD','AMC_BACKUP_BUCKET','AMC_BACKUP_RETENTION_DAYS'])assert.match(source,new RegExp(key));
  assert.match(source,/verifyBackup\(file,config\.password\)/);
  assert.match(source,/createReadStream\(file\)/);
+ assert.match(source,/writeBackupMonitor\(app\.db,\{status:'running'/);
+ assert.match(source,/writeBackupMonitor\(app\.db,\{status:'ok'/);
+ assert.match(source,/writeBackupMonitor\(app\.db,\{status:'failed'/);
+ assert.match(source,/lastSuccessAt:new Date\(\)\.toISOString\(\)/);
  assert.doesNotMatch(source,/console\.log\([^\n]*SERVICE_ROLE/i);
  assert.doesNotMatch(source,/console\.log\([^\n]*BACKUP_PASSWORD/i);
 });
