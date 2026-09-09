@@ -12,7 +12,7 @@ test('one final customer price is sent, documented and carried into the work',as
  assert.match(bridge,/reset-client-price/);
  assert.match(bridge,/const quoteForDocument=q=>\(\{\.\.\.q,total:clientTotal\(q\)\}\)/);
  assert.match(bridge,/total:clientTotal\(draft\)/);
- assert.match(bridge,/quotePdfGeneration\.createAndAttach\(\{quoteId:sent\.id,document:quoteForDocument\(draft\),makePdf,blobToBase64,request\}\)/);
+ assert.match(bridge,/createAndAttach\(\{quoteId:sent\.id,document:quoteForDocument\(draft\),makePdf,blobToBase64,request\}\)/);
  assert.match(generation,/makePdf\(document\)/);
  const origin='http://localhost:4180',app=createApp({dbPath:':memory:',origin});
  app.addUser('admin@total.test','Strong-Admin-2026!','AMC','admin');
