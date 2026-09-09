@@ -6,6 +6,7 @@ permissions:
   contents: write
 jobs:
   refactor:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +25,6 @@ jobs:
           git rm .github/workflows/refactor-quote-pdf-generation-bootstrap.yml .github/scripts/refactor_quote_pdf_generation.py
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add web-amc/public/presupuestos-bridge.js web-amc/public/quote-pdf-generation.js web-amc/server.mjs web-amc/tests/admin-ui.test.mjs
+          git add web-amc/public/presupuestos-bridge.js web-amc/public/quote-pdf-generation.js web-amc/server.mjs web-amc/tests/admin-ui.test.mjs web-amc/tests/final-price-contract.test.mjs web-amc/tests/release-regressions.test.mjs
           git commit -m 'Centralizar generación PDF de presupuestos'
           git push origin HEAD:refactor-quote-pdf-generation-staging
