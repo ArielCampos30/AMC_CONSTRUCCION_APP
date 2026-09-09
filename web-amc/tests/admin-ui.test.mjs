@@ -276,10 +276,12 @@ test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
 });
 
 test('pending PDF can be regenerated and returns to the exact quote',async()=>{
-  const [app,features,bridge]=await Promise.all([
+  const [app,features,bridge,generation,server]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8'),
+    readFile(new URL('../server.mjs',import.meta.url),'utf8')
   ]);
   assert.match(app,/data-action="generate-pdf-admin"/);
   assert.match(app,/features\.generatePdf\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
@@ -292,12 +294,17 @@ test('pending PDF can be regenerated and returns to the exact quote',async()=>{
   assert.match(features,/amc:pdf-error/);
   assert.match(features,/onPdfReady\?\.\(data\)/);
   assert.match(bridge,/async function generatePendingPdf\(quoteId\)/);
-  assert.match(bridge,/makePdf\(quoteForDocument\(draft\)\)/);
-  assert.match(bridge,/\/api\/quotes\/'\+quoteId\+'\/pdf/);
+  assert.match(bridge,/quotePdfGeneration\.createAndAttach/);
+  assert.match(generation,/async function createAndAttach/);
+  assert.match(generation,/makePdf\(document\)/);
+  assert.match(generation,/\/api\/upload/);
+  assert.match(generation,/\/api\/quotes\/'\+quoteId\+'\/pdf/);
+  assert.match(server,/quote-pdf-generation\.js.*presupuestos-bridge\.js/s);
   assert.match(bridge,/type:'amc:pdf-ready'/);
   assert.match(bridge,/No pudimos generar el PDF/);
   assert.match(bridge,/type:'amc:pdf-error'/);
   assert.doesNotMatch(app,/<span>PDF pendiente<\/span>/);
+  assert.equal((bridge.match(/makePdf\(quoteForDocument\(draft\)\)/g)||[]).length,0);
 });
 
 test('admin budget detail opens the exact quote and only one overflow menu stays open',async()=>{
