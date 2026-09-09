@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 
 test('launcher Android usa logo visible y nombre corto',async()=>{
   const [foreground,legacy,round,strings]=await Promise.all([
