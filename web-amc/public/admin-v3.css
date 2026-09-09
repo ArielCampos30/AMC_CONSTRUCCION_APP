@@ -18,3 +18,8 @@ body.admin-v3 .footer-note{padding-bottom:85px}.admin-v3-attention{display:grid;
 .work-admin-real-costs>summary{cursor:pointer;font-weight:750;color:#155b54}.work-admin-real-costs form{margin-top:14px}
 @media(max-width:800px){.work-admin-kpis{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.work-admin-kpis{grid-template-columns:1fr}.work-admin-kpis strong{font-size:20px}}
+
+@media(max-width:430px){
+  .admin-v3-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow:visible;padding-bottom:14px}
+  .admin-v3-chips button{width:100%;white-space:normal;line-height:1.2;padding:8px 10px}
+}
