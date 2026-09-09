@@ -395,3 +395,15 @@ test('notification, refresh and margin UI avoid duplicate work',async()=>{
   assert.match(bridge,/El precio actual alcanza el margen objetivo/);
   assert.match(bridge,/Usar .* como precio final/);
 });
+
+
+test('Respaldos abre una pantalla de sistema y no cae en Inicio',async()=>{
+  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.match(app,/function adminBackups\(\)/);
+  assert.match(app,/page==='respaldos'\)html=adminBackups\(\)/);
+  assert.match(app,/Respaldo automático/);
+  assert.match(app,/03:00 \(hora de Argentina\)/);
+  assert.match(app,/Retención:<\/strong> 30 días/);
+  assert.match(app,/No necesitás descargar, subir ni confirmar nada/);
+  assert.match(app,/Una restauración se hace sólo ante una falla o pérdida real de datos/);
+});
