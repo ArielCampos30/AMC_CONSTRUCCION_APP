@@ -68,3 +68,23 @@ test('notice UI updates counters, visual state and browser notifications without
  assert.doesNotMatch(app,/function applyNoticeRead\(ids=\[\]\)/);
  assert.doesNotMatch(app,/function syncVisibleNotices\(\)/);
 });
+
+
+test('backend de avisos queda modularizado sin duplicar reglas en server',async()=>{
+ const [server,notifications]=await Promise.all([
+  readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../notifications.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(server,/from '.\/notifications\.mjs'/);
+ assert.match(server,/notificationFeatures\(\{db,all,put,origin,now,id/);
+ assert.match(server,/notificationRoutes\(\{p,method,b,user,res\}\)/);
+ assert.match(notifications,/const notify=\(userId,title,body,url='\/#avisos',priority='normal'\)/);
+ assert.match(notifications,/const notifyAdmins=/);
+ assert.match(notifications,/const noticeRouteInfo=/);
+ assert.match(notifications,/const markNoticesForRoute=/);
+ assert.match(notifications,/p==='\/api\/notices\/read'/);
+ assert.match(notifications,/p==='\/api\/notices\/test'/);
+ assert.match(notifications,/p==='\/api\/notices'/);
+ assert.doesNotMatch(server,/const noticeRouteInfo=/);
+ assert.doesNotMatch(server,/p==='\/api\/notices\/read'\)\{/);
+});
