@@ -36,7 +36,12 @@ body.full-chat-page .floating-chat-button{display:none!important}
 #amc-chat-dialog .compact-composer{position:relative;display:grid;grid-template-columns:36px minmax(0,1fr) 40px;align-items:end;gap:4px;padding:8px;margin:0;background:#fff;border-top:1px solid #dce9e5;flex-shrink:0}
 #amc-chat-dialog .compact-composer textarea{box-sizing:border-box;width:100%;height:40px;min-height:40px;max-height:85px;margin:0;padding:10px 12px;font-size:14px;line-height:18px;border-radius:20px;resize:none;background:#f0f5f3}
 #amc-chat-dialog .compact-composer input[type=file]{display:none!important}#amc-chat-dialog .chat-send-icon{width:40px;height:40px;min-height:40px;padding:0;border:0;border-radius:50%;background:#0d6661;color:white;font-size:0}#amc-chat-dialog .chat-send-icon:disabled{opacity:.55}#amc-chat-dialog .chat-send-icon::after{content:'➤';font-size:20px}
-#amc-chat-dialog .chat-photo-preview,#amc-chat-dialog .chat-connection{grid-column:1/-1;grid-row:1;margin:0;max-height:92px;overflow:auto;font-size:11px}#amc-chat-dialog .chat-photo-preview img{width:48px;height:44px}#amc-chat-dialog .chat-photo-preview button{padding:2px 6px;font-size:10px}
+#amc-chat-dialog .chat-photo-preview,#amc-chat-dialog .chat-connection{grid-column:1/-1;margin:0;max-height:92px;overflow:auto;font-size:11px}#amc-chat-dialog .chat-photo-preview img{width:48px;height:44px}#amc-chat-dialog .chat-photo-preview button{padding:2px 6px;font-size:10px}
 #amc-chat-dialog .chat-attach-menu[hidden]{display:none!important}#amc-chat-dialog .chat-attach-menu{position:absolute;bottom:calc(100% + 4px);left:8px;z-index:3;background:white;border:1px solid #c7ddd4;border-radius:12px;box-shadow:0 5px 18px #123c3a25;padding:4px}#amc-chat-dialog .chat-attach-photo{display:flex;align-items:center;gap:9px;min-height:44px;padding:8px 12px;border:0;background:white;color:#155b54;font-size:13px;border-radius:8px}
 #amc-chat-dialog .chat-send-status{grid-column:1/-1;font-size:11px;line-height:1.3;margin:2px 0;color:#155b54;overflow-wrap:anywhere}
+@media(max-width:560px){
+#amc-chat-dialog{width:calc(100vw - 12px);height:min(560px,calc(100dvh - 94px));max-height:calc(100dvh - 94px);margin:auto 6px calc(76px + env(safe-area-inset-bottom)) 6px;border-radius:16px}
+#amc-chat-dialog .message{max-width:84%}
+#amc-chat-dialog .compact-composer{padding:6px}
+}
 `;document.head.append(style);
