@@ -29,7 +29,7 @@ test('Supabase file store uploads, downloads and removes only through the privat
  assert.equal(calls[0].method,'POST');
  assert.equal(calls[0].headers.Authorization,'Bearer sb_secret_test_only');
  assert.equal(calls[0].headers.apikey,'sb_secret_test_only');
- assert.equal(calls[0].headers['x-upsert'],'true');
+ assert.equal(calls[0].headers['x-upsert'],'false');
  const bytes=await store.download('abc-123');
  assert.deepEqual(bytes,download);
  assert.equal(calls[1].url,'https://project.supabase.co/storage/v1/object/authenticated/amc-files/files/abc-123');
