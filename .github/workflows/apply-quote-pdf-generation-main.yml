@@ -1,0 +1,34 @@
+name: AMC Apply PDF Generation Main
+on:
+  push:
+    branches: [refactor-quote-pdf-generation-main]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+          ref: refactor-quote-pdf-generation-main
+          fetch-depth: 0
+      - name: Aplicar exactamente el diff validado en staging
+        run: |
+          git diff origin/staging..origin/refactor-quote-pdf-generation-staging -- web-amc/public/presupuestos-bridge.js web-amc/public/quote-pdf-generation.js web-amc/tests/admin-ui.test.mjs web-amc/tests/final-price-contract.test.mjs web-amc/tests/release-regressions.test.mjs > /tmp/pdf-generation.patch
+          git apply --check /tmp/pdf-generation.patch
+          git apply /tmp/pdf-generation.patch
+      - name: Probar AMC
+        working-directory: web-amc
+        run: |
+          npm ci --ignore-scripts
+          npm test
+      - name: Guardar cambio limpio
+        run: |
+          git rm .github/workflows/apply-quote-pdf-generation-main.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add web-amc/public/presupuestos-bridge.js web-amc/public/quote-pdf-generation.js web-amc/tests/admin-ui.test.mjs web-amc/tests/final-price-contract.test.mjs web-amc/tests/release-regressions.test.mjs
+          git commit -m 'Centralizar generación PDF de presupuestos'
+          git push origin HEAD:refactor-quote-pdf-generation-main
