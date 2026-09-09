@@ -9,6 +9,7 @@ const origin='http://localhost:4180';
 test('estimator comparison is explicit and integrated AMC notices avoid duplicate push',()=>{
   const html=read('../private/presupuestos-original.html');
   const app=read('../public/app.js');
+  const notices=read('../public/notice-ui.js');
   const index=read('../public/index.html');
   const sw=read('../public/sw.js');
   const bridge=read('../public/presupuestos-bridge.js');
@@ -19,8 +20,8 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   assert.match(html,/Herramientas:/);
   assert.match(html,/Otros costos:/);
   assert.match(html,/Agregar esta opción al presupuesto/);
-  assert.match(app,/function showInternalNotice/);
-  assert.match(app,/notice\.priority==='normal'/);
+  assert.match(notices,/function showInternal\(notice\)/);
+  assert.match(notices,/notice\.priority==='normal'/);
   assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)/);
   assert.match(app,/selectedId\?q\.id===selectedId:match\(q\)/);
   assert.match(app,/page\.startsWith\('chat-admin\/'\)/);
