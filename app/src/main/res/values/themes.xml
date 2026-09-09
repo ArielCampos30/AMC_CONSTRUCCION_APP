@@ -1,9 +1,10 @@
 <resources>
     <style name="Theme.AMC" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#0F3F74</item>
-        <item name="android:navigationBarColor">#0F3F74</item>
-        <item name="android:statusBarColor">#0F3F74</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorAccent">#0B675F</item>
+        <item name="android:navigationBarColor">#F3F8F6</item>
+        <item name="android:statusBarColor">#F3F8F6</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>
