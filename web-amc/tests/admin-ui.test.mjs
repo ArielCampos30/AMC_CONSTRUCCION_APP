@@ -221,12 +221,13 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
 });
 
 test('mutating actions use one shared spinner without floating loading messages',async()=>{
-  const [app,bridge,index,server,busy]=await Promise.all([
+  const [app,bridge,index,server,busy,pdf]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/index.html',import.meta.url),'utf8'),
     readFile(new URL('../server.mjs',import.meta.url),'utf8'),
-    readFile(new URL('../public/amc-busy.js',import.meta.url),'utf8')
+    readFile(new URL('../public/amc-busy.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-pdf-actions.js',import.meta.url),'utf8')
   ]);
   assert.match(index,/amc-busy\.js/);
   assert.match(server,/amc-busy\.js/);
@@ -249,24 +250,29 @@ test('mutating actions use one shared spinner without floating loading messages'
   assert.doesNotMatch(app,/dataset\.busy/);
   assert.match(app,/toast\('Se creó la obra\.'\)/);
   assert.match(bridge,/Se creó la obra\./);
-  assert.equal((app.match(/\bfetch\(/g)||[]).length,2);
+  assert.equal((app.match(/\bfetch\(/g)||[]).length+(pdf.match(/\bfetch\(/g)||[]).length,2);
   assert.equal((bridge.match(/\bfetch\(/g)||[]).length,1);
 });
 
 test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
-  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
-  assert.match(app,/function pdfFileName\(q\)/);
-  assert.match(app,/async function pdfBlob\(q\)/);
-  assert.match(app,/async function downloadQuotePdf\(q\)/);
-  assert.match(app,/async function shareQuotePdf\(q\)/);
-  assert.match(app,/new File\(\[blob\],name,\{type:'application\/pdf'\}\)/);
-  assert.match(app,/navigator\.canShare\?\.\(\{files:\[file\]\}\)/);
-  assert.match(app,/navigator\.share\(\{title:'Presupuesto AMC',text:q\?\.number\|\|'Presupuesto AMC',files:\[file\]\}\)/);
-  assert.match(app,/window\.AMCNative\?\.savePdf/);
+  const [app,pdf]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-pdf-actions.js',import.meta.url),'utf8')
+  ]);
+  assert.match(app,/from '.\/quote-pdf-actions\.js'/);
+  assert.match(pdf,/function pdfFileName\(q\)/);
+  assert.match(pdf,/async function pdfBlob\(q\)/);
+  assert.match(pdf,/export async function downloadQuotePdf\(q\)/);
+  assert.match(pdf,/export async function shareQuotePdf\(q\)/);
+  assert.match(pdf,/new File\(\[blob\],name,\{type:'application\/pdf'\}\)/);
+  assert.match(pdf,/navigator\.canShare\?\.\(\{files:\[file\]\}\)/);
+  assert.match(pdf,/navigator\.share\(\{title:'Presupuesto AMC',text:q\?\.number\|\|'Presupuesto AMC',files:\[file\]\}\)/);
+  assert.match(pdf,/window\.AMCNative\?\.savePdf/);
   assert.match(app,/data-action="download-pdf-admin"/);
   assert.match(app,/data-action="download-quote-pdf"/);
-  assert.doesNotMatch(app,/navigator\.share\(\{title:'Presupuesto AMC',url/);
-  assert.doesNotMatch(app,/Enlace al PDF copiado/);
+  assert.doesNotMatch(pdf,/navigator\.share\(\{title:'Presupuesto AMC',url/);
+  assert.doesNotMatch(pdf,/Enlace al PDF copiado/);
+  assert.doesNotMatch(app,/function pdfFileName\(q\)/);
 });
 
 test('pending PDF can be regenerated and returns to the exact quote',async()=>{
