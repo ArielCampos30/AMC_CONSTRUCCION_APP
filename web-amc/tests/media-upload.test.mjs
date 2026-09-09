@@ -52,3 +52,23 @@ test('almacenamiento de media queda modularizado sin duplicar upload y GC en ser
  assert.doesNotMatch(server,/const safeFile=\(user,key,mime\)=>/);
  assert.doesNotMatch(server,/const cleanupOrphanFiles=async/);
 });
+
+
+test('acceso y serving de media quedan modularizados sin duplicar reglas en server',async()=>{
+ const [server,access]=await Promise.all([
+  readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../media-access.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(server,/from '.\/media-access\.mjs'/);
+ assert.match(server,/mediaAccessFeatures\(\{db,all,objectStore,planning,team,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail\}\)/);
+ assert.match(server,/mediaAccess\.serve\(\{user,p,method,req,res\}\)/);
+ assert.match(access,/const canAccessPrivateFile=/);
+ assert.match(access,/const serve=async/);
+ assert.match(access,/planning\.publicMedia\(p\)/);
+ assert.match(access,/objectStore\.download/);
+ assert.match(access,/if-none-match/);
+ assert.match(access,/Content-Disposition/);
+ assert.match(access,/Archivo no encontrado/);
+ assert.doesNotMatch(server,/const canAccessPrivateFile=\(user,p,file\)=>/);
+ assert.doesNotMatch(server,/objectStore\.download\(wantsThumb\?key\+'-thumb':key\)/);
+});
