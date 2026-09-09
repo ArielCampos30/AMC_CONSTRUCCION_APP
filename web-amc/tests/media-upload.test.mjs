@@ -72,3 +72,19 @@ test('acceso y serving de media quedan modularizados sin duplicar reglas en serv
  assert.doesNotMatch(server,/const canAccessPrivateFile=\(user,p,file\)=>/);
  assert.doesNotMatch(server,/objectStore\.download\(wantsThumb\?key\+'-thumb':key\)/);
 });
+
+
+test('parser multipart queda modularizado sin duplicar implementación en server',async()=>{
+ const [server,parser]=await Promise.all([
+  readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../media-upload-parser.mjs',import.meta.url),'utf8')
+ ]);
+ assert.match(server,/from '.\/media-upload-parser\.mjs'/);
+ assert.match(server,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
+ assert.match(parser,/export function createMediaUploadParser/);
+ assert.match(parser,/boundary=/);
+ assert.match(parser,/7\*1024\*1024/);
+ assert.match(parser,/thumbnail/);
+ assert.match(parser,/No se recibió la foto/);
+ assert.doesNotMatch(server,/const readMultipart=async req=>/);
+});
