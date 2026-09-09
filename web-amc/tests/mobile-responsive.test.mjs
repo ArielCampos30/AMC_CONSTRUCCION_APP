@@ -11,5 +11,6 @@ test('filtros admin y chat se adaptan a pantallas angostas',async()=>{
   assert.match(admin,/\.admin-v3-chips button\{width:100%;white-space:normal/);
   assert.doesNotMatch(float,/chat-photo-preview,#amc-chat-dialog \.chat-connection\{grid-column:1\/-1;grid-row:1/);
   assert.match(float,/@media\(max-width:560px\)[\s\S]*#amc-chat-dialog\{width:calc\(100vw - 12px\)/);
-  assert.match(float,/height:min\(560px,calc\(100dvh - 94px\)\)/);
+  assert.match(float,/height:min\(430px,58dvh\)/);
+  assert.match(float,/max-height:58dvh/);
 });
