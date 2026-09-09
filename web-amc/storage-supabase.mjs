@@ -36,7 +36,7 @@ export function createSupabaseFileStore({env=process.env,fetchImpl=globalThis.fe
    const body=Buffer.isBuffer(bytes)?bytes:Buffer.from(bytes);
    await request(objectUrl(id),{
     method:'POST',
-    headers:{...authHeaders(config),'Content-Type':mime,'Content-Length':String(body.length),'cache-control':'no-cache','x-upsert':'true'},
+    headers:{...authHeaders(config),'Content-Type':mime,'Content-Length':String(body.length),'cache-control':'no-cache','x-upsert':'false'},
     body
    },'No pudimos guardar el archivo en el almacenamiento externo.');
    return true;
