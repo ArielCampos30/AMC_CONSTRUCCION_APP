@@ -1,7 +1,7 @@
 import json, os, time, urllib.request
 
 DRIVER="http://127.0.0.1:9515"
-BASE="http://127.0.0.1:4180"
+BASE="http://localhost:4180"
 
 def call(method,path,payload=None):
     data=None if payload is None else json.dumps(payload).encode()
