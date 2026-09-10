@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createCommunityUI} from '../public/community-ui.js';
 
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const date=value=>value||'';
 const heading=(tag,title,body='')=>`<header><b>${tag}</b><h1>${title}</h1><p>${body}</p></header>`;
 const options=(items,value)=>items.map(item=>`<option ${item===value?'selected':''}>${item}</option>`).join('');
