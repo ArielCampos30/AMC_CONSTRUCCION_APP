@@ -11,6 +11,7 @@ import {adminUtilityRoutes} from './admin-utility-routes.mjs';
 import {profileRoutes} from './profile-routes.mjs';
 import {mediaUploadRoutes} from './media-upload-routes.mjs';
 import {deviceRoutes} from './device-routes.mjs';
+import {publicSystemRoutes} from './public-system-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -88,6 +89,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleProfile=profileRoutes({db,put,send,fail,text});
  const handleMediaUpload=mediaUploadRoutes({mediaStorage,send});
  const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
+ const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,startedAt,demo,keys,services,send});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -104,8 +106,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
   try{
    if(!['GET','HEAD'].includes(method)){if(req.headers.origin!==origin)fail(403,'Origen no permitido.');if(!['/api/login','/api/register','/api/forgot-password','/api/reset-password'].includes(p)&&(!session||req.headers['x-csrf-token']!==session.csrf))fail(403,'Sesión vencida. Volvé a ingresar.');}
    if(['/api/forgot-password','/api/reset-password'].includes(p)){if(method!=='POST')fail(405,'Método no permitido.');checkRate(req.socket.remoteAddress+':recovery',8);const b=await readBody(req);if(await recovery.route({p,method,b,user,res}))return;}
-   if((p==='/health'||p==='/healthz')&&method==='GET'){const before=Date.now();db.prepare('SELECT 1 AS ok').get();return send(res,200,{ok:true,database:'available',driver:remoteUrl?'postgresql':'sqlite',databaseMs:Date.now()-before,version,errors5xx15m:recentErrorCount(),...backupHealth(),uptimeSeconds:Math.floor((Date.now()-startedAt)/1000)});}
-   if(p==='/api/config')return send(res,200,{demo,webPushKey:keys.publicKey,services,version});
+   if(handlePublicSystem({p,method,res}))return;
    if(await authentication.handlePublic({p,method,req,res}))return;
    if(handleState({p,method,user,session,res}))return;
    if(await mediaAccess.serve({user,p,method,req,res}))return;
