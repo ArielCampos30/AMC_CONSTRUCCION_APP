@@ -10,8 +10,8 @@ export function staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fai
   try{staticResponse(req,res,file);}catch{send(res,404,{error:'No encontrado.'});}
   return true;
  };
- const serveFallback=({req,res,p,method})=>{
-  if(method!=='GET'&&method!=='HEAD')fail(405,'Método no permitido.');
+ const requirePageMethod=method=>{if(method!=='GET'&&method!=='HEAD')fail(405,'Método no permitido.');};
+ const serveFallback=({res,p,method})=>{
   const file=resolveFile(p);
   if(!insidePublic(file))fail(404,'No encontrado.');
   try{
@@ -21,5 +21,5 @@ export function staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fai
   }catch{fail(404,'No encontrado.');}
   return true;
  };
- return {serveEarly,serveFallback};
+ return {serveEarly,requirePageMethod,serveFallback};
 }
