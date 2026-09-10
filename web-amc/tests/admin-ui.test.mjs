@@ -286,10 +286,11 @@ test('mutating actions use one shared spinner without floating loading messages'
 });
 
 test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
-  const [app,pdf,quotesUI]=await Promise.all([
+  const [app,pdf,quotesUI,clientQuotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/quote-pdf-actions.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/client-quotes-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(app,/from '.\/quote-pdf-actions\.js'/);
   assert.match(pdf,/function pdfFileName\(q\)/);
@@ -302,7 +303,7 @@ test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
   assert.match(pdf,/window\.AMCNative\?\.savePdf/);
   assert.match(quotesUI,/data-action="download-pdf-admin"/);
   assert.match(quotesUI,/data-action="share-pdf-admin"/);
-  assert.match(app,/data-action="download-quote-pdf"/);
+  assert.match(clientQuotesUI,/data-action="download-quote-pdf"/);
   assert.doesNotMatch(pdf,/navigator\.share\(\{title:'Presupuesto AMC',url/);
   assert.doesNotMatch(pdf,/Enlace al PDF copiado/);
   assert.doesNotMatch(app,/function pdfFileName\(q\)/);
