@@ -84,7 +84,8 @@ test('server authorization isolates tenants, employee assignments, staff chat an
   await employeeB.call(staffPhoto.url,undefined,404);await clientA.call(staffPhoto.url,undefined,404);
 
   const adminState=await admin.call('/api/state');
-  assert.equal(adminState.requests.length,2);assert.equal(adminState.quotes.length,2);assert.equal(adminState.works.length,2);assert.equal(adminState.clients.length,2);
+  assert.equal(adminState.requests.length,2);assert.equal(adminState.quotes.length,2);assert.equal(adminState.works.length,2);assert.equal(adminState.clients.length,0);
+  assert.equal(adminState.agendaClients.filter(x=>x.hasAccount!==0).length,2);
   assert.ok(adminState.works.some(x=>x.id===workB.id));
  }finally{await close();}
 });
