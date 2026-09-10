@@ -30,5 +30,5 @@ test('server delega primitivas base sin duplicarlas',async()=>{
  assert.doesNotMatch(server,/id=\(\)=>randomUUID\(\)/);
  assert.doesNotMatch(server,/createHash\('sha256'\)/);
  assert.doesNotMatch(server,/const fail=\(status,message\)=>/);
- assert.match(server,/import \{randomBytes\} from 'node:crypto'/);
+ assert.doesNotMatch(server,/randomBytes/);
 });
