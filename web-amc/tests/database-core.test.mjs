@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID,createHash} from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import {createDatabaseCore} from '../database-core.mjs';
 
 const id=()=>randomUUID();
@@ -45,4 +46,15 @@ test('database transaction rolls back atomically',()=>{
   assert.throws(()=>core.transaction(()=>{core.put('post','',{id:'rollback',title:'No guardar'});throw Error('stop');}),/stop/);
   assert.equal(core.all('post').some(p=>p.id==='rollback'),false);
  }finally{core.db.close();}
+});
+
+test('server delegates database initialization and migrations to database core',async()=>{
+ const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(server,/from '.\/database-core\.mjs'/);
+ assert.match(server,/createDatabaseCore\(\{dbPath,id,sha,now,fail\}\)/);
+ assert.match(server,/beginStateSnapshot\(\)/);
+ assert.match(server,/endStateSnapshot\(\)/);
+ assert.doesNotMatch(server,/CREATE TABLE IF NOT EXISTS users/);
+ assert.doesNotMatch(server,/const migrateRelations=/);
+ assert.doesNotMatch(server,/const migrateCompletion=/);
 });
