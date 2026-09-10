@@ -27,13 +27,13 @@ test('admin two-factor setup, TOTP login and one-use recovery codes work end to 
   const admin=actor(base);
   await admin.call('/api/login',{email:'owner-2fa@amc.test',password:'Strong-Owner-2026!'});
   let state=await admin.call('/api/state');
-  assert.deepEqual(state.twoFactor,{available:true,enabled:false,pending:false});
+  assert.deepEqual(state.twoFactor,{});
+  assert.deepEqual(await admin.call('/api/admin/2fa/status'),{available:true,enabled:false,pending:false});
 
   const setup=await admin.call('/api/admin/2fa/setup',{password:'Strong-Owner-2026!'});
   assert.match(setup.secret,/^[A-Z2-7]+$/);
   assert.match(setup.uri,/^otpauth:\/\/totp\//);
-  state=await admin.call('/api/state');
-  assert.equal(state.twoFactor.pending,true);
+  assert.equal((await admin.call('/api/admin/2fa/status')).pending,true);
 
   const enabled=await admin.call('/api/admin/2fa/enable',{code:totpCode(setup.secret)});
   assert.equal(enabled.ok,true);
@@ -47,7 +47,8 @@ test('admin two-factor setup, TOTP login and one-use recovery codes work end to 
 
   await admin.call('/api/login',{email:'owner-2fa@amc.test',password:'Strong-Owner-2026!',code:totpCode(setup.secret)});
   state=await admin.call('/api/state');
-  assert.equal(state.twoFactor.enabled,true);
+  assert.deepEqual(state.twoFactor,{});
+  assert.equal((await admin.call('/api/admin/2fa/status')).enabled,true);
 
   await admin.call('/api/logout',{});
   admin.cookie='';admin.csrf='';
@@ -69,9 +70,11 @@ test('two-factor remains optional for non-admin accounts and reports unavailable
  const base='http://127.0.0.1:'+app.server.address().port;
  try{
   const admin=actor(base);await admin.call('/api/login',{email:'owner-no-2fa@amc.test',password:'Strong-Owner-2026!'});
-  assert.equal((await admin.call('/api/state')).twoFactor.available,false);
+  assert.deepEqual((await admin.call('/api/state')).twoFactor,{});
+  assert.equal((await admin.call('/api/admin/2fa/status')).available,false);
   const client=actor(base);await client.call('/api/login',{email:'client-no-2fa@amc.test',password:'Client-Strong-2026!'});
   assert.equal((await client.call('/api/state')).user.role,'client');
+  await client.call('/api/admin/2fa/status',undefined,403);
  }finally{
   await new Promise(resolve=>app.server.close(resolve));
  }
