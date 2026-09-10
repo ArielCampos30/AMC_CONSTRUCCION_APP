@@ -23,6 +23,8 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   assert.match(html,/Agregar esta opción al presupuesto/);
   assert.match(notices,/function showInternal\(notice\)/);
   assert.match(notices,/notice\.priority==='normal'/);
+  assert.doesNotMatch(app,/function oldRequestDetail\(\)/);
+  assert.match(app,/function requestDetail\(\)\{return state\.user\?hub\.detail\(page\.slice\(10\)\):auth\(\);\}/);
   assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)/);
   assert.match(quotesUI,/selectedId\?quote\.id===selectedId:match\(quote\)/);
   assert.match(app,/page\.startsWith\('chat-admin\/'\)/);
