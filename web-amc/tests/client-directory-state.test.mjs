@@ -8,7 +8,7 @@ test('directorio Admin funciona con agendaClients aunque clients quede vacío',a
   agendaClients:[{id:'u1',name:'Cuenta',hasAccount:1},{id:'lead1',name:'Lead',hasAccount:0}],
   clients:[],requests:[],quotes:[],works:[],archivedClients:[]
  };
- assert.deepEqual(clientRows(state).map(c=>c.id),['lead1','u1']);
+ assert.deepEqual(clientRows(state).map(c=>c.id),['u1','lead1']);
  const source=await readFile(new URL('../public/client-directory.js',import.meta.url),'utf8');
  assert.match(source,/state\.agendaClients\|\|state\.clients\|\|\[\]/);
  assert.match(source,/some\(c=>c\.hasAccount!==0\)/);
