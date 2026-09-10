@@ -18,6 +18,9 @@ export function communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmi
   if(method==='POST'&&/^\/api\/reviews\/[^/]+\/approve$/.test(p)){
    requireAdmin(user);const review=get('review',p.split('/')[3]);put('review',review.userId,{...review,approved:true});send(res,200,{ok:true});return true;
   }
+  if(method==='GET'&&p==='/api/referrals'){
+   send(res,200,{referrals:all('referral',user.id)});return true;
+  }
   if(method==='POST'&&p==='/api/referrals'){
    if(!text(b.name))fail(400,'Ingresá un nombre.');put('referral',user.id,{id:id(),name:text(b.name),note:text(b.note,1000),date:now()});send(res,201,{ok:true});return true;
   }
