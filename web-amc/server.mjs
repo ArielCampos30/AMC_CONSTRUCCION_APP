@@ -12,6 +12,7 @@ import {profileRoutes} from './profile-routes.mjs';
 import {mediaUploadRoutes} from './media-upload-routes.mjs';
 import {deviceRoutes} from './device-routes.mjs';
 import {publicSystemRoutes} from './public-system-routes.mjs';
+import {estimatorPageRoutes} from './estimator-page-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -90,6 +91,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleMediaUpload=mediaUploadRoutes({mediaStorage,send});
  const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
  const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,startedAt,demo,keys,services,send});
+ const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -135,7 +137,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     fail(404,'Acción no encontrada.');
    }
    if(method!=='GET'&&method!=='HEAD')fail(405,'Método no permitido.');
-   if(p==='/presupuestos'){if(!user){res.writeHead(302,{Location:'/#ingresar'});return res.end();}requireAdmin(user);let html=readFileSync(path.join(ROOT,'private/presupuestos-original.html'),'utf8');const saved=all('estimator',user.id)[0]||null;const bootstrap=JSON.stringify({saved,csrf:session.csrf}).replaceAll('<','\\u003c');html=html.replace('<head>','<head><script>window.AMCStored='+bootstrap+';</script>');html=html.replace('</body>','<script src="/amc-busy.js"></script><script src="/amc-confirm.js"></script><script src="/pdf-logo.js"></script><script src="/estimator-sync.js"></script><script src="/presupuestos-bridge.js"></script><script src="/estimator-steps.js"></script></body>');res.setHeader('Content-Type','text/html; charset=utf-8');return res.end(html);}
+   if(handleEstimatorPage({p,method,user,session,res}))return;
    const file=path.resolve(ROOT,'public','.'+(p==='/'?'/index.html':p));if(!file.startsWith(path.join(ROOT,'public')+path.sep))fail(404,'No encontrado.');try{const bytes=readFileSync(file);res.setHeader('Content-Type',({'html':'text/html; charset=utf-8','js':'text/javascript; charset=utf-8','css':'text/css; charset=utf-8','jpg':'image/jpeg','png':'image/png','svg':'image/svg+xml','webp':'image/webp','webmanifest':'application/manifest+json'})[file.split('.').pop()]||'application/octet-stream');res.end(method==='HEAD'?undefined:bytes);}catch{fail(404,'No encontrado.');}
   }catch(e){if((!e.status||e.status>=500)&&process.env.NODE_ENV!=='test')console.error(JSON.stringify({level:'error',requestId:req.amcRequestId||'',method:req.method,path:p,status:e.status||500,error:e.code||e.name||'Error'}));else if(process.env.NODE_ENV==='test'&&!e.status)console.error(e);if(!res.headersSent)send(res,e.status||500,{error:e.status?e.message:'Ocurrió un error. Intentá nuevamente.',...(e.requiresTwoFactor?{requiresTwoFactor:true}:{})});else res.end();}
  }
