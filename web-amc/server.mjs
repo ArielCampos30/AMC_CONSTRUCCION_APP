@@ -1,4 +1,5 @@
 import {staticResponse} from './static-response.mjs';
+import {applyHttpSecurity} from './http-security.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
 import {closureFeatures} from './closure.mjs';
@@ -93,16 +94,8 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,startedAt,demo,keys,services,send});
  const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
  async function handle(req,res){
-  const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
-  if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
-  res.setHeader('Cache-Control','no-store');
-  res.setHeader('X-Content-Type-Options','nosniff');
-  res.setHeader('Referrer-Policy','same-origin');
-  res.setHeader('X-Frame-Options','SAMEORIGIN');
-  res.setHeader('Cross-Origin-Opener-Policy','same-origin-allow-popups');
-  res.setHeader('Cross-Origin-Resource-Policy','same-origin');
-  res.setHeader('Permissions-Policy','camera=(self), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()');
-  res.setHeader('Content-Security-Policy',estimatorPage?"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; worker-src 'self'; manifest-src 'self'":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; worker-src 'self'; manifest-src 'self'");
+  const url=new URL(req.url,origin),p=url.pathname,method=req.method;
+  applyHttpSecurity({res,origin,pathname:p});
   if(['GET','HEAD'].includes(method)&&(p==='/'||/\.(?:js|css|png|jpg|webp|svg|webmanifest|html|txt|xml)$/.test(p))&&!p.startsWith('/api/')&&!p.startsWith('/media/')){const file=path.resolve(ROOT,'public','.'+(p==='/'?'/index.html':p));if(!file.startsWith(path.join(ROOT,'public')+path.sep))return send(res,404,{error:'No encontrado.'});try{return staticResponse(req,res,file);}catch{return send(res,404,{error:'No encontrado.'});}}
   const {session,user}=authentication.resolve(req);
   try{
