@@ -25,6 +25,8 @@ test('chat móvil conserva el compositor, sigue al teclado y evita avisos del hi
  assert.match(confirm,/position:fixed;inset:0;margin:auto/);
  assert.match(confirm,/@media\(max-width:560px\)/);
  assert.match(manifest,/android:windowSoftInputMode="adjustResize"/);
+ assert.doesNotMatch(activity,/setOnApplyWindowInsetsListener/);
+ assert.doesNotMatch(activity,/WindowInsetsCompat/);
  assert.match(activity,/putBoolean\("foreground",true\)/);
  assert.match(activity,/refreshPushToken\(\)/);
  assert.match(activity,/setActiveChatRoute\(String route\)/);
