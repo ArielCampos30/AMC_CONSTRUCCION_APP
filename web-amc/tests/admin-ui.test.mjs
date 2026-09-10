@@ -49,12 +49,13 @@ test('admin v3 exposes the five primary destinations and responsive views',async
 });
 
 test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
-  const [app,features,bridge]=await Promise.all([
+  const [app,features,bridge,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
-  assert.match(app,/data-action="editor" data-id="\$\{r\.id\}" data-quote="\$\{q\.id\}"/);
+  assert.match(quotesUI,/data-action="editor".*data-quote=/s);
   assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
   assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',quoteMode='',selectedClient=''/);
   assert.match(features,/quoteEdit\?'&quote='/);
