@@ -90,13 +90,14 @@ test('request detail changes quote actions after a quote exists',async()=>{
 });
 
 test('admin edits clients and employees with AMC dialogs instead of browser confirms',async()=>{
-  const [app,directory,team,bridge,index,server,clientRequests,features,planning,closure,clientDialogs]=await Promise.all([
+  const [app,directory,team,bridge,index,server,estimatorPage,clientRequests,features,planning,closure,clientDialogs]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
     readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/index.html',import.meta.url),'utf8'),
     readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../estimator-page-routes.mjs',import.meta.url),'utf8'),
     readFile(new URL('../client-requests.mjs',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
@@ -112,7 +113,7 @@ test('admin edits clients and employees with AMC dialogs instead of browser conf
   assert.match(server,/clientRequestFeatures/);
   assert.match(team,/Editar empleado/);
   assert.match(index,/amc-confirm\.js/);
-  assert.match(server,/amc-confirm\.js/);
+  assert.match(estimatorPage,/amc-confirm\.js/);
   for(const source of [app,team,bridge,features,planning,closure]){
     assert.doesNotMatch(source,/\bconfirm\(/);
     assert.match(source,/AMCConfirm/);
@@ -258,16 +259,17 @@ test('suggested price and visibility refresh preserve the active estimator',asyn
 });
 
 test('mutating actions use one shared spinner without floating loading messages',async()=>{
-  const [app,bridge,index,server,busy,pdf]=await Promise.all([
+  const [app,bridge,index,server,estimatorPage,busy,pdf]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/index.html',import.meta.url),'utf8'),
     readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../estimator-page-routes.mjs',import.meta.url),'utf8'),
     readFile(new URL('../public/amc-busy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/quote-pdf-actions.js',import.meta.url),'utf8')
   ]);
   assert.match(index,/amc-busy\.js/);
-  assert.match(server,/amc-busy\.js/);
+  assert.match(estimatorPage,/amc-busy\.js/);
   assert.match(app,/window\.AMCBusy\?\.start\(\)/);
   assert.match(app,/window\.AMCBusy\?\.stop\(\)/);
   assert.match(bridge,/window\.AMCBusy\?\.start\(\)/);
