@@ -114,9 +114,10 @@ test('WhatsApp externo normaliza números argentinos',()=>{
 test('PDF pendiente conserva el presupuesto y permite reintento explícito',()=>{
   const bridge=read('../public/presupuestos-bridge.js');
   const app=read('../public/app.js');
+  const quotesUI=read('../public/admin-quotes-ui.js');
   assert.match(bridge,/storedQuote\.pdfPending=false/);
   assert.match(bridge,/El presupuesto sigue guardado\. El PDF no se pudo generar\./);
-  assert.match(app,/Generar PDF/);
+  assert.match(quotesUI,/Generar PDF/);
 });
 
 test('guardar o enviar usa el precio comercial automático o editado',()=>{
@@ -150,7 +151,8 @@ test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
     '../public/floating-chat.js',
     '../public/team-ui.js',
     '../public/amc-busy.js',
-    '../public/app.js'
+    '../public/app.js',
+    '../public/admin-quotes-ui.js'
   ]){
     execFileSync(process.execPath,['--check',fileURLToPath(new URL(path,import.meta.url))]);
   }

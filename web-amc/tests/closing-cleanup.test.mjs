@@ -13,6 +13,7 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   const index=read('../public/index.html');
   const sw=read('../public/sw.js');
   const bridge=read('../public/presupuestos-bridge.js');
+  const quotesUI=read('../public/admin-quotes-ui.js');
   assert.match(html,/Elegir estimación/);
   assert.match(html,/Precio base del trabajo:/);
   assert.match(html,/Movilidad:/);
@@ -23,7 +24,7 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   assert.match(notices,/function showInternal\(notice\)/);
   assert.match(notices,/notice\.priority==='normal'/);
   assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)/);
-  assert.match(app,/selectedId\?q\.id===selectedId:match\(q\)/);
+  assert.match(quotesUI,/selectedId\?quote\.id===selectedId:match\(quote\)/);
   assert.match(app,/page\.startsWith\('chat-admin\/'\)/);
   assert.match(app,/page\.startsWith\('chat-equipo\/'\)/);
   assert.match(index,/aria-live="assertive"/);
