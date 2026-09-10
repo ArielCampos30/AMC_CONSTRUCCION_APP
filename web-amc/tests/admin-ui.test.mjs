@@ -386,12 +386,13 @@ test('calendar programming uses clear labels and returns to the exact work',asyn
 });
 
 test('work date and team assignment use one clear source of truth',async()=>{
-  const [app,planning,teamServer,teamUi,worksUI]=await Promise.all([
+  const [app,planning,teamServer,teamUi,worksUI,teamDialogUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../team.mjs',import.meta.url),'utf8'),
     readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-team-dialog-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(planning,/Equipo de trabajo:.*se administra desde la ficha de la obra/s);
   assert.match(planning,/active=\(s\.calendarBookings\|\|\[\]\)\.filter\(b=>b\.workId===w\.id/);
@@ -400,10 +401,13 @@ test('work date and team assignment use one clear source of truth',async()=>{
   assert.match(worksUI,/Equipo de esta obra/);
   assert.match(worksUI,/team\.length\?'Editar equipo':'Asignar equipo'/);
   assert.match(app,/Primero programá y confirmá la fecha de la obra/);
-  assert.match(app,/actualMap=new Map\(actual\.map/);
-  assert.match(app,/Inicio programado:/);
-  assert.match(app,/Si necesitás cambiar la fecha, usá Reprogramar/);
-  const teamDialog=app.slice(app.indexOf('function openAssignTeamDialog'),app.indexOf('function openLinkClientDialog'));assert.doesNotMatch(teamDialog,/field\('Fecha/);
+  assert.match(teamDialogUI,/actualMap=new Map\(actual\.map/);
+  assert.match(teamDialogUI,/Inicio programado:/);
+  assert.match(teamDialogUI,/Si necesitás cambiar la fecha, usá Reprogramar/);
+  assert.doesNotMatch(teamDialogUI,/field\('Fecha/);
+  assert.match(app,/from '.\/admin-team-dialog-ui\.js'/);
+  assert.match(app,/const openAssignTeamDialog=workId=>adminTeamDialog\.open\(workId\)/);
+  assert.doesNotMatch(app,/function openAssignTeamDialog\(/);
   assert.match(teamServer,/function workAssignments\(work\)/);
   assert.match(teamServer,/if\(!work\.start\)fail\(409,'Primero programá y confirmá la fecha de la obra/);
   assert.match(teamServer,/calendarBooking.*teamIds:rows\.map/s);
