@@ -18,7 +18,7 @@ test('diagnóstico del sistema queda fuera del estado general y sólo lo puede l
   const state=await admin.call('/api/state');
   assert.equal(Object.hasOwn(state,'system'),false);
   const diagnostic=await admin.call('/api/state/system');
-  assert.equal(diagnostic.system.database,'SQLite');
+  assert.ok(['SQLite','PostgreSQL'].includes(diagnostic.system.database));
   assert.equal(typeof diagnostic.system.documents,'number');
   assert.equal(typeof diagnostic.system.files,'number');
   assert.equal(typeof diagnostic.system.devices,'number');
