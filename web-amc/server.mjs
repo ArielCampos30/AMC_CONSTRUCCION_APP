@@ -6,6 +6,7 @@ import {fieldworkFeatures} from './fieldwork.mjs';
 import {quoteLifecycle} from './quote-lifecycle.mjs';
 import {quoteWorkRoutes} from './quote-work-routes.mjs';
 import {stateRoutes} from './state-routes.mjs';
+import {communityRoutes} from './community-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -78,6 +79,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleQuoteWork=quoteWorkRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,optionalAmount,validDate,now,id,sha,lifecycle});
  const handleFeature=featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning,markNoticesForRoute});
  const handleState=stateRoutes({db,all,userView,chatSummary,planning,services,serviceCatalog,team,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
+ const handleCommunity=communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmins,send,fail,text,services,now,id});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -118,13 +120,8 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(authentication.logout({p,method,user,session,b,res}))return;
     if(method==='POST'&&p==='/api/profile'){if(!text(b.name))fail(400,'El nombre es obligatorio.');db.prepare('UPDATE users SET name=?,phone=?,town=?,sound=? WHERE id=?').run(text(b.name),text(b.phone),text(b.town),b.sound?1:0,user.id);if(user.role==='client')put('clientProfile',user.id,{id:'profile-'+user.id,userId:user.id,address:text(b.address,500)});return send(res,200,{ok:true});}
     if(method==='POST'&&p==='/api/upload')return send(res,201,await mediaStorage.upload(user,b));
-    if(method==='POST'&&p==='/api/favorites'){get('post',b.postId);const key=user.id+':'+b.postId;const old=db.prepare('SELECT id FROM docs WHERE id=?').get(key);if(old)db.prepare('DELETE FROM docs WHERE id=?').run(key);else put('favorite',user.id,{id:key,postId:b.postId});return send(res,200,{ok:true});}
     if(await handleQuoteWork({p,method,b,user,res}))return;
-    if(method==='POST'&&p==='/api/posts'){requireAdmin(user);if(!text(b.title)||!text(b.description)||!text(b.town)||!services.includes(b.service))fail(400,'Completá la publicación.');const image=safeFile(user,b.photoId,'image/'),before=b.beforeId?safeFile(user,b.beforeId,'image/'):null;const post=put('post','',{id:id(),title:text(b.title),description:text(b.description,4000),town:text(b.town),service:b.service,date:now(),image,before,demo:false});return send(res,201,post);}
-    if(method==='DELETE'&&/^\/api\/posts\/[^/]+$/.test(p)){requireAdmin(user);db.prepare("DELETE FROM docs WHERE id=? AND kind='post'").run(p.split('/')[3]);return send(res,200,{ok:true});}
-    if(method==='POST'&&p==='/api/reviews'){if(user.role!=='client')fail(403,'Ingresá con una cuenta de cliente para escribir una reseña.');if(!all('work',user.id).some(w=>w.status==='Finalizado'))fail(409,'Podés dejar una reseña después de confirmar el cierre de una obra.');if(![1,2,3,4,5].includes(Number(b.rating))||text(b.text).length<10)fail(400,'Completá la calificación y al menos 10 caracteres.');const previous=all('review',user.id)[0],review=put('review',user.id,{id:previous?.id||'review-'+user.id,userId:user.id,name:user.name,rating:Number(b.rating),text:text(b.text,1500),date:now(),approved:false});notifyAdmins(previous?'Reseña actualizada':'Nueva reseña','Hay una reseña pendiente de revisión.','/#resenas');return send(res,previous?200:201,review);}
-    if(method==='POST'&&/^\/api\/reviews\/[^/]+\/approve$/.test(p)){requireAdmin(user);const r=get('review',p.split('/')[3]);put('review',r.userId,{...r,approved:true});return send(res,200,{ok:true});}
-    if(method==='POST'&&p==='/api/referrals'){if(!text(b.name))fail(400,'Ingresá un nombre.');put('referral',user.id,{id:id(),name:text(b.name),note:text(b.note,1000),date:now()});return send(res,201,{ok:true});}
+    if(handleCommunity({p,method,b,user,res}))return;
     if(notificationRoutes({p,method,b,user,res}))return;
     if(method==='POST'&&p==='/api/devices'){if(!['web','android'].includes(b.kind)||!validSubscription(b.kind,b.subscription))fail(400,'Suscripción inválida.');const body=JSON.stringify(b.subscription),key=sha(b.kind+':'+(b.kind==='web'?b.subscription.endpoint:b.subscription.token));if(db.prepare('SELECT count(*) AS n FROM devices WHERE userId=?').get(user.id).n>=20&&!db.prepare('SELECT id FROM devices WHERE id=?').get(key))fail(400,'Límite de dispositivos alcanzado.');transaction(()=>{db.prepare('DELETE FROM delivery WHERE deviceId=?').run(key);db.prepare('INSERT INTO devices VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET userId=excluded.userId,body=excluded.body').run(key,user.id,b.kind,body);});return send(res,200,{deviceId:key});}
     fail(404,'Acción no encontrada.');
