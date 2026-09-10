@@ -5,6 +5,7 @@ import {createResourceViews} from './resource-views.mjs';
 import {createInputValues} from './input-values.mjs';
 import {now,id,sha,fail} from './server-primitives.mjs';
 import {createBackgroundRuntime} from './background-runtime.mjs';
+import {createHttpServer} from './http-server.mjs';
 import {applyHttpSecurity} from './http-security.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
@@ -32,10 +33,8 @@ import {createMediaUploadParser} from './media-upload-parser.mjs';
 import {createSupabaseFileStore} from './storage-supabase.mjs';
 import {createSystemHealth} from './system-health.mjs';
 import {createDatabaseCore} from './database-core.mjs';
-import http from 'node:http';
 import {teamFeatures} from './team.mjs';
 import {featureRoutes} from './features.mjs';
-import {randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -132,7 +131,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
    staticFiles.serveFallback({res,p,method});
   }catch(e){if((!e.status||e.status>=500)&&process.env.NODE_ENV!=='test')console.error(JSON.stringify({level:'error',requestId:req.amcRequestId||'',method:req.method,path:p,status:e.status||500,error:e.code||e.name||'Error'}));else if(process.env.NODE_ENV==='test'&&!e.status)console.error(e);if(!res.headersSent)send(res,e.status||500,{error:e.status?e.message:'Ocurrió un error. Intentá nuevamente.',...(e.requiresTwoFactor?{requiresTwoFactor:true}:{})});else res.end();}
  }
- const server=http.createServer((req,res)=>{const requestId=randomBytes(8).toString('hex'),started=Date.now();req.amcRequestId=requestId;res.setHeader('X-Request-ID',requestId);res.once('finish',()=>{if(process.env.NODE_ENV==='test')return;const pathname=String(req.url||'').split('?')[0];if(res.statusCode>=500){recentServerErrors.push(Date.now());recentErrorCount();}if(pathname==='/healthz'&&res.statusCode<400)return;console.log(JSON.stringify({level:'info',requestId,method:req.method,path:pathname,status:res.statusCode,durationMs:Date.now()-started}));});handle(req,res).catch(error=>{console.error(JSON.stringify({level:'error',requestId,method:req.method,path:String(req.url||'').split('?')[0],status:503,error:error?.code||error?.name||'Unhandled'}));if(!res.headersSent)send(res,503,{error:'No pudimos confirmar la operación. Revisá la conexión y el estado antes de repetirla.'});else res.end();});});server.requestTimeout=30000;server.headersTimeout=10000;background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
+ const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const demo=process.argv.includes('--demo'),port=Number(process.env.PORT||4180),origin=process.env.AMC_ORIGIN||process.env.RENDER_EXTERNAL_URL||`http://localhost:${port}`;
