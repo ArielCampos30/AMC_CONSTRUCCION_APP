@@ -2,6 +2,7 @@ import {staticResponse} from './static-response.mjs';
 import {staticFileRoutes} from './static-file-routes.mjs';
 import {createRequestRuntime} from './request-runtime.mjs';
 import {createResourceViews} from './resource-views.mjs';
+import {createInputValues} from './input-values.mjs';
 import {applyHttpSecurity} from './http-security.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
@@ -42,10 +43,7 @@ export const services=['Albañilería','Revoques','Cerámicos y porcelanato','Pi
 export const serviceCatalog={Albañilería:['Revoque fino','Revoque completo','Porcelanato','Cerámicos','Contrapiso','Reparación de grietas'],Pintura:['Interior','Exterior','Aberturas'],Plomería:['Canillas','Inodoro','Termotanque','Pérdidas y cañerías'],Electricidad:['Iluminación','Tomacorrientes','Tablero eléctrico'],Reparaciones:['Humedad','Techos','Arreglos generales']};
 const now=()=>new Date().toISOString(),id=()=>randomUUID(),sha=v=>createHash('sha256').update(v).digest('hex');
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
-const text=(v,max=200)=>typeof v==='string'?v.trim().slice(0,max):'';
-const amount=v=>{if(!Number.isFinite(Number(v))||Number(v)<=0||Number(v)>1e10)fail(400,'Importe inválido.');return Math.round(Number(v)*100)/100;};
-const optionalAmount=v=>{if(!Number.isFinite(Number(v||0))||Number(v||0)<0||Number(v||0)>1e10)fail(400,'Importe inválido.');return Math.round(Number(v||0)*100)/100;};
-const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&!isNaN(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
+const {text,amount,optionalAmount,validDate}=createInputValues({fail});
 export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,origin='http://localhost:4180',clock=Date.now,sendRecovery,twoFactorKey=process.env.AMC_2FA_KEY,fileStore}={}){
  const version=(process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA||process.env.AMC_VERSION||'dev').slice(0,7),startedAt=Date.now();
  const recentServerErrors=[];const recentErrorCount=()=>{const cutoff=Date.now()-15*60*1000;while(recentServerErrors.length&&recentServerErrors[0]<cutoff)recentServerErrors.shift();return recentServerErrors.length;};
