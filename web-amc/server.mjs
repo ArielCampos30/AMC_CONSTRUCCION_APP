@@ -1,6 +1,7 @@
 import {staticResponse} from './static-response.mjs';
 import {staticFileRoutes} from './static-file-routes.mjs';
 import {createRequestRuntime} from './request-runtime.mjs';
+import {createResourceViews} from './resource-views.mjs';
 import {applyHttpSecurity} from './http-security.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
@@ -52,9 +53,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const objectStore=fileStore||createSupabaseFileStore();
  const {backupHealth,systemStatus}=createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt});
  const {userView,passwordHash,addUser,own,requireAdmin,canAccessRequest,canAccessQuote,canAccessWork,requireResource,createAdminVerifier}=createAuthCore({db,all,id,fail});
- const publicWork=w=>{const {internalNotes,cost,internalCost,grossMargin,margin,journal,mobility,tools,contingency,calculations,estimatedTeam,personnelCost,actualPersonnelCost,actualOtherCosts,finalCost,realProfit,...safe}=w;return safe;};
- const publicQuote=q=>{const {cost,internalCost,grossMargin,margin,journal,mobility,tools,contingency,calculations,internalNotes,estimatedTeam,personnelCost,...safe}=q;return safe;};
- const employeeWork=w=>{const safe=publicWork(w);delete safe.budget;delete safe.payments;delete safe.baseBudget;delete safe.userId;return safe;};
+ const {publicWork,publicQuote,employeeWork}=createResourceViews();
  const keys=pushKeys(db);
  if(demo&&!db.prepare("SELECT id FROM users WHERE email='admin@amc.test'").get()){
   addUser('admin@amc.test','AMC-Prueba-2026!','Ariel · AMC','admin');addUser('cliente@amc.test','Cliente-Prueba-2026!','Cliente de prueba');
