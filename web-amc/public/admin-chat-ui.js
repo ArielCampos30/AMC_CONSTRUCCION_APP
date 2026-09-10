@@ -1,0 +1,9 @@
+export function createAdminChatUI({getState,getTab,getEmployee,setEmployee,renderClientMessages,heading,esc,date}){
+ const render=()=>{
+  const state=getState(),tab=getTab(),employees=state.employees||[],selected=getEmployee(),employee=employees.find(item=>item.id===selected)||employees[0];
+  if(employee&&!selected)setEmployee(employee.id);
+  const readAt=employee?state.staffReadByEmployee?.[employee.id]||'':'';
+  return heading('COMUNICACIÓN','Chat','Clientes y equipo permanecen en canales separados.')+`<nav class="admin-v3-chips"><button data-admin-chat="Clientes" aria-pressed="${tab==='Clientes'}">Clientes</button><button data-admin-chat="Equipo" aria-pressed="${tab==='Equipo'}">Equipo</button></nav>${tab==='Clientes'?renderClientMessages():`<div class="admin-v3-chat"><aside>${employees.map(item=>`<button data-admin-employee="${item.id}" class="${item.id===employee?.id?'active':''}"><strong>${esc(item.name)}</strong><small>Equipo AMC</small></button>`).join('')}</aside><section class="panel"><h2>${esc(employee?.name||'Equipo')}</h2><div class="admin-v3-messages">${(state.staffMessages||[]).filter(message=>message.employeeId===employee?.id).map(message=>{const mine=message.senderRole==='admin',read=mine&&readAt&&message.date<=readAt;return `<article class="${mine?'mine':''}"><p>${esc(message.text)}</p><small class="message-meta"><span>${date(message.date)}</span>${mine?`<span class="message-check ${read?'read':''}" title="${read?'Leído':'Enviado'}">✓</span>`:''}</small></article>`}).join('')||'<p>Sin mensajes todavía.</p>'}</div>${employee?`<form id="admin-staff-message" data-id="${employee.id}"><textarea name="text" maxlength="4000" required placeholder="Escribí un mensaje"></textarea><button class="primary">Enviar</button></form>`:''}</section></div>`}`;
+ };
+ return {render};
+}
