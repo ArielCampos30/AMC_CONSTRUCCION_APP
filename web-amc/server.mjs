@@ -10,6 +10,7 @@ import {communityRoutes} from './community-routes.mjs';
 import {adminUtilityRoutes} from './admin-utility-routes.mjs';
 import {profileRoutes} from './profile-routes.mjs';
 import {mediaUploadRoutes} from './media-upload-routes.mjs';
+import {deviceRoutes} from './device-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -86,6 +87,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleAdminUtility=adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now});
  const handleProfile=profileRoutes({db,put,send,fail,text});
  const handleMediaUpload=mediaUploadRoutes({mediaStorage,send});
+ const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -128,7 +130,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(await handleQuoteWork({p,method,b,user,res}))return;
     if(handleCommunity({p,method,b,user,res}))return;
     if(notificationRoutes({p,method,b,user,res}))return;
-    if(method==='POST'&&p==='/api/devices'){if(!['web','android'].includes(b.kind)||!validSubscription(b.kind,b.subscription))fail(400,'Suscripción inválida.');const body=JSON.stringify(b.subscription),key=sha(b.kind+':'+(b.kind==='web'?b.subscription.endpoint:b.subscription.token));if(db.prepare('SELECT count(*) AS n FROM devices WHERE userId=?').get(user.id).n>=20&&!db.prepare('SELECT id FROM devices WHERE id=?').get(key))fail(400,'Límite de dispositivos alcanzado.');transaction(()=>{db.prepare('DELETE FROM delivery WHERE deviceId=?').run(key);db.prepare('INSERT INTO devices VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET userId=excluded.userId,body=excluded.body').run(key,user.id,b.kind,body);});return send(res,200,{deviceId:key});}
+    if(handleDevices({p,method,b,user,res}))return;
     fail(404,'Acción no encontrada.');
    }
    if(method!=='GET'&&method!=='HEAD')fail(405,'Método no permitido.');
