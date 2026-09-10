@@ -6,15 +6,19 @@ import {createApp} from '../server.mjs';
 const origin='http://localhost:4180';
 
 test('admin v3 exposes the five primary destinations and responsive views',async()=>{
-  const [app,css,hub,worker]=await Promise.all([
+  const [app,css,hub,worker,dashboard]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-v3.css',import.meta.url),'utf8'),
     readFile(new URL('../public/project-hub.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/sw.js',import.meta.url),'utf8')
+    readFile(new URL('../public/sw.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-dashboard-ui.js',import.meta.url),'utf8')
   ]);
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
-  assert.match(app,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
+  assert.match(dashboard,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
+  assert.match(app,/from '.\/admin-dashboard-ui\.js'/);
+  assert.match(app,/html=adminDashboard\(\)/);
+  assert.doesNotMatch(app,/function adminHome\(\)/);
   assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
   assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
   assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
