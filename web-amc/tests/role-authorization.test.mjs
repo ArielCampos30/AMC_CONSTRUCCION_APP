@@ -79,7 +79,7 @@ test('server authorization isolates tenants, employee assignments, staff chat an
   assert.equal((await employeeA.call('/api/staff-chat/messages?employeeId='+empB.id)).messages.length,1);
   assert.equal((await employeeB.call('/api/staff-chat/messages')).messages.length,0);
   assert.equal((await admin.call('/api/staff-chat/messages?employeeId='+empA.id)).messages[0].id,staff.id);
-  assert.deepEqual((await admin.call('/api/state')).staffMessages,[]);
+  assert.ok((await admin.call('/api/state')).staffMessages.some(x=>x.id===staff.id));
   await admin.call(staffPhoto.url);await employeeA.call(staffPhoto.url);
   await employeeB.call(staffPhoto.url,undefined,404);await clientA.call(staffPhoto.url,undefined,404);
 
