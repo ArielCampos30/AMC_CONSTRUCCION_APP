@@ -1,5 +1,4 @@
 export function quoteWorkRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,optionalAmount,validDate,now,id,sha,lifecycle}){
- const createWorkFromQuote=(q,r,userId)=>{const obraId='work-'+q.id;put('quote',q.userId,{...q,presupuestoId:q.presupuestoId||q.id,solicitudId:q.solicitudId||q.requestId,obraId,schemaVersion:2,status:'Aceptado',repliedAt:now()});put('request',r.userId,{...r,solicitudId:r.solicitudId||r.id,presupuestoIds:[...new Set([...(r.presupuestoIds||[]),q.id])],obraIds:[...new Set([...(r.obraIds||[]),obraId])],schemaVersion:2,status:'Presupuesto aceptado'});put('work',r.userId,{id:obraId,obraId,presupuestoId:q.id,solicitudId:q.requestId,schemaVersion:2,userId:r.userId,quoteId:q.id,requestId:q.requestId,title:r.service,address:r.address||r.town,status:'Presupuesto aceptado',budget:q.total,payments:[],updates:[],estimatedTeam:q.estimatedTeam||[],personnelCost:q.personnelCost||0,internalCost:q.internalCost||0,grossMargin:q.grossMargin??q.total,start:'',end:''});return obraId;};
  return async function route({p,method,b,user,res}){
   let match;
   if(method==='POST'&&p==='/api/quotes'){
