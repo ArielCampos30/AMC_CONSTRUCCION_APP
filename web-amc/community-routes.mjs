@@ -9,6 +9,9 @@ export function communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmi
   if(method==='DELETE'&&/^\/api\/posts\/[^/]+$/.test(p)){
    requireAdmin(user);db.prepare("DELETE FROM docs WHERE id=? AND kind='post'").run(p.split('/')[3]);send(res,200,{ok:true});return true;
   }
+  if(method==='GET'&&p==='/api/reviews/pending'){
+   requireAdmin(user);send(res,200,{pendingReviews:all('review').filter(r=>!r.approved)});return true;
+  }
   if(method==='POST'&&p==='/api/reviews'){
    if(user.role!=='client')fail(403,'Ingresá con una cuenta de cliente para escribir una reseña.');if(!all('work',user.id).some(w=>w.status==='Finalizado'))fail(409,'Podés dejar una reseña después de confirmar el cierre de una obra.');if(![1,2,3,4,5].includes(Number(b.rating))||text(b.text).length<10)fail(400,'Completá la calificación y al menos 10 caracteres.');const previous=all('review',user.id)[0],review=put('review',user.id,{id:previous?.id||'review-'+user.id,userId:user.id,name:user.name,rating:Number(b.rating),text:text(b.text,1500),date:now(),approved:false});notifyAdmins(previous?'Reseña actualizada':'Nueva reseña','Hay una reseña pendiente de revisión.','/#resenas');send(res,previous?200:201,review);return true;
   }
