@@ -37,13 +37,18 @@ test('dual-write mirrors accepted uploads and prefer-storage serves the external
 
 
 test('almacenamiento de media queda modularizado sin duplicar upload y GC en server',async()=>{
- const [server,storage]=await Promise.all([
+ const [server,storage,uploadRoutes]=await Promise.all([
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
-  readFile(new URL('../media-storage.mjs',import.meta.url),'utf8')
+  readFile(new URL('../media-storage.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../media-upload-routes.mjs',import.meta.url),'utf8')
  ]);
  assert.match(server,/from '.\/media-storage\.mjs'/);
  assert.match(server,/mediaStorageFeatures\(\{db,all,put,transaction,objectStore,text,fail,id,now\}\)/);
- assert.match(server,/mediaStorage\.upload\(user,b\)/);
+ assert.match(server,/from '.\/media-upload-routes\.mjs'/);
+ assert.match(server,/mediaUploadRoutes\(\{mediaStorage,send\}\)/);
+ assert.match(server,/handleMediaUpload\(\{p,method,b,user,res\}\)/);
+ assert.match(uploadRoutes,/mediaStorage\.upload\(user,b\)/);
+ assert.doesNotMatch(server,/mediaStorage\.upload\(user,b\)/);
  assert.match(storage,/const safeFile=/);
  assert.match(storage,/const cleanupOrphanFiles=async/);
  assert.match(storage,/const upload=async\(user,b\)/);

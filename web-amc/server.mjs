@@ -9,6 +9,7 @@ import {stateRoutes} from './state-routes.mjs';
 import {communityRoutes} from './community-routes.mjs';
 import {adminUtilityRoutes} from './admin-utility-routes.mjs';
 import {profileRoutes} from './profile-routes.mjs';
+import {mediaUploadRoutes} from './media-upload-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -84,6 +85,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleCommunity=communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmins,send,fail,text,services,now,id});
  const handleAdminUtility=adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now});
  const handleProfile=profileRoutes({db,put,send,fail,text});
+ const handleMediaUpload=mediaUploadRoutes({mediaStorage,send});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -122,7 +124,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(await clientRequests.route({p,method,b,user,res}))return;
     if(authentication.logout({p,method,user,session,b,res}))return;
     if(handleProfile({p,method,b,user,res}))return;
-    if(method==='POST'&&p==='/api/upload')return send(res,201,await mediaStorage.upload(user,b));
+    if(await handleMediaUpload({p,method,b,user,res}))return;
     if(await handleQuoteWork({p,method,b,user,res}))return;
     if(handleCommunity({p,method,b,user,res}))return;
     if(notificationRoutes({p,method,b,user,res}))return;
