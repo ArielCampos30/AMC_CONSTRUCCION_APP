@@ -1,5 +1,6 @@
 import {staticResponse} from './static-response.mjs';
 import {staticFileRoutes} from './static-file-routes.mjs';
+import {createRequestRuntime} from './request-runtime.mjs';
 import {applyHttpSecurity} from './http-security.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
@@ -60,14 +61,10 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
   put('post','',{id:id(),title:'Inspiración para tu próximo proyecto',service:'Reparaciones',town:'Imagen ilustrativa',date:now(),description:'Publicación de ejemplo. Desde el panel podés subir tus propios trabajos.',image:'/assets/living.jpg',before:null,demo:true});
  }
  if(process.env.AMC_ADMIN_EMAIL&&process.env.AMC_ADMIN_PASSWORD&&!db.prepare("SELECT id FROM users WHERE role='admin'").get())addUser(process.env.AMC_ADMIN_EMAIL.toLowerCase(),process.env.AMC_ADMIN_PASSWORD,'AMC','admin');
- const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));};
+ const {send,readRaw,readBody,rate,checkRate}=createRequestRuntime({fail});
  const notifications=notificationFeatures({db,all,put,origin,now,id,schedulePush:()=>queueMicrotask(()=>flushPush()),send,requireAdmin,text,fail});
  const {notify,notifyAdmins,markNoticeRead,markNoticesForRoute,route:notificationRoutes}=notifications;
- const readRaw=async(req,limit=7*1024*1024)=>{let chunks=[],size=0;for await(const chunk of req){size+=chunk.length;if(size>limit)fail(413,'El archivo es demasiado grande.');chunks.push(chunk);}return Buffer.concat(chunks);};
- const readBody=async req=>{try{return JSON.parse((await readRaw(req)).toString()||'{}');}catch{fail(400,'Datos inválidos.');}};
  const readMultipart=createMediaUploadParser({readRaw,text,fail});
- const rate=new Map();
- const checkRate=(key,limit)=>{const t=Date.now(),r=rate.get(key)||{count:0,end:t+900000};if(r.end<t){r.count=0;r.end=t+900000;}r.count++;rate.set(key,r);if(r.count>limit)fail(429,'Demasiados intentos. Probá en unos minutos.');if(rate.size>10000)for(const [k,v]of rate)if(v.end<t)rate.delete(k);};
  const verifyAdmin=createAdminVerifier(checkRate);
  const mediaStorage=mediaStorageFeatures({db,all,put,transaction,objectStore,text,fail,id,now});
  const {safeFile,cleanupOrphanFiles}=mediaStorage;
