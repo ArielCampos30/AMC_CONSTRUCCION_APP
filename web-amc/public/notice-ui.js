@@ -2,8 +2,17 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
  const shownLiveNotices=new Set();
  let lastNoticeRouteKey='';
  const notices=()=>getState().notices||[];
+ const routeKey=value=>{try{return new URL(String(value||''),location.href).hash.replace(/^#/,'');}catch{return String(value||'').replace(/^\/?#/,'');}};
+ const activeChatRoute=()=>document.documentElement?.dataset.amcActiveChatRoute||'';
+ function suppressActiveChat(notice){
+  const active=activeChatRoute();
+  if(!notice||!active||routeKey(notice.url)!==routeKey(active))return false;
+  shownLiveNotices.add(notice.id);
+  queueMicrotask(async()=>{try{const result=await api('/api/notices/read',{route:active});applyRead(result.noticeIds||[notice.id]);}catch{}});
+  return true;
+ }
  function showInternal(notice){
-  if(!notice||notice.priority==='normal'||shownLiveNotices.has(notice.id))return;
+  if(!notice||notice.priority==='normal'||shownLiveNotices.has(notice.id)||suppressActiveChat(notice))return;
   shownLiveNotices.add(notice.id);
   const host=document.querySelector('#amc-live-alert');
   if(!host)return;
@@ -29,11 +38,11 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
   try{navigator.serviceWorker?.controller?.postMessage({type:'AMC_NOTICE_READ',ids:[...read]});}catch{}
  }
  async function syncVisible(){
-  const state=getState(),page=getPage();
-  if(!state.user||page==='avisos')return;
+  const state=getState(),page=getPage(),active=activeChatRoute();
+  if(!state.user||(!active&&page==='avisos'))return;
   const unread=notices().filter(n=>!n.read);
   if(!unread.length)return;
-  const route='#'+page,key=state.user.id+'|'+route+'|'+unread.map(n=>n.id).join(',');
+  const route=active||'#'+page,key=state.user.id+'|'+route+'|'+unread.map(n=>n.id).join(',');
   if(key===lastNoticeRouteKey)return;
   lastNoticeRouteKey=key;
   try{const result=await api('/api/notices/read',{route});applyRead(result.noticeIds||[]);}catch{lastNoticeRouteKey='';}
