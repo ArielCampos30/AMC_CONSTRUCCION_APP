@@ -6,14 +6,15 @@ import {createApp} from '../server.mjs';
 const origin='http://localhost:4180';
 
 test('admin v3 exposes the five primary destinations and responsive views',async()=>{
-  const [app,css,hub,worker,dashboard,requestsUI,quotesUI]=await Promise.all([
+  const [app,css,hub,worker,dashboard,requestsUI,quotesUI,worksUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-v3.css',import.meta.url),'utf8'),
     readFile(new URL('../public/project-hub.js',import.meta.url),'utf8'),
     readFile(new URL('../public/sw.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-dashboard-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-requests-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
   ]);
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
@@ -32,7 +33,12 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(app,/const adminQuoteDetail=\(\)=>adminQuotesUI\.detail\(\)/);
   assert.doesNotMatch(app,/function adminQuotes\(/);
   assert.doesNotMatch(app,/function adminQuoteDetail\(\)/);
-  assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
+  assert.match(worksUI,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
+  assert.match(app,/from '.\/admin-works-ui\.js'/);
+  assert.match(app,/const adminWorks=\(\)=>adminWorksUI\.list\(\)/);
+  assert.match(app,/const adminWorkDetail=\(\)=>adminWorksUI\.detail\(\)/);
+  assert.doesNotMatch(app,/function adminWorks\(\)/);
+  assert.doesNotMatch(app,/function adminWorkDetail\(\)/);
   assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
   assert.match(app,/\/api\/staff-chat\/messages/);  assert.match(app,/min="\$\{required\?'0\.01':'0'\}" step="0\.01"/);
   assert.match(hub,/Coordinar visita/);
@@ -345,9 +351,10 @@ test('admin budget detail opens the exact quote and only one overflow menu stays
 });
 
 test('calendar programming uses clear labels and returns to the exact work',async()=>{
-  const [app,planning]=await Promise.all([
+  const [app,planning,worksUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(planning,/Qué estás agendando/);
   assert.match(planning,/Obra · trabajo con presupuesto aceptado/);
@@ -361,23 +368,24 @@ test('calendar programming uses clear labels and returns to the exact work',asyn
   assert.match(planning,/type:'calendar-saved'/);
   assert.match(app,/navigate\('obra-admin\/'\+encodeURIComponent\(planningResult\.workId\)\)/);
   assert.match(app,/Obra programada\. La fecha quedó confirmada\./);
-  assert.match(app,/Situación de la fecha/);
-  assert.match(app,/Propuesta enviada al cliente/);
+  assert.match(worksUI,/Situación de la fecha/);
+  assert.match(worksUI,/Propuesta enviada al cliente/);
 });
 
 test('work date and team assignment use one clear source of truth',async()=>{
-  const [app,planning,teamServer,teamUi]=await Promise.all([
+  const [app,planning,teamServer,teamUi,worksUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../team.mjs',import.meta.url),'utf8'),
-    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(planning,/Equipo de trabajo:.*se administra desde la ficha de la obra/s);
   assert.match(planning,/active=\(s\.calendarBookings\|\|\[\]\)\.filter\(b=>b\.workId===w\.id/);
   assert.match(planning,/current=active\.find\(b=>b\.id===w\.calendarBookingId\)/);
-  assert.match(app,/Equipo previsto al presupuestar/);
-  assert.match(app,/Equipo de esta obra/);
-  assert.match(app,/team\.length\?'Editar equipo':'Asignar equipo'/);
+  assert.match(worksUI,/Equipo previsto al presupuestar/);
+  assert.match(worksUI,/Equipo de esta obra/);
+  assert.match(worksUI,/team\.length\?'Editar equipo':'Asignar equipo'/);
   assert.match(app,/Primero programá y confirmá la fecha de la obra/);
   assert.match(app,/actualMap=new Map\(actual\.map/);
   assert.match(app,/Inicio programado:/);
@@ -392,29 +400,32 @@ test('work date and team assignment use one clear source of truth',async()=>{
 });
 
 test('work detail is compact, accurate and uses the current client profile',async()=>{
-  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+  const [app,worksUI]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
+  ]);
   assert.match(app,/adminAgendaClient=id=>/);
   assert.match(app,/adminRequestContact=r=>/);
-  assert.match(app,/contact=adminRequestContact\(r\)/);
-  assert.match(app,/clientAddress=contact\.address\|\|contact\.town/);
-  assert.match(app,/Teléfono:<\/b>/);
-  assert.match(app,/Dirección:<\/b>/);
-  assert.match(app,/internalAdminNote=\/\^Presupuesto iniciado por Administración/);
-  assert.match(app,/workDescription=\(q\?\.items\|\|\[\]\)/);
-  assert.match(app,/workTitle=\(q\?\.items\|\|\[\]\)/);
-  assert.match(app,/displayStatus=w\.status==='Presupuesto aceptado'\?'Obra creada'/);
-  assert.match(app,/Resumen económico/);
-  assert.match(app,/Costo estimado/);
-  assert.match(app,/Ganancia estimada/);
-  assert.match(app,/hasActualCosts\?/);
-  assert.match(app,/photos\.length\?/);
-  assert.match(app,/notes\?/);
-  assert.match(app,/Registrar o revisar costos reales/);
-  assert.match(app,/#presupuesto-admin\/\$\{encodeURIComponent\(q\.id\)\}/);
-  assert.doesNotMatch(app,/<h2>Costos reales de personal<\/h2>/);
-  assert.doesNotMatch(app,/Todavía no hay fotos de avance/);
-  assert.doesNotMatch(app,/Sin notas internas\./);
-  assert.doesNotMatch(app,/href="#solicitud\/\$\{encodeURIComponent\(r\.id\)\}">Ver<\/a>/);
+  assert.match(worksUI,/contact=adminRequestContact\(r\)/);
+  assert.match(worksUI,/clientAddress=contact\.address\|\|contact\.town/);
+  assert.match(worksUI,/Teléfono:<\/b>/);
+  assert.match(worksUI,/Dirección:<\/b>/);
+  assert.match(worksUI,/internalAdminNote=\/\^Presupuesto iniciado por Administración/);
+  assert.match(worksUI,/workDescription=\(q\?\.items\|\|\[\]\)/);
+  assert.match(worksUI,/workTitle=\(q\?\.items\|\|\[\]\)/);
+  assert.match(worksUI,/displayStatus=w\.status==='Presupuesto aceptado'\?'Obra creada'/);
+  assert.match(worksUI,/Resumen económico/);
+  assert.match(worksUI,/Costo estimado/);
+  assert.match(worksUI,/Ganancia estimada/);
+  assert.match(worksUI,/hasActualCosts\?/);
+  assert.match(worksUI,/photos\.length\?/);
+  assert.match(worksUI,/notes\?/);
+  assert.match(worksUI,/Registrar o revisar costos reales/);
+  assert.match(worksUI,/#presupuesto-admin\/\$\{encodeURIComponent\(q\.id\)\}/);
+  assert.doesNotMatch(worksUI,/<h2>Costos reales de personal<\/h2>/);
+  assert.doesNotMatch(worksUI,/Todavía no hay fotos de avance/);
+  assert.doesNotMatch(worksUI,/Sin notas internas\./);
+  assert.doesNotMatch(worksUI,/href="#solicitud\/\$\{encodeURIComponent\(r\.id\)\}">Ver<\/a>/);
 });
 
 test('notification, refresh and margin UI avoid duplicate work',async()=>{
