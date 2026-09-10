@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createCommunityUI} from '../public/community-ui.js';
 
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
 const date=value=>value||'';
 const heading=(tag,title,body='')=>`<header><b>${tag}</b><h1>${title}</h1><p>${body}</p></header>`;
 const options=(items,value)=>items.map(item=>`<option ${item===value?'selected':''}>${item}</option>`).join('');
@@ -31,11 +31,12 @@ test('reseñas y referidos se renderizan desde el módulo sin mover sus acciones
  assert.match(html,/id="pending-reviews-admin"/);
  assert.match(html,/Excelente trabajo/);
 
- state={user:{id:'client-1',role:'client'},works:[],reviews:[],referrals:[{id:'ref-1',name:'Pedro',note:'Cocina',date:'2026-09-09'}]};
+ state={user:{id:'client-1',role:'client'},works:[],reviews:[],referrals:[{id:'legacy-ref',name:'No usar estado',note:'',date:'2026-09-09'}]};
  html=ui.referrals();
  assert.match(html,/id="referral"/);
  assert.match(html,/data-action="share"/);
- assert.match(html,/Pedro/);
+ assert.match(html,/id="referrals-list"/);
+ assert.doesNotMatch(html,/No usar estado/);
 
  const [app,source]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
@@ -48,7 +49,9 @@ test('reseñas y referidos se renderizan desde el módulo sin mover sus acciones
  assert.match(app,/if\(f\.id==='referral'\)await api\('\/api\/referrals',data\)/);
  assert.match(app,/case'approve-review':await api\('\/api\/reviews\/'/);
  assert.match(source,/fetch\('\/api\/reviews\/pending'/);
+ assert.match(source,/fetch\('\/api\/referrals'/);
  assert.doesNotMatch(source,/state\.pendingReviews/);
+ assert.doesNotMatch(source,/state\.referrals/);
  assert.doesNotMatch(app,/function reviews\(\)/);
  assert.doesNotMatch(app,/function referrals\(\)/);
 });
