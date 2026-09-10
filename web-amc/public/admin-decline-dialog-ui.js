@@ -1,0 +1,4 @@
+export function createAdminDeclineDialog({esc}){
+ function open(requestId){let d=document.getElementById('decline-request-dialog');if(!d){d=document.createElement('dialog');d.id='decline-request-dialog';d.className='admin-v3-dialog';document.body.append(d);}d.innerHTML='<form id="decline-request-form" data-id="'+esc(requestId)+'"><h2>No tomar solicitud</h2><label>Motivo<select name="reason"><option>Sin disponibilidad</option><option>Fuera de zona</option><option>Trabajo que AMC no realiza</option><option>Condiciones no compatibles</option><option>Otro</option></select></label><label>Comentario opcional<textarea name="comment" maxlength="1000" rows="3"></textarea></label><div><button type="button" data-close-dialog>Cancelar</button><button class="primary">No tomar solicitud</button></div></form>';d.querySelector('[data-close-dialog]').onclick=()=>d.close();d.showModal();}
+ return {open};
+}
