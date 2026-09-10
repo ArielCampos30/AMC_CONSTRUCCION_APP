@@ -1,0 +1,12 @@
+export function createRequestUI({getState,getSelectedPost,isAdmin,auth,heading,field,options,esc,empty,today=()=>new Date().toLocaleDateString('en-CA')}){
+ function render(visit=false){
+  const state=getState(),user=state.user;
+  if(!user)return auth();
+  if(isAdmin())return empty('Esta es tu cuenta de AMC','Para probar un pedido, ingresá con una cuenta de cliente en otra sesión de Chrome.');
+  const catalog=state.serviceCatalog||Object.fromEntries((state.services||[]).map(service=>[service,[service]])),
+   selectedPost=getSelectedPost(),
+   selected=state.posts.find(post=>post.id===selectedPost)?.service;
+  return heading('CONTANOS TU IDEA',visit?'Solicitar una visita':'Solicitar trabajo')+`<form id="request" class="panel reader" data-type="${visit?'visita':'presupuesto'}"><div class="pill-nav"><a href="#pedir">Presupuesto</a><a href="#visita">Visita</a></div>${selectedPost?`<p>Inspirado en: <strong>${esc(state.posts.find(post=>post.id===selectedPost)?.title)}</strong></p>`:''}<div class="form-grid">${field('Nombre completo','name','text',user.name)}${field('Teléfono','phone','tel',user.phone)}${field('Localidad','town','text',user.town)}</div>${field('Dirección del trabajo','address','text',user.address||'',false)}<fieldset class="service-catalog"><legend>Elegí uno o varios servicios</legend>${Object.entries(catalog).map(([rubric,items])=>`<section><h3>${esc(rubric)}</h3>${items.map(item=>`<label><input type="checkbox" name="services" value="${esc(item)}" ${item===selected?'checked':''}> ${esc(item)}</label>`).join('')}</section>`).join('')}</fieldset><label>Descripción libre<textarea name="description" required rows="4" maxlength="4000"></textarea></label>${visit?`<div class="form-grid"><label>Día preferido<input name="day" type="date" min="${today()}" required></label><label>Horario<select name="slot">${options(['Mañana · 9 a 12','Tarde · 14 a 18'])}</select></label></div><p class="muted">Confirmaremos la dirección indicada arriba.</p><p class="muted">AMC debe confirmar la disponibilidad.</p>`:field('Medidas aproximadas (opcional)','dimensions','text','',false)}<div class="client-photo-actions"><label>Elegir de galería<input type="file" name="photos" accept="image/*" multiple></label><label>Sacar foto<input type="file" name="camera" accept="image/*" capture="environment"></label></div><div class="mini-photos" id="previews"></div><button type="submit" class="primary full">Enviar solicitud</button></form>`;
+ }
+ return {render};
+}
