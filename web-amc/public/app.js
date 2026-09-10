@@ -38,7 +38,7 @@ const clientStateSignature=value=>value?.user?.role==='client'?JSON.stringify({u
 const noticeUI=createNoticeUI({getState:()=>state,getPage:()=>page,api,esc,date,heading,btn,empty,sound});
 const communityUI=createCommunityUI({getState:()=>state,isAdmin,heading,options,esc,date,empty,btn,field});
 const discoveryUI=createDiscoveryUI({getState:()=>state,isAdmin,heading,post,empty,esc});
-const adminDashboard=createAdminDashboardUI({getState:()=>state,heading,closureNeedsAction});
+const adminDashboard=createAdminDashboardUI({getState:()=>state,heading,closureNeedsAction:work=>closureNeedsAction(work)});
 const showInternalNotice=notice=>noticeUI.showInternal(notice);
 const paintNoticeCount=()=>noticeUI.paintCount();
 const applyNoticeRead=ids=>noticeUI.applyRead(ids);
