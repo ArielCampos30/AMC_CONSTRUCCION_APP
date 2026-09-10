@@ -4,7 +4,7 @@ import {postgresSql} from './postgres-sql.mjs';
 const control=new Int32Array(workerData.control),bytes=new Uint8Array(workerData.bytes);
 function reply(value){const data=Buffer.from(JSON.stringify(value));if(data.length>bytes.length)return reply({error:'Respuesta de base de datos demasiado grande.',code:'AMC_LIMIT'});bytes.set(data);Atomics.store(control,1,data.length);Atomics.store(control,0,1);Atomics.notify(control,0);}
 const connectionError=e=>{const code=String(e?.code||'');return code.startsWith('08')||['ECONNRESET','ECONNREFUSED','EPIPE','ETIMEDOUT','57P01','57P02','57P03'].includes(code);};
-const command=sql=>String(sql||'').trim().split(/\s+/,2).join(' ').toUpperCase();
+const command=sql=>String(sql||'').trim().match(/^([A-Za-z]+)/)?.[1]?.toUpperCase()||'';
 let client,pg,clientConfig,failed=true,closing=false,transactionOpen=false;
 async function connectClient(){
  const next=new pg.Client(clientConfig);
@@ -30,7 +30,7 @@ try{
 }catch(e){failed=true;reply({error:'No se pudo conectar a la base de datos. Revisá dirección, contraseña y certificado en el alojamiento.',code:e.code||'AMC_CONNECT'});}
 parentPort.on('message',async({sql,params=[]})=>{
  if(sql==='__close'){closing=true;transactionOpen=false;try{await client?.end();}catch{}failed=true;reply({ok:true});parentPort.close();return;}
- const op=command(sql),rollback=op==='ROLLBACK',begin=op==='BEGIN'||op==='BEGIN IMMEDIATE',finish=rollback||op==='COMMIT';
+ const op=command(sql),rollback=op==='ROLLBACK',begin=op==='BEGIN',finish=rollback||op==='COMMIT';
  if(failed&&transactionOpen){
   if(rollback){transactionOpen=false;reply({rows:[],changes:0});return;}
   return reply({error:'La conexión se perdió durante una transacción. La operación fue cancelada para conservar la integridad de los datos.',code:'AMC_TRANSACTION_CONNECTION'});
