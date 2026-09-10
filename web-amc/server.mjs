@@ -7,6 +7,7 @@ import {quoteLifecycle} from './quote-lifecycle.mjs';
 import {quoteWorkRoutes} from './quote-work-routes.mjs';
 import {stateRoutes} from './state-routes.mjs';
 import {communityRoutes} from './community-routes.mjs';
+import {adminUtilityRoutes} from './admin-utility-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -80,6 +81,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleFeature=featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning,markNoticesForRoute});
  const handleState=stateRoutes({db,all,userView,chatSummary,planning,services,serviceCatalog,team,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
  const handleCommunity=communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmins,send,fail,text,services,now,id});
+ const handleAdminUtility=adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -108,8 +110,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(user.role==='employee'&&!['/api/logout','/api/profile','/api/upload','/api/devices','/api/notices/read','/api/notices/test'].includes(p)&&!/^\/api\/assignments\/[^/]+\/(report|visit-sheet|materials)$/.test(p))fail(403,'Tu acceso está limitado a tus asignaciones.');
     if(method==='POST'&&(p==='/api/assignments'||/^\/api\/assignments\/[^/]+\/edit$/.test(p)))planning.validateTime(b.day,b.time);
     if(method==='POST'&&/^\/api\/requests\/[^/]+\/appointment$/.test(p))planning.validateTime(b.day,b.time,Number(b.duration));
-    if(p==='/api/offline-notes'&&method==='POST'){requireAdmin(user);if(!/^[\w-]{8,100}$/.test(b.idempotencyKey||'')||!text(b.text,4000)||!Array.isArray(b.photos)||b.photos.length>4)fail(400,'Informe inválido.');const key='offline-note-'+sha(user.id+':'+b.idempotencyKey),old=all('offlineNote',user.id).find(x=>x.id===key);if(old)return send(res,200,old);const task=get('assignment',b.assignmentId);if(['Cancelada','Finalizada'].includes(task.status))fail(409,'La asignación ya terminó o fue cancelada.');const photos=b.photos.map(x=>safeFile(user,x,'image/'));return send(res,201,put('offlineNote',user.id,{id:key,assignmentId:task.id,title:task.clientName+' · '+task.day,text:text(b.text,4000),photos,date:now()}));}
-    if(p==='/api/estimator-state'&&method==='POST'){requireAdmin(user);const old=all('estimator',user.id)[0];if(b.revision!==(old?.revision||0))fail(409,'Hay cambios guardados desde otra ventana. Descargá tu copia antes de recargar.');if(!b.db||typeof b.db!=='object'||!Array.isArray(b.db.quotes)||!Array.isArray(b.db.customTariffs)||!b.draft||typeof b.draft!=='object'||!Array.isArray(b.draft.items))fail(400,'Datos del cotizador inválidos.');const saved=put('estimator',user.id,{id:'estimator-'+user.id,revision:(old?.revision||0)+1,db:b.db,draft:b.draft,updatedAt:now()});return send(res,200,{revision:saved.revision,updatedAt:saved.updatedAt});}
+    if(handleAdminUtility({p,method,b,user,res}))return;
     if(await planning.route({p,method,b,user,res}))return;
     if(await recovery.route({p,method,b,user,res}))return;
     if(await closure.route({p,method,b,user,res}))return;
