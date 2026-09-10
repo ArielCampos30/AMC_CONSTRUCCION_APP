@@ -4,6 +4,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
@@ -30,6 +31,9 @@ public class PushService extends FirebaseMessagingService {
         String url=message.getData().getOrDefault("url","/#avisos");
         String title=message.getData().getOrDefault("title","AMC Construcciones y Arreglos");
         String body=message.getData().getOrDefault("body","Tenés una nueva novedad.");
+        SharedPreferences prefs=getSharedPreferences("amc",MODE_PRIVATE);
+        String activeChatRoute=prefs.getString("activeChatRoute","");
+        if(prefs.getBoolean("foreground",false)&&!activeChatRoute.isEmpty()&&activeChatRoute.equals(url))return;
         boolean sound=!"false".equalsIgnoreCase(message.getData().getOrDefault("sound","true"));
         boolean urgent="urgent".equals(message.getData().get("priority"));
         String channel=!sound?SILENT:urgent?URGENT:UPDATES;

@@ -84,6 +84,17 @@ public class MainActivity extends Activity {
         loadRequestedUrl(getIntent());
     }
 
+    @Override protected void onResume(){
+        super.onResume();
+        getSharedPreferences("amc",MODE_PRIVATE).edit().putBoolean("foreground",true).apply();
+        if(webView!=null)webView.postDelayed(()->sendPushToken(false),250);
+    }
+
+    @Override protected void onPause(){
+        getSharedPreferences("amc",MODE_PRIVATE).edit().putBoolean("foreground",false).apply();
+        super.onPause();
+    }
+
     private boolean isTrusted(Uri uri){
         if(uri==null||backendUri==null)return false;
         int expectedPort=backendUri.getPort(),actualPort=uri.getPort();
@@ -137,6 +148,8 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void clearNotifications(){getSystemService(NotificationManager.class).cancelAll();}
         @JavascriptInterface public void clearNotification(String id){if(id!=null&&!id.isEmpty())getSystemService(NotificationManager.class).cancel(id.hashCode());}
         @JavascriptInterface public void requestNotifications(){runOnUiThread(()->{if(Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.POST_NOTIFICATIONS},NOTIFICATIONS);else sendPushToken(true);});}
+        @JavascriptInterface public void refreshPushToken(){runOnUiThread(()->sendPushToken(false));}
+        @JavascriptInterface public void setActiveChatRoute(String route){String safe=route!=null&&route.startsWith("/#chat")?route:"";getSharedPreferences("amc",MODE_PRIVATE).edit().putString("activeChatRoute",safe).apply();}
         @JavascriptInterface public void savePdf(String base64Data, String fileName, boolean share) {
             runOnUiThread(() -> { try {
                 byte[] data = Base64.decode(base64Data, Base64.DEFAULT);
