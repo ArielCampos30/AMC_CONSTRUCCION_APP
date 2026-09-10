@@ -97,7 +97,7 @@ test('favicon PWA y notificaciones usan la identidad AMC actual',()=>{
   const html=read('../public/index.html');
   const manifest=JSON.parse(read('../public/manifest.webmanifest'));
   const sw=read('../public/sw.js');
-  const server=read('../server.mjs');
+  const staticFiles=read('../static-file-routes.mjs');
   assert.match(html,/amc-logo\.webp\?v=20260908/);
   assert.doesNotMatch(html,/amc-icon\.png/);
   assert.equal(manifest.theme_color,'#0b675f');
@@ -105,7 +105,7 @@ test('favicon PWA y notificaciones usan la identidad AMC actual',()=>{
   assert.match(sw,/AMC-offline-shell-v10/);
   assert.match(sw,/\/assets\/amc-logo\.webp/);
   assert.doesNotMatch(sw,/amc-icon\.png/);
-  assert.match(server,/'webp':'image\/webp'/);
+  assert.match(staticFiles,/'webp':'image\/webp'/);
 });
 
 test('WhatsApp externo normaliza números argentinos',()=>{
