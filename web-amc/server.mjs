@@ -1,4 +1,5 @@
 import {staticResponse} from './static-response.mjs';
+import {staticFileRoutes} from './static-file-routes.mjs';
 import {applyHttpSecurity} from './http-security.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
@@ -93,10 +94,11 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
  const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,startedAt,demo,keys,services,send});
  const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
+ const staticFiles=staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fail});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method;
   applyHttpSecurity({res,origin,pathname:p});
-  if(['GET','HEAD'].includes(method)&&(p==='/'||/\.(?:js|css|png|jpg|webp|svg|webmanifest|html|txt|xml)$/.test(p))&&!p.startsWith('/api/')&&!p.startsWith('/media/')){const file=path.resolve(ROOT,'public','.'+(p==='/'?'/index.html':p));if(!file.startsWith(path.join(ROOT,'public')+path.sep))return send(res,404,{error:'No encontrado.'});try{return staticResponse(req,res,file);}catch{return send(res,404,{error:'No encontrado.'});}}
+  if(staticFiles.serveEarly({req,res,p,method}))return;
   const {session,user}=authentication.resolve(req);
   try{
    if(!['GET','HEAD'].includes(method)){if(req.headers.origin!==origin)fail(403,'Origen no permitido.');if(!['/api/login','/api/register','/api/forgot-password','/api/reset-password'].includes(p)&&(!session||req.headers['x-csrf-token']!==session.csrf))fail(403,'Sesión vencida. Volvé a ingresar.');}
@@ -129,9 +131,9 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(handleDevices({p,method,b,user,res}))return;
     fail(404,'Acción no encontrada.');
    }
-   if(method!=='GET'&&method!=='HEAD')fail(405,'Método no permitido.');
+   staticFiles.requirePageMethod(method);
    if(handleEstimatorPage({p,method,user,session,res}))return;
-   const file=path.resolve(ROOT,'public','.'+(p==='/'?'/index.html':p));if(!file.startsWith(path.join(ROOT,'public')+path.sep))fail(404,'No encontrado.');try{const bytes=readFileSync(file);res.setHeader('Content-Type',({'html':'text/html; charset=utf-8','js':'text/javascript; charset=utf-8','css':'text/css; charset=utf-8','jpg':'image/jpeg','png':'image/png','svg':'image/svg+xml','webp':'image/webp','webmanifest':'application/manifest+json'})[file.split('.').pop()]||'application/octet-stream');res.end(method==='HEAD'?undefined:bytes);}catch{fail(404,'No encontrado.');}
+   staticFiles.serveFallback({res,p,method});
   }catch(e){if((!e.status||e.status>=500)&&process.env.NODE_ENV!=='test')console.error(JSON.stringify({level:'error',requestId:req.amcRequestId||'',method:req.method,path:p,status:e.status||500,error:e.code||e.name||'Error'}));else if(process.env.NODE_ENV==='test'&&!e.status)console.error(e);if(!res.headersSent)send(res,e.status||500,{error:e.status?e.message:'Ocurrió un error. Intentá nuevamente.',...(e.requiresTwoFactor?{requiresTwoFactor:true}:{})});else res.end();}
  }
  let delivering=false;
