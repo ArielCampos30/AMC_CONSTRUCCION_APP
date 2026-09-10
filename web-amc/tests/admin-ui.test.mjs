@@ -6,13 +6,14 @@ import {createApp} from '../server.mjs';
 const origin='http://localhost:4180';
 
 test('admin v3 exposes the five primary destinations and responsive views',async()=>{
-  const [app,css,hub,worker,dashboard,requestsUI]=await Promise.all([
+  const [app,css,hub,worker,dashboard,requestsUI,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-v3.css',import.meta.url),'utf8'),
     readFile(new URL('../public/project-hub.js',import.meta.url),'utf8'),
     readFile(new URL('../public/sw.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-dashboard-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/admin-requests-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/admin-requests-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
@@ -25,6 +26,12 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(app,/from '.\/admin-requests-ui\.js'/);
   assert.match(app,/const adminRequests=\(\)=>adminRequestsUI\.render\(\)/);
   assert.doesNotMatch(app,/function adminRequests\(\)/);
+  assert.match(quotesUI,/Pendientes.*Aceptados.*No aceptados.*Vencidos.*Todos/s);
+  assert.match(app,/from '.\/admin-quotes-ui\.js'/);
+  assert.match(app,/const adminQuotes=selectedId=>adminQuotesUI\.list\(selectedId\)/);
+  assert.match(app,/const adminQuoteDetail=\(\)=>adminQuotesUI\.detail\(\)/);
+  assert.doesNotMatch(app,/function adminQuotes\(/);
+  assert.doesNotMatch(app,/function adminQuoteDetail\(\)/);
   assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
   assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
   assert.match(app,/\/api\/staff-chat\/messages/);  assert.match(app,/min="\$\{required\?'0\.01':'0'\}" step="0\.01"/);
@@ -264,9 +271,10 @@ test('mutating actions use one shared spinner without floating loading messages'
 });
 
 test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
-  const [app,pdf]=await Promise.all([
+  const [app,pdf,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/quote-pdf-actions.js',import.meta.url),'utf8')
+    readFile(new URL('../public/quote-pdf-actions.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(app,/from '.\/quote-pdf-actions\.js'/);
   assert.match(pdf,/function pdfFileName\(q\)/);
@@ -277,7 +285,8 @@ test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
   assert.match(pdf,/navigator\.canShare\?\.\(\{files:\[file\]\}\)/);
   assert.match(pdf,/navigator\.share\(\{title:'Presupuesto AMC',text:q\?\.number\|\|'Presupuesto AMC',files:\[file\]\}\)/);
   assert.match(pdf,/window\.AMCNative\?\.savePdf/);
-  assert.match(app,/data-action="download-pdf-admin"/);
+  assert.match(quotesUI,/data-action="download-pdf-admin"/);
+  assert.match(quotesUI,/data-action="share-pdf-admin"/);
   assert.match(app,/data-action="download-quote-pdf"/);
   assert.doesNotMatch(pdf,/navigator\.share\(\{title:'Presupuesto AMC',url/);
   assert.doesNotMatch(pdf,/Enlace al PDF copiado/);
@@ -285,13 +294,14 @@ test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
 });
 
 test('pending PDF can be regenerated and returns to the exact quote',async()=>{
-  const [app,features,bridge,generation]=await Promise.all([
+  const [app,features,bridge,generation,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8')
+    readFile(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
-  assert.match(app,/data-action="generate-pdf-admin"/);
+  assert.match(quotesUI,/data-action="generate-pdf-admin"/);
   assert.match(app,/features\.generatePdf\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
   assert.match(features,/pdfJob=null/);
   assert.match(features,/function generatePdf\(requestId='',quoteId=''\)/);
@@ -316,14 +326,17 @@ test('pending PDF can be regenerated and returns to the exact quote',async()=>{
 });
 
 test('admin budget detail opens the exact quote and only one overflow menu stays open',async()=>{
-  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
-  assert.match(app,/function adminQuoteDetail\(\)/);
-  assert.match(app,/state\.quotes\.find\(q=>q\.id===id\)/);
-  assert.match(app,/Trabajos incluidos/);
-  assert.match(app,/Importe/);
-  assert.match(app,/Datos internos/);
+  const [app,quotesUI]=await Promise.all([
+    readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
+  ]);
+  assert.match(quotesUI,/const detail=\(\)=>/);
+  assert.match(quotesUI,/state\.quotes\|\|\[\]/);
+  assert.match(quotesUI,/Trabajos incluidos/);
+  assert.match(quotesUI,/Importe/);
+  assert.match(quotesUI,/Datos internos/);
   assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)\)html=adminQuoteDetail\(\)/);
-  assert.match(app,/href="#presupuesto-admin\/\$\{encodeURIComponent\(q\.id\)\}"/);
+  assert.match(quotesUI,/href="#presupuesto-admin\/\$\{encodeURIComponent\(quote\.id\)\}"/);
   assert.match(app,/const actionMenu=e\.target\.closest\('\.admin-v3-actions details'\)/);
   assert.match(app,/if\(!actionMenu\)document\.querySelectorAll\('\.admin-v3-actions details\[open\]'\)/);
   assert.match(app,/detail\.removeAttribute\('open'\)/);
