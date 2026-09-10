@@ -1,5 +1,4 @@
 import {staticResponse} from './static-response.mjs';
-import {PostgresDatabase} from './postgres-db.mjs';
 import {planningFeatures} from './planning.mjs';
 import {recoveryFeatures} from './recovery.mjs';
 import {closureFeatures} from './closure.mjs';
@@ -13,12 +12,12 @@ import {mediaAccessFeatures} from './media-access.mjs';
 import {createMediaUploadParser} from './media-upload-parser.mjs';
 import {createSupabaseFileStore} from './storage-supabase.mjs';
 import {createSystemHealth} from './system-health.mjs';
+import {createDatabaseCore} from './database-core.mjs';
 import http from 'node:http';
 import {teamFeatures} from './team.mjs';
 import {featureRoutes} from './features.mjs';
-import {DatabaseSync} from 'node:sqlite';
 import {randomUUID,randomBytes,scryptSync,timingSafeEqual,createHash} from 'node:crypto';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {pushKeys,deliver,validSubscription} from './push.mjs';
@@ -33,35 +32,11 @@ const amount=v=>{if(!Number.isFinite(Number(v))||Number(v)<=0||Number(v)>1e10)fa
 const optionalAmount=v=>{if(!Number.isFinite(Number(v||0))||Number(v||0)<0||Number(v||0)>1e10)fail(400,'Importe inválido.');return Math.round(Number(v||0)*100)/100;};
 const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&!isNaN(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
 export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,origin='http://localhost:4180',clock=Date.now,sendRecovery,twoFactorKey=process.env.AMC_2FA_KEY,fileStore}={}){
- if(dbPath!==':memory:')mkdirSync(path.dirname(dbPath),{recursive:true});
- const version=(process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA||process.env.AMC_VERSION||'dev').slice(0,7),startedAt=Date.now(); const recentServerErrors=[];const recentErrorCount=()=>{const cutoff=Date.now()-15*60*1000;while(recentServerErrors.length&&recentServerErrors[0]<cutoff)recentServerErrors.shift();return recentServerErrors.length;};
- const testUrl=process.env.NODE_ENV==='test'?process.env.AMC_TEST_DATABASE_URL:null;const remoteUrl=testUrl||process.env.AMC_DATABASE_URL;const db=remoteUrl?new PostgresDatabase(remoteUrl,{schema:testUrl?'amc_test_'+(dbPath===':memory:'?id().replaceAll('-',''):sha(dbPath).slice(0,24)):'amc_data',test:!!testUrl,caFile:process.env.AMC_DATABASE_CA_FILE}):new DatabaseSync(dbPath);db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
- CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,name TEXT,phone TEXT,town TEXT,role TEXT NOT NULL,password TEXT NOT NULL,sound INTEGER DEFAULT 1);
- CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,userId TEXT NOT NULL,expires INTEGER NOT NULL,csrf TEXT NOT NULL);
- CREATE TABLE IF NOT EXISTS docs(id TEXT PRIMARY KEY,kind TEXT NOT NULL,owner TEXT NOT NULL DEFAULT '',body TEXT NOT NULL);
- CREATE INDEX IF NOT EXISTS docs_scope ON docs(kind,owner);
- CREATE TABLE IF NOT EXISTS files(id TEXT PRIMARY KEY,owner TEXT NOT NULL,mime TEXT NOT NULL,body BLOB NOT NULL);
- CREATE TABLE IF NOT EXISTS devices(id TEXT PRIMARY KEY,userId TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL);
- CREATE TABLE IF NOT EXISTS delivery(id TEXT PRIMARY KEY,deviceId TEXT NOT NULL,noticeId TEXT NOT NULL,body TEXT NOT NULL,attempts INTEGER DEFAULT 0,nextAt INTEGER DEFAULT 0,status TEXT DEFAULT 'pending',error TEXT DEFAULT '');
- CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT NOT NULL);`);
- if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='active'))db.exec('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+ const version=(process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA||process.env.AMC_VERSION||'dev').slice(0,7),startedAt=Date.now();
+ const recentServerErrors=[];const recentErrorCount=()=>{const cutoff=Date.now()-15*60*1000;while(recentServerErrors.length&&recentServerErrors[0]<cutoff)recentServerErrors.shift();return recentServerErrors.length;};
+ const {db,remoteUrl,all,get,put,transaction,beginStateSnapshot,endStateSnapshot}=createDatabaseCore({dbPath,id,sha,now,fail});
  const objectStore=fileStore||createSupabaseFileStore();
- let stateRows=null;
- const all=(kind,owner)=>stateRows?(stateRows.get(kind)||[]).filter(r=>owner===undefined||r.owner===owner).map(r=>r.value):db.prepare('SELECT body FROM docs WHERE kind=?'+(owner===undefined?'':' AND owner=?')+' ORDER BY rowid DESC').all(...(owner===undefined?[kind]:[kind,owner])).map(r=>JSON.parse(r.body));
- const get=(kind,key)=>{const r=db.prepare('SELECT body FROM docs WHERE kind=? AND id=?').get(kind,key);if(!r)fail(404,'No encontrado.');return JSON.parse(r.body);};
- const put=(kind,owner,body)=>{db.prepare('INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body,owner=excluded.owner').run(body.id,kind,owner,JSON.stringify(body));return body;}; const {backupHealth,systemStatus}=createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt});
- const transaction=fn=>{db.exec('BEGIN IMMEDIATE');try{const value=fn();db.exec('COMMIT');return value;}catch(e){db.exec('ROLLBACK');throw e;}};
- const migrateRelations=()=>transaction(()=>{
-  const requests=all('request'),quotes=all('quote'),works=all('work'),quoteById=new Map(quotes.map(q=>[q.id,q]));
-  const workByQuote=new Map(works.filter(w=>w.quoteId||w.presupuestoId).map(w=>[w.presupuestoId||w.quoteId,w]));
-  for(const quote of quotes){const solicitudId=quote.solicitudId||quote.requestId||null,work=workByQuote.get(quote.id);const next={...quote,presupuestoId:quote.presupuestoId||quote.id,solicitudId,requestId:quote.requestId||solicitudId,obraId:quote.obraId||work?.id||null,schemaVersion:2};if(JSON.stringify(next)!==JSON.stringify(quote))put('quote',quote.userId,next);}
-  for(const work of works){const presupuestoId=work.presupuestoId||work.quoteId||null,quote=presupuestoId?quoteById.get(presupuestoId):null,solicitudId=work.solicitudId||work.requestId||quote?.solicitudId||quote?.requestId||null;if(!presupuestoId&&!solicitudId)continue;const next={...work,obraId:work.obraId||work.id,presupuestoId,quoteId:work.quoteId||presupuestoId,solicitudId,requestId:work.requestId||solicitudId,schemaVersion:2};if(JSON.stringify(next)!==JSON.stringify(work))put('work',work.userId,next);}
-  const migratedQuotes=all('quote'),migratedWorks=all('work');
-  for(const request of requests){const presupuestoIds=migratedQuotes.filter(q=>(q.solicitudId||q.requestId)===request.id).map(q=>q.id),obraIds=migratedWorks.filter(w=>(w.solicitudId||w.requestId)===request.id).map(w=>w.id),next={...request,solicitudId:request.solicitudId||request.id,presupuestoIds:[...new Set([...(request.presupuestoIds||[]),...presupuestoIds])],obraIds:[...new Set([...(request.obraIds||[]),...obraIds])],schemaVersion:2};if(JSON.stringify(next)!==JSON.stringify(request))put('request',request.userId,next);}
- });
- migrateRelations();
- const migrateCompletion=()=>transaction(()=>{for(const work of all('work').filter(w=>['Pendiente de cierre','Pendiente de conformidad'].includes(w.status))){const closure=all('closure').filter(c=>c.workId===work.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0],closureStatus=closure?.status||(work.status==='Pendiente de conformidad'?'Pendiente de conformidad':'Pendiente');put('work',work.userId,{...work,status:'Finalizado',closureStatus,completedAt:work.completedAt||work.updatedAt||now()});if(work.requestId){const request=all('request').find(r=>r.id===work.requestId);if(request)put('request',request.userId,{...request,status:'Cerrada',statusUpdatedAt:request.statusUpdatedAt||now()});}if(work.calendarBookingId){const booking=all('calendarBooking').find(b=>b.id===work.calendarBookingId);if(booking&&booking.status!=='Cancelada'&&booking.status!=='Finalizada')put('calendarBooking','',{...booking,status:'Finalizada',completedAt:booking.completedAt||now(),updatedAt:now()});}}});
- migrateCompletion();
+ const {backupHealth,systemStatus}=createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt});
  const userView=u=>u?{id:u.id,email:u.email,name:u.name,phone:u.phone,town:u.town,role:u.role,sound:!!u.sound}:null;
  const weakPasswords=new Set(['12345678','123456789','1234567890','password','password1','qwerty123','admin123','contraseña','contrasena','amc12345']);
  const passwordHash=p=>{if(typeof p!=='string'||p.length<8||p.length>200||weakPasswords.has(p.trim().toLowerCase()))fail(400,'Usá una contraseña de al menos 8 caracteres que no sea una clave común.');const salt=randomBytes(16).toString('hex');return salt+':'+scryptSync(p,salt,64).toString('hex');};
@@ -138,10 +113,10 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
    if(await authentication.handlePublic({p,method,req,res}))return;
    if(p==='/api/state'&&method==='GET'){
     lifecycle.run();
-    const snapshotAll=user?.role==='admin';if(snapshotAll){stateRows=new Map();for(const row of db.prepare("SELECT kind,owner,body FROM docs WHERE kind!='estimator' ORDER BY rowid DESC").all()){if(!stateRows.has(row.kind))stateRows.set(row.kind,[]);stateRows.get(row.kind).push({owner:row.owner,value:JSON.parse(row.body)});}}try{
+    const snapshotAll=user?.role==='admin';if(snapshotAll)beginStateSnapshot();try{
     const savedProfile=user?all('clientProfile',user.id)[0]:null,common={user:user?{...userView(user),address:savedProfile?.address||''}:null,...(user?chatSummary(user):{}),csrf:session?.csrf,appearance:planning.appearance(),posts:all('post').filter(p=>!p.demo),reviews:all('review').filter(r=>r.approved),myReview:user?.role==='client'?all('review',user.id)[0]||null:null,services,serviceCatalog};if(!user)return send(res,200,common);
     if(user.role==='employee')return send(res,200,{...common,...team.state(user),...fieldwork.state(user),...recovery.state(user),...closure.state(user),...planning.state(user),notices:all('notice',user.id),staffMessages:staffMessages(user),staffUnread:staffUnread(user),staffReadByAdmin:staffReadByAdmin(user.id),chatRequests:[],messages:[],appointments:[],extras:[],receipts:[],favorites:[],requests:[],quotes:[],works:all('work').filter(w=>canAccessWork(user,w)).map(employeeWork),referrals:[],clients:[],pendingReviews:[]});
-    const leads=user.role==='admin'?all('leadClient'):[],registered=user.role==='admin'?db.prepare("SELECT id,name,email,phone,town,1 AS hasAccount FROM users WHERE role='client'").all().map(c=>{const profile=all('clientProfile',c.id)[0],adminNote=all('clientAdminNote').find(n=>n.clientId===c.id);return {...c,address:profile?.address||'',note:adminNote?.note||'',linkedLeadId:leads.find(l=>l.linkedUserId===c.id)?.id||null};}):[],linkedLeadIds=new Set(leads.filter(l=>l.linkedUserId).map(l=>l.id)),owner=user.role==='admin'?undefined:user.id,allowedChat=user.role==='client'?clientChatIds(user):null;return send(res,200,{...common,agendaClients:user.role==='admin'?[...registered,...leads.filter(x=>!linkedLeadIds.has(x.id)).map(x=>({...x,hasAccount:0}))]:[],archivedClients:user.role==='admin'?all('clientArchive').filter(c=>c.archived).map(c=>c.userId):[],offlineNotes:user.role==='admin'?all('offlineNote',user.id):[],staffMessages:user.role==='admin'?staffMessages(user):[],...team.state(user),...fieldwork.state(user),...recovery.state(user),...closure.state(user),...planning.state(user),chatRequests:user.role==='client'?all('request',owner).filter(r=>allowedChat.has(r.id)):undefined,messages:all('message',owner).filter(m=>!allowedChat||allowedChat.has(m.requestId)),appointments:all('appointment',owner),extras:all('extra',owner),receipts:all('receipt',owner),favorites:all('favorite',user.id).map(r=>r.postId),requests:all('request',owner),quotes:all('quote',owner).map(q=>user.role==='admin'?q:publicQuote(q)),works:all('work',owner).map(w=>user.role==='admin'?w:publicWork(w)),notices:all('notice',user.id),referrals:all('referral',user.id),clients:user.role==='admin'?registered:[],pendingReviews:user.role==='admin'?all('review').filter(r=>!r.approved):[],staffReadByEmployee:user.role==='admin'?staffReadByEmployee():undefined,system:user.role==='admin'?systemStatus():undefined,twoFactor:user.role==='admin'?twoFactor.status(user):undefined});}finally{stateRows=null;}
+    const leads=user.role==='admin'?all('leadClient'):[],registered=user.role==='admin'?db.prepare("SELECT id,name,email,phone,town,1 AS hasAccount FROM users WHERE role='client'").all().map(c=>{const profile=all('clientProfile',c.id)[0],adminNote=all('clientAdminNote').find(n=>n.clientId===c.id);return {...c,address:profile?.address||'',note:adminNote?.note||'',linkedLeadId:leads.find(l=>l.linkedUserId===c.id)?.id||null};}):[],linkedLeadIds=new Set(leads.filter(l=>l.linkedUserId).map(l=>l.id)),owner=user.role==='admin'?undefined:user.id,allowedChat=user.role==='client'?clientChatIds(user):null;return send(res,200,{...common,agendaClients:user.role==='admin'?[...registered,...leads.filter(x=>!linkedLeadIds.has(x.id)).map(x=>({...x,hasAccount:0}))]:[],archivedClients:user.role==='admin'?all('clientArchive').filter(c=>c.archived).map(c=>c.userId):[],offlineNotes:user.role==='admin'?all('offlineNote',user.id):[],staffMessages:user.role==='admin'?staffMessages(user):[],...team.state(user),...fieldwork.state(user),...recovery.state(user),...closure.state(user),...planning.state(user),chatRequests:user.role==='client'?all('request',owner).filter(r=>allowedChat.has(r.id)):undefined,messages:all('message',owner).filter(m=>!allowedChat||allowedChat.has(m.requestId)),appointments:all('appointment',owner),extras:all('extra',owner),receipts:all('receipt',owner),favorites:all('favorite',user.id).map(r=>r.postId),requests:all('request',owner),quotes:all('quote',owner).map(q=>user.role==='admin'?q:publicQuote(q)),works:all('work',owner).map(w=>user.role==='admin'?w:publicWork(w)),notices:all('notice',user.id),referrals:all('referral',user.id),clients:user.role==='admin'?registered:[],pendingReviews:user.role==='admin'?all('review').filter(r=>!r.approved):[],staffReadByEmployee:user.role==='admin'?staffReadByEmployee():undefined,system:user.role==='admin'?systemStatus():undefined,twoFactor:user.role==='admin'?twoFactor.status(user):undefined});}finally{if(snapshotAll)endStateSnapshot();}
    }
    if(await mediaAccess.serve({user,p,method,req,res}))return;
    if(p.startsWith('/api/')){
@@ -215,6 +190,3 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  if(process.env.RENDER&&!process.env.AMC_DATABASE_URL&&!demo){console.error('Render producción requiere AMC_DATABASE_URL: no se permite guardar en disco temporal.');process.exit(1);}
  const app=createApp({demo,origin,dbPath:process.env.AMC_DB_PATH||path.join(ROOT,'data',demo?'demo.sqlite':'amc.sqlite')});app.server.listen(port,demo&&!process.env.RENDER?'127.0.0.1':'0.0.0.0',()=>console.log('AMC conectado: '+origin+(demo?' · entorno de prueba, cuentas de ejemplo':' ')));
 }
-
-
-
