@@ -16,7 +16,10 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
   assert.match(dashboard,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
-  assert.match(app,/from '.\/admin-dashboard-ui\.js'/);\n  assert.match(app,/html=adminDashboard\(\)/);\n  assert.doesNotMatch(app,/function adminHome\(\)/);\n  assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
+  assert.match(app,/from '.\/admin-dashboard-ui\.js'/);
+  assert.match(app,/html=adminDashboard\(\)/);
+  assert.doesNotMatch(app,/function adminHome\(\)/);
+  assert.match(app,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
   assert.match(app,/En curso.*Programadas.*Pendientes.*Finalizadas.*Todas/s);
   assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
   assert.match(app,/\/api\/staff-chat\/messages/);  assert.match(app,/min="\$\{required\?'0\.01':'0'\}" step="0\.01"/);
