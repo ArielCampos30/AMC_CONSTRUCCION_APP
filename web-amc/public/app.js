@@ -20,6 +20,7 @@ import {createCommunityUI} from './community-ui.js';
 import {createDiscoveryUI} from './discovery-ui.js';
 import {createRequestUI} from './request-ui.js';
 import {createHomeUI} from './home-ui.js';
+import {createPostCardUI} from './post-card-ui.js';
 import {createClientQuotesUI} from './client-quotes-ui.js';
 import {createClientWorksUI} from './client-works-ui.js';
 import {createAdminDashboardUI} from './admin-dashboard-ui.js';
@@ -46,6 +47,8 @@ async function api(url,body,method='POST'){const key=method+' '+url+' '+JSON.str
 const clientStateSignature=value=>value?.user?.role==='client'?JSON.stringify({user:value.user,requests:value.requests,quotes:value.quotes,works:value.works,closures:value.closures,dateProposals:value.dateProposals,appointments:value.appointments,extras:value.extras,receipts:value.receipts,notices:value.notices,chatUnread:value.chatUnread,myReview:value.myReview}):'';
 const noticeUI=createNoticeUI({getState:()=>state,getPage:()=>page,api,esc,date,heading,btn,empty,sound});
 const communityUI=createCommunityUI({getState:()=>state,isAdmin,heading,options,esc,date,empty,btn,field});
+const postCardUI=createPostCardUI({getState:()=>state,getBefore:()=>before,isAdmin,esc,date,btn});
+const post=p=>postCardUI.render(p);
 const discoveryUI=createDiscoveryUI({getState:()=>state,isAdmin,heading,post,empty,esc});
 const adminDashboard=createAdminDashboardUI({getState:()=>state,heading,closureNeedsAction:work=>closureNeedsAction(work)});
 const showInternalNotice=notice=>noticeUI.showInternal(notice);
@@ -65,7 +68,6 @@ const auth=register=>accountUI.auth(register),profile=()=>accountUI.profile();
 const requestUI=createRequestUI({getState:()=>state,getSelectedPost:()=>selectedPost,isAdmin,auth,heading,field,options,esc,empty});
 const features=createFeatures({getState:()=>state,isAdmin,esc,money,date,field,options,heading,empty,thumb,api,upload,refresh:reload,navigate,toast,onNoticesRead:applyNoticeRead,onPdfReady:data=>{render();toast('PDF generado y listo.');requestAnimationFrame(()=>document.querySelector('[data-quote-id="'+CSS.escape(data.quoteId||'')+'"]')?.scrollIntoView({block:'center',behavior:'smooth'}));}});
 const clientV5=createClientV5({getState:()=>state,esc,money,date,heading,empty,thumb});
-function post(p){const saved=state.favorites?.includes(p.id),showBefore=before.has(p.id);return `<article class="post"><div class="post-head"><div class="mini-logo">AMC</div><div><strong>AMC Construcciones y Arreglos</strong><small>${esc(p.town)} · ${date(p.date)}</small></div></div><div class="post-photo"><a href="${esc(showBefore?p.before:p.image)}"><img src="${esc(showBefore?p.before:p.image)}?thumb=1" alt="${esc(p.title)} · ${showBefore?'antes':'después'}" loading="lazy"></a>${p.demo?'<span class="photo-label">IMAGEN ILUSTRATIVA</span>':''}${p.before?`<div class="comparison">${btn(showBefore?'Ver después':'Ver antes','compare',`data-id="${p.id}"`,'selected')}</div>`:''}</div><div class="post-body"><div class="post-title"><span class="tag">${esc(p.service)}</span>${btn(saved?'♥':'♡','favorite',`data-id="${p.id}" aria-label="Guardar trabajo" aria-pressed="${!!saved}"`,'save '+(saved?'saved':''))}</div><h2>${esc(p.title)}</h2><p>${esc(p.description)}</p>${!isAdmin()?btn('Quiero algo así ↗','inspired',`data-id="${p.id}"`,'outline full'):''}</div></article>`;}
 const homeUI=createHomeUI({getState:()=>state,isAdmin,getFilter:()=>filter,whatsappEnabled:WHATSAPP_ENABLED,esc,btn,post,empty});
 const home=()=>homeUI.render();
 const requestForm=(visit=false)=>requestUI.render(visit);
