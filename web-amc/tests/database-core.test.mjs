@@ -49,11 +49,14 @@ test('database transaction rolls back atomically',()=>{
 });
 
 test('server delegates database initialization and migrations to database core',async()=>{
- const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+ const [server,stateRoutes]=await Promise.all([
+  readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../state-routes.mjs',import.meta.url),'utf8')
+ ]);
  assert.match(server,/from '.\/database-core\.mjs'/);
  assert.match(server,/createDatabaseCore\(\{dbPath,id,sha,now,fail\}\)/);
- assert.match(server,/beginStateSnapshot\(\)/);
- assert.match(server,/endStateSnapshot\(\)/);
+ assert.match(stateRoutes,/beginStateSnapshot\(\)/);
+ assert.match(stateRoutes,/endStateSnapshot\(\)/);
  assert.doesNotMatch(server,/CREATE TABLE IF NOT EXISTS users/);
  assert.doesNotMatch(server,/const migrateRelations=/);
  assert.doesNotMatch(server,/const migrateCompletion=/);

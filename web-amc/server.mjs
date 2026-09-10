@@ -5,6 +5,7 @@ import {closureFeatures} from './closure.mjs';
 import {fieldworkFeatures} from './fieldwork.mjs';
 import {quoteLifecycle} from './quote-lifecycle.mjs';
 import {quoteWorkRoutes} from './quote-work-routes.mjs';
+import {stateRoutes} from './state-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -76,6 +77,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const clientRequests=clientRequestFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,services,serviceCatalog,planning});
  const handleQuoteWork=quoteWorkRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,optionalAmount,validDate,now,id,sha,lifecycle});
  const handleFeature=featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning,markNoticesForRoute});
+ const handleState=stateRoutes({db,all,userView,chatSummary,planning,services,serviceCatalog,team,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -95,13 +97,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
    if((p==='/health'||p==='/healthz')&&method==='GET'){const before=Date.now();db.prepare('SELECT 1 AS ok').get();return send(res,200,{ok:true,database:'available',driver:remoteUrl?'postgresql':'sqlite',databaseMs:Date.now()-before,version,errors5xx15m:recentErrorCount(),...backupHealth(),uptimeSeconds:Math.floor((Date.now()-startedAt)/1000)});}
    if(p==='/api/config')return send(res,200,{demo,webPushKey:keys.publicKey,services,version});
    if(await authentication.handlePublic({p,method,req,res}))return;
-   if(p==='/api/state'&&method==='GET'){
-    lifecycle.run();
-    const snapshotAll=user?.role==='admin';if(snapshotAll)beginStateSnapshot();try{
-    const savedProfile=user?all('clientProfile',user.id)[0]:null,common={user:user?{...userView(user),address:savedProfile?.address||''}:null,...(user?chatSummary(user):{}),csrf:session?.csrf,appearance:planning.appearance(),posts:all('post').filter(p=>!p.demo),reviews:all('review').filter(r=>r.approved),myReview:user?.role==='client'?all('review',user.id)[0]||null:null,services,serviceCatalog};if(!user)return send(res,200,common);
-    if(user.role==='employee')return send(res,200,{...common,...team.state(user),...fieldwork.state(user),...recovery.state(user),...closure.state(user),...planning.state(user),notices:all('notice',user.id),staffMessages:staffMessages(user),staffUnread:staffUnread(user),staffReadByAdmin:staffReadByAdmin(user.id),chatRequests:[],messages:[],appointments:[],extras:[],receipts:[],favorites:[],requests:[],quotes:[],works:all('work').filter(w=>canAccessWork(user,w)).map(employeeWork),referrals:[],clients:[],pendingReviews:[]});
-    const leads=user.role==='admin'?all('leadClient'):[],registered=user.role==='admin'?db.prepare("SELECT id,name,email,phone,town,1 AS hasAccount FROM users WHERE role='client'").all().map(c=>{const profile=all('clientProfile',c.id)[0],adminNote=all('clientAdminNote').find(n=>n.clientId===c.id);return {...c,address:profile?.address||'',note:adminNote?.note||'',linkedLeadId:leads.find(l=>l.linkedUserId===c.id)?.id||null};}):[],linkedLeadIds=new Set(leads.filter(l=>l.linkedUserId).map(l=>l.id)),owner=user.role==='admin'?undefined:user.id,allowedChat=user.role==='client'?clientChatIds(user):null;return send(res,200,{...common,agendaClients:user.role==='admin'?[...registered,...leads.filter(x=>!linkedLeadIds.has(x.id)).map(x=>({...x,hasAccount:0}))]:[],archivedClients:user.role==='admin'?all('clientArchive').filter(c=>c.archived).map(c=>c.userId):[],offlineNotes:user.role==='admin'?all('offlineNote',user.id):[],staffMessages:user.role==='admin'?staffMessages(user):[],...team.state(user),...fieldwork.state(user),...recovery.state(user),...closure.state(user),...planning.state(user),chatRequests:user.role==='client'?all('request',owner).filter(r=>allowedChat.has(r.id)):undefined,messages:all('message',owner).filter(m=>!allowedChat||allowedChat.has(m.requestId)),appointments:all('appointment',owner),extras:all('extra',owner),receipts:all('receipt',owner),favorites:all('favorite',user.id).map(r=>r.postId),requests:all('request',owner),quotes:all('quote',owner).map(q=>user.role==='admin'?q:publicQuote(q)),works:all('work',owner).map(w=>user.role==='admin'?w:publicWork(w)),notices:all('notice',user.id),referrals:all('referral',user.id),clients:user.role==='admin'?registered:[],pendingReviews:user.role==='admin'?all('review').filter(r=>!r.approved):[],staffReadByEmployee:user.role==='admin'?staffReadByEmployee():undefined,system:user.role==='admin'?systemStatus():undefined,twoFactor:user.role==='admin'?twoFactor.status(user):undefined});}finally{if(snapshotAll)endStateSnapshot();}
-   }
+   if(handleState({p,method,user,session,res}))return;
    if(await mediaAccess.serve({user,p,method,req,res}))return;
    if(p.startsWith('/api/')){
     if(!user)fail(401,'Ingresá a tu cuenta para continuar.');checkRate(user.id+':api',400);if(p.startsWith('/api/admin/2fa/')){const twoFactorBody=method==='GET'?{}:await readBody(req);if(await twoFactor.route({p,method,b:twoFactorBody,user,res,session}))return;}if(chat.routeBeforeBody({p,method,user,url,res}))return;const b=p==='/api/upload'&&String(req.headers['content-type']||'').startsWith('multipart/form-data')?await readMultipart(req):await readBody(req);
