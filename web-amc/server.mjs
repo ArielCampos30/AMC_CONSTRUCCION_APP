@@ -131,8 +131,9 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(handleDevices({p,method,b,user,res}))return;
     fail(404,'Acción no encontrada.');
    }
+   staticFiles.requirePageMethod(method);
    if(handleEstimatorPage({p,method,user,session,res}))return;
-   staticFiles.serveFallback({req,res,p,method});
+   staticFiles.serveFallback({res,p,method});
   }catch(e){if((!e.status||e.status>=500)&&process.env.NODE_ENV!=='test')console.error(JSON.stringify({level:'error',requestId:req.amcRequestId||'',method:req.method,path:p,status:e.status||500,error:e.code||e.name||'Error'}));else if(process.env.NODE_ENV==='test'&&!e.status)console.error(e);if(!res.headersSent)send(res,e.status||500,{error:e.status?e.message:'Ocurrió un error. Intentá nuevamente.',...(e.requiresTwoFactor?{requiresTwoFactor:true}:{})});else res.end();}
  }
  let delivering=false;
