@@ -6,7 +6,7 @@ import {createApp} from '../server.mjs';
 const origin='http://localhost:4180';
 
 test('admin v3 exposes the five primary destinations and responsive views',async()=>{
-  const [app,css,hub,worker,dashboard,requestsUI,quotesUI,worksUI]=await Promise.all([
+  const [app,css,hub,worker,dashboard,requestsUI,quotesUI,worksUI,chatUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-v3.css',import.meta.url),'utf8'),
     readFile(new URL('../public/project-hub.js',import.meta.url),'utf8'),
@@ -14,7 +14,8 @@ test('admin v3 exposes the five primary destinations and responsive views',async
     readFile(new URL('../public/admin-dashboard-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-requests-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-chat-ui.js',import.meta.url),'utf8')
   ]);
   const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
   assert.ok(app.includes(nav));
@@ -39,7 +40,14 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(app,/const adminWorkDetail=\(\)=>adminWorksUI\.detail\(\)/);
   assert.doesNotMatch(app,/function adminWorks\(\)/);
   assert.doesNotMatch(app,/function adminWorkDetail\(\)/);
-  assert.match(app,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
+  assert.match(chatUI,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
+  assert.match(chatUI,/data-admin-employee/);
+  assert.match(chatUI,/id="admin-staff-message"/);
+  assert.match(app,/from '.\/admin-chat-ui\.js'/);
+  assert.match(app,/const adminChat=\(\)=>adminChatUI\.render\(\)/);
+  assert.doesNotMatch(app,/function adminChat\(\)/);
+  assert.match(app,/const tab=e\.target\.closest\('\[data-admin-chat\]'\)/);
+  assert.match(app,/const employee=e\.target\.closest\('\[data-admin-employee\]'\)/);
   assert.match(app,/\/api\/staff-chat\/messages/);  assert.match(app,/min="\$\{required\?'0\.01':'0'\}" step="0\.01"/);
   assert.match(hub,/Coordinar visita/);
   assert.match(hub,/No tomar/);
