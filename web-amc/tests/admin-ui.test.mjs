@@ -90,7 +90,7 @@ test('request detail changes quote actions after a quote exists',async()=>{
 });
 
 test('admin edits clients and employees with AMC dialogs instead of browser confirms',async()=>{
-  const [app,directory,team,bridge,index,server,features,planning,closure]=await Promise.all([
+  const [app,directory,team,bridge,index,server,features,planning,closure,clientDialogs]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
     readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
@@ -99,11 +99,14 @@ test('admin edits clients and employees with AMC dialogs instead of browser conf
     readFile(new URL('../server.mjs',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/accounts-closure-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/accounts-closure-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-client-dialogs-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(directory,/data-action="edit-client"/);
-  assert.match(app,/function openEditClientDialog\(clientId\)/);
-  assert.match(app,/edit-client-form/);
+  assert.match(app,/from '.\/admin-client-dialogs-ui\.js'/);
+  assert.match(app,/const openEditClientDialog=clientId=>adminClientDialogs\.openEditClientDialog\(clientId\)/);
+  assert.match(clientDialogs,/function openEditClientDialog\(clientId\)/);
+  assert.match(clientDialogs,/edit-client-form/);
   assert.match(server,/\/api\\\/admin\\\/clients\\\/\[\^\/\]\+\\\/profile/);
   assert.match(team,/Editar empleado/);
   assert.match(index,/amc-confirm\.js/);
@@ -218,15 +221,16 @@ test('full admin chat never stacks the floating chat and blocks double send',asy
 });
 
 test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
-  const [app,steps,features,bridge]=await Promise.all([
+  const [app,steps,features,bridge,clientDialogs]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/estimator-steps.js',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8')
+    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-client-dialogs-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(app,/case'manual-admin':openClientDialog\('budget'\)/);
-  assert.match(app,/Si el teléfono ya existe, AMC usará automáticamente la ficha guardada/);
-  assert.match(app,/data-use-existing/);
+  assert.match(clientDialogs,/Si el teléfono ya existe, AMC usará automáticamente la ficha guardada/);
+  assert.match(clientDialogs,/data-use-existing/);
   assert.match(app,/Cliente existente encontrado/);
   assert.match(steps,/\['Cliente','Trabajo','Costos','Final'\]/);
   assert.match(bridge,/4\. Mano de obra estimada/);
