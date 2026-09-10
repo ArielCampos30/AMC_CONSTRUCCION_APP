@@ -417,12 +417,13 @@ test('work date and team assignment use one clear source of truth',async()=>{
 });
 
 test('work detail is compact, accurate and uses the current client profile',async()=>{
-  const [app,worksUI]=await Promise.all([
+  const [app,worksUI,helpers]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/admin-works-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/admin-helpers.js',import.meta.url),'utf8')
   ]);
-  assert.match(app,/adminAgendaClient=id=>/);
-  assert.match(app,/adminRequestContact=r=>/);
+  assert.match(helpers,/const agendaClient=id=>/);
+  assert.match(helpers,/const requestContact=r=>/);
   assert.match(worksUI,/contact=adminRequestContact\(r\)/);
   assert.match(worksUI,/clientAddress=contact\.address\|\|contact\.town/);
   assert.match(worksUI,/Teléfono:<\/b>/);
