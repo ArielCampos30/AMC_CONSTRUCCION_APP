@@ -152,7 +152,8 @@ test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
     '../public/team-ui.js',
     '../public/amc-busy.js',
     '../public/app.js',
-    '../public/admin-quotes-ui.js'
+    '../public/admin-quotes-ui.js',
+    '../public/admin-works-ui.js'
   ]){
     execFileSync(process.execPath,['--check',fileURLToPath(new URL(path,import.meta.url))]);
   }
