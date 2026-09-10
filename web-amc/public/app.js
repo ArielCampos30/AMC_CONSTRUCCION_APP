@@ -32,6 +32,7 @@ import {createAdminClientDetailUI} from './admin-client-detail-ui.js';
 import {createAdminClientDialogs} from './admin-client-dialogs-ui.js';
 import {createAdminTeamDialog} from './admin-team-dialog-ui.js';
 import {createAdminDeclineDialog} from './admin-decline-dialog-ui.js';
+import {createAdminHelpers} from './admin-helpers.js';
 import {createAdminChatUI} from './admin-chat-ui.js';
 const adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='/admin-v3.css';document.head.append(adminStyle);
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -84,7 +85,7 @@ const clientQuotesUI=createClientQuotesUI({getState:()=>state,isAdmin,heading,es
 const quotes=selectedId=>clientQuotesUI.render(selectedId);
 const clientWorksUI=createClientWorksUI({getState:()=>state,getWorkId:()=>workId,setWorkId:value=>workId=value,heading,empty,esc,date,money});
 const works=()=>clientWorksUI.render();
-const adminChip=(label,group,current)=>`<button data-admin-filter="${group}" data-value="${esc(label)}" aria-pressed="${label===current}">${esc(label)}</button>`,adminBadge=value=>`<span class="admin-v3-badge" data-status="${esc(value)}">${esc(value)}</span>`,adminRequest=id=>state.requests.find(r=>r.id===id)||{},adminClient=id=>state.clients.find(c=>c.id===id)||{},adminAgendaClient=id=>(state.agendaClients||state.clients||[]).find(c=>c.id===id)||null,adminRequestContact=r=>adminAgendaClient(r?.leadId||r?.userId)||r||{},latestClosureFor=workId=>(state.closures||[]).filter(c=>c.workId===workId).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0],closureNeedsAction=w=>w?.status==='Finalizado'&&(!latestClosureFor(w.id)||latestClosureFor(w.id).status==='Observaciones'),quoteCanEdit=q=>['Guardado','Entregado','Enviado','Cambios solicitados'].includes(q?.status),quoteCanRevise=q=>['Rechazado','Vencido'].includes(q?.status);
+const {chip:adminChip,badge:adminBadge,request:adminRequest,client:adminClient,agendaClient:adminAgendaClient,requestContact:adminRequestContact,latestClosureFor,closureNeedsAction,quoteCanEdit,quoteCanRevise}=createAdminHelpers({getState:()=>state,esc});
 const adminRequestsUI=createAdminRequestsUI({getState:()=>state,getFilter:()=>adminRequestFilter,adminChip,adminBadge,quoteCanEdit,quoteCanRevise,heading,esc,date,empty});
 const adminRequests=()=>adminRequestsUI.render();
 const adminQuotesUI=createAdminQuotesUI({getState:()=>state,getFilter:()=>adminQuoteFilter,getPage:()=>page,adminChip,adminBadge,adminRequest,adminClient,quoteCanEdit,quoteCanRevise,heading,esc,date,empty,money});
