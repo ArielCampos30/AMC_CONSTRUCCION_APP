@@ -17,18 +17,21 @@ test('filtros admin y chat se adaptan a pantallas angostas',async()=>{
 
 
 test('móvil compacto no agrega huecos innecesarios ni mueve el fondo al abrir chat',async()=>{
-  const [styles,chatView,app,features]=await Promise.all([
+  const [styles,chatView,app,features,media]=await Promise.all([
     readFile(new URL('../public/styles.css',import.meta.url),'utf8'),
     readFile(new URL('../public/chat-view.js',import.meta.url),'utf8'),
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/media-upload-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(styles,/@media\(max-width:850px\)[\s\S]*header\{height:62px;padding:0 16px/);
   assert.match(styles,/@media\(max-width:560px\)\{main\{padding:12px 14px 92px/);
   assert.match(chatView,/opening&&!log\.closest\('#amc-chat-dialog'\)/);
-  assert.match(app,/async function decodeImageSource\(file\)/);
-  assert.match(app,/if\(thumbnail\?\.size\)data\.append\('thumbnail'/);
-  assert.match(app,/decodeFallback:true/);
+  assert.match(media,/async function decodeImageSource\(file\)/);
+  assert.match(media,/if\(thumbnail\?\.size\)data\.append\('thumbnail'/);
+  assert.match(media,/decodeFallback:true/);
+  assert.match(app,/from '.\/media-upload-ui\.js'/);
+  assert.match(app,/function upload\(file,onProgress,showBusy=true\)\{return mediaUpload\.upload/);
   assert.match(features,/if\(preview\)preview\.hidden=true/);
   assert.match(features,/releasePending\(item\);if\(preview\)preview\.hidden=false/);
   assert.match(features,/No pudimos preparar esta foto/);
