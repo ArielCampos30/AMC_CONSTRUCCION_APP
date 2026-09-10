@@ -52,12 +52,13 @@ test('chat informa al emisor cuándo el otro lado leyó el mensaje',async()=>{
 });
 
 test('UI usa checks y prepara fotos más livianas para móvil',async()=>{
-  const [features,app,float,chat,team]=await Promise.all([
+  const [features,app,float,chat,team,media]=await Promise.all([
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8'),
     readFile(new URL('../public/chat-view.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/media-upload-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(features,/chatReadByOther/);
   assert.match(features,/message-check/);
@@ -65,8 +66,8 @@ test('UI usa checks y prepara fotos más livianas para móvil',async()=>{
   assert.doesNotMatch(features,/<small>\$\{esc\(x\.state\)\}/);
   assert.match(chat,/\.message-check\.read\{color:#159164\}/);
   assert.match(team,/staffReadByAdmin/);
-  assert.match(app,/target=1440/);
-  assert.match(app,/canvasBlob\(canvas,'image\/webp',\.74\)/);
-  assert.doesNotMatch(app,/Promise\.all\(\[canvasBlob\(canvas,'image\/jpeg'/);
+  assert.match(media,/target=1440/);
+  assert.match(media,/canvasBlob\(canvas,'image\/webp',\.74\)/);
+  assert.doesNotMatch(media,/Promise\.all\(\[canvasBlob\(canvas,'image\/jpeg'/);
   assert.match(float,/height:min\(430px,58dvh\)/);
 });
