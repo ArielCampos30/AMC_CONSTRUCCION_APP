@@ -90,13 +90,14 @@ test('request detail changes quote actions after a quote exists',async()=>{
 });
 
 test('admin edits clients and employees with AMC dialogs instead of browser confirms',async()=>{
-  const [app,directory,team,bridge,index,server,features,planning,closure,clientDialogs]=await Promise.all([
+  const [app,directory,team,bridge,index,server,clientRequests,features,planning,closure,clientDialogs]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
     readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/index.html',import.meta.url),'utf8'),
     readFile(new URL('../server.mjs',import.meta.url),'utf8'),
+    readFile(new URL('../client-requests.mjs',import.meta.url),'utf8'),
     readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/accounts-closure-ui.js',import.meta.url),'utf8'),
@@ -107,7 +108,8 @@ test('admin edits clients and employees with AMC dialogs instead of browser conf
   assert.match(app,/const openEditClientDialog=clientId=>adminClientDialogs\.openEditClientDialog\(clientId\)/);
   assert.match(clientDialogs,/function openEditClientDialog\(clientId\)/);
   assert.match(clientDialogs,/edit-client-form/);
-  assert.match(server,/\/api\\\/admin\\\/clients\\\/\[\^\/\]\+\\\/profile/);
+  assert.match(clientRequests,/\/api\\\/admin\\\/clients\\\/\(\[\^\/\]\+\)\\\/profile/);
+  assert.match(server,/clientRequestFeatures/);
   assert.match(team,/Editar empleado/);
   assert.match(index,/amc-confirm\.js/);
   assert.match(server,/amc-confirm\.js/);
