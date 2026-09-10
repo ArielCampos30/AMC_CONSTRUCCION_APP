@@ -25,7 +25,7 @@ test('reseñas pendientes salen del estado general y quedan disponibles sólo pa
   assert.equal(pending.pendingReviews[0].approved,false);
 
   await client.call('/api/login',{email:clientUser.email,password:'Strong-Client-2026!'});
-  assert.equal((await client.call('/api/reviews/pending',undefined,403)).error,'Acceso restringido.');
+  assert.equal((await client.call('/api/reviews/pending',undefined,403)).error,'Este acceso es exclusivo de AMC.');
  }finally{await new Promise(resolve=>app.server.close(resolve));}
 });
 
