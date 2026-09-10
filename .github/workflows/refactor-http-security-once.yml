@@ -1,38 +1,11 @@
 name: Refactor HTTP Security Once
 on:
-  push:
-    branches:
-      - refactor-http-security-staging
-    paths:
-      - scripts/refactor-http-security.py
-      - .github/workflows/refactor-http-security-once.yml
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  refactor:
+  retired:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar proyecto
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Configurar Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Aplicar extracción
-        run: python scripts/refactor-http-security.py
-      - name: Instalar dependencias
-        working-directory: web-amc
-        run: npm ci --ignore-scripts
-      - name: Ejecutar pruebas
-        working-directory: web-amc
-        run: npm test
-      - name: Guardar cambio
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web-amc/server.mjs
-          git diff --cached --quiet && exit 0
-          git commit -m "Delegar seguridad HTTP"
-          git push
+      - run: echo retired
