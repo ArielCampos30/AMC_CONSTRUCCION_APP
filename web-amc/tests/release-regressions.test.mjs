@@ -84,10 +84,12 @@ test('Vista cliente usa un modal público y no navega a la vista legacy oculta',
 
 test('formularios Admin reducen autofill de datos ajenos sin romper login',()=>{
   const app=read('../public/app.js');
+  const dialogs=read('../public/admin-client-dialogs-ui.js');
   const account=read('../public/account-ui.js');
-  assert.match(app,/id="new-client-form" autocomplete="off"/);
-  assert.match(app,/input\.autocomplete='off'/);
-  assert.match(app,/input\.setAttribute\('data-form-type','other'\)/);
+  assert.match(app,/from '.\/admin-client-dialogs-ui\.js'/);
+  assert.match(dialogs,/id="new-client-form" autocomplete="off"/);
+  assert.match(dialogs,/input\.autocomplete='off'/);
+  assert.match(dialogs,/input\.setAttribute\('data-form-type','other'\)/);
   assert.match(account,/autocomplete="\$\{register\?'new-password':'current-password'\}"/);
 });
 
