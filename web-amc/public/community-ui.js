@@ -1,7 +1,7 @@
 export function createCommunityUI({getState,isAdmin,heading,options,esc,date,empty,btn,field}){
  let pendingReviews=[],pendingLoadedAt=0,pendingLoading=false,pendingError=false;
  const pendingMarkup=()=>pendingLoading&&!pendingLoadedAt?'<p>Cargando reseñas pendientes…</p>':pendingError&&!pendingLoadedAt?'<p>No se pudieron cargar las reseñas pendientes.</p>':pendingReviews.map(review=>`<article class="panel"><div class="title-row"><strong>${esc(review.name)}</strong><span class="status">${'★'.repeat(review.rating)}</span></div><p>${esc(review.text)}</p><small>${date(review.date)}</small><button class="primary" data-action="approve-review" data-id="${esc(review.id)}">Aprobar y publicar</button></article>`).join('')||'<p>No hay reseñas pendientes.</p>';
- const paintPending=()=>{const node=document.getElementById('pending-reviews-admin');if(node)node.innerHTML=pendingMarkup();};
+ const paintPending=()=>{if(typeof document==='undefined')return;const node=document.getElementById('pending-reviews-admin');if(node)node.innerHTML=pendingMarkup();};
  const loadPending=async()=>{if(!isAdmin()||pendingLoading||Date.now()-pendingLoadedAt<30000)return;pendingLoading=true;pendingError=false;paintPending();try{const response=await fetch('/api/reviews/pending',{credentials:'same-origin'});if(!response.ok)throw Error('No se pudieron cargar las reseñas pendientes.');const data=await response.json();if(!isAdmin())return;pendingReviews=data.pendingReviews||[];pendingLoadedAt=Date.now();}catch{pendingError=true;}finally{pendingLoading=false;paintPending();}};
  const reviews=()=>{
   const state=getState(),canReview=state.user?.role==='client'&&(state.works||[]).some(work=>work.status==='Finalizado'),
