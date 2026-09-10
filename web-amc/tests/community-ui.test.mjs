@@ -12,7 +12,7 @@ const btn=(label,action)=>`<button data-action="${action}">${label}</button>`;
 const field=(label,name)=>`<label>${label}<input name="${name}"></label>`;
 
 test('reseñas y referidos se renderizan desde el módulo sin mover sus acciones API',async()=>{
- let state={user:{id:'client-1',role:'client'},works:[],reviews:[],pendingReviews:[],referrals:[],myReview:null};
+ let state={user:{id:'client-1',role:'client'},works:[],reviews:[],referrals:[],myReview:null};
  const ui=createCommunityUI({getState:()=>state,isAdmin:()=>state.user?.role==='admin',heading,options,esc,date,empty,btn,field});
 
  let html=ui.reviews();
@@ -25,25 +25,30 @@ test('reseñas y referidos se renderizan desde el módulo sin mover sus acciones
  assert.match(html,/Enviar reseña/);
  assert.match(html,/La reseña se publica después de revisión/);
 
- state={user:{id:'admin-1',role:'admin'},works:[],reviews:[{id:'r1',name:'Ana',rating:5,text:'Excelente trabajo',date:'2026-09-09'}],pendingReviews:[{id:'r2',name:'Luis',rating:4,text:'Muy buen trabajo',date:'2026-09-09'}],referrals:[]};
+ state={user:{id:'admin-1',role:'admin'},works:[],reviews:[{id:'r1',name:'Ana',rating:5,text:'Excelente trabajo',date:'2026-09-09'}],referrals:[]};
  html=ui.reviews();
  assert.match(html,/Pendientes de revisión/);
- assert.match(html,/data-action="approve-review"/);
+ assert.match(html,/id="pending-reviews-admin"/);
  assert.match(html,/Excelente trabajo/);
 
- state={user:{id:'client-1',role:'client'},works:[],reviews:[],pendingReviews:[],referrals:[{id:'ref-1',name:'Pedro',note:'Cocina',date:'2026-09-09'}]};
+ state={user:{id:'client-1',role:'client'},works:[],reviews:[],referrals:[{id:'ref-1',name:'Pedro',note:'Cocina',date:'2026-09-09'}]};
  html=ui.referrals();
  assert.match(html,/id="referral"/);
  assert.match(html,/data-action="share"/);
  assert.match(html,/Pedro/);
 
- const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+ const [app,source]=await Promise.all([
+  readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/community-ui.js',import.meta.url),'utf8')
+ ]);
  assert.match(app,/from '.\/community-ui\.js'/);
  assert.match(app,/communityUI\.reviews\(\)/);
  assert.match(app,/communityUI\.referrals\(\)/);
  assert.match(app,/if\(f\.id==='review'\)await api\('\/api\/reviews',data\)/);
  assert.match(app,/if\(f\.id==='referral'\)await api\('\/api\/referrals',data\)/);
  assert.match(app,/case'approve-review':await api\('\/api\/reviews\/'/);
+ assert.match(source,/fetch\('\/api\/reviews\/pending'/);
+ assert.doesNotMatch(source,/state\.pendingReviews/);
  assert.doesNotMatch(app,/function reviews\(\)/);
  assert.doesNotMatch(app,/function referrals\(\)/);
 });
