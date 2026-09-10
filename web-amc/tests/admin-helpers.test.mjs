@@ -8,8 +8,8 @@ const esc=value=>String(value??'');
 test('helpers Admin conservan filtros, contactos, cierres y estados de presupuesto',async()=>{
  const state={
   requests:[{id:'r1',userId:'u1',leadId:'lead1'}],
-  clients:[{id:'u1',name:'Cuenta'}],
-  agendaClients:[{id:'lead1',name:'Contacto actual'}],
+  clients:[],
+  agendaClients:[{id:'u1',name:'Cuenta',hasAccount:1},{id:'lead1',name:'Contacto actual',hasAccount:0}],
   closures:[
    {id:'c1',workId:'w1',date:'2026-09-08',status:'Pendiente de conformidad'},
    {id:'c2',workId:'w1',date:'2026-09-09',status:'Observaciones'}
@@ -20,6 +20,7 @@ test('helpers Admin conservan filtros, contactos, cierres y estados de presupues
  assert.match(h.badge('En curso'),/data-status="En curso"/);
  assert.equal(h.request('r1').id,'r1');
  assert.equal(h.client('u1').name,'Cuenta');
+ assert.equal(h.client('lead1').id,undefined);
  assert.equal(h.requestContact(state.requests[0]).name,'Contacto actual');
  assert.equal(h.latestClosureFor('w1').id,'c2');
  assert.equal(h.closureNeedsAction({id:'w1',status:'Finalizado'}),true);

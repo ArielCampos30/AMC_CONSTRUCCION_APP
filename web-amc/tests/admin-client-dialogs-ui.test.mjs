@@ -12,6 +12,9 @@ test('diálogos de clientes Admin quedan en un módulo sin mover sus handlers',a
  assert.match(dialogs,/link-client-form/);
  assert.match(dialogs,/data-use-existing/);
  assert.match(dialogs,/autocomplete='off'/);
+ assert.match(dialogs,/state\.agendaClients\|\|state\.clients\|\|\[\]/);
+ assert.match(dialogs,/filter\(c=>c\.hasAccount!==0\)/);
+ assert.doesNotMatch(dialogs,/\(state\.clients\|\|\[\]\)\.map/);
  assert.match(app,/from '.\/admin-client-dialogs-ui\.js'/);
  assert.match(app,/const openClientDialog=mode=>adminClientDialogs\.openClientDialog\(mode\)/);
  assert.match(app,/const openEditClientDialog=clientId=>adminClientDialogs\.openEditClientDialog\(clientId\)/);
