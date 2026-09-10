@@ -40,7 +40,9 @@ test('chat informa al emisor cuándo el otro lado leyó el mensaje',async()=>{
     const staffFromAdmin=await admin.call('/api/staff-chat/messages',{employeeId:worker.id,text:'Hola equipo',idempotencyKey:'receipt-staff-a'},201);
     await employee.call('/api/staff-chat/read',{});
     adminState=await admin.call('/api/state');
-    assert.ok(adminState.staffReadByEmployee[worker.id]>=staffFromAdmin.date);
+    assert.deepEqual(adminState.staffReadByEmployee,{});
+    const adminStaffChat=await admin.call('/api/staff-chat/messages?employeeId='+worker.id);
+    assert.ok(adminStaffChat.readAt>=staffFromAdmin.date);
 
     const staffFromEmployee=await employee.call('/api/staff-chat/messages',{text:'Recibido',idempotencyKey:'receipt-staff-e'},201);
     await admin.call('/api/staff-chat/read',{employeeId:worker.id});
