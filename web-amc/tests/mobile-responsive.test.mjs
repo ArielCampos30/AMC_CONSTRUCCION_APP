@@ -30,7 +30,7 @@ test('móvil compacto no agrega huecos innecesarios ni mueve el fondo al abrir c
   assert.match(media,/async function decodeImageSource\(file\)/);
   assert.match(media,/if\(thumbnail\?\.size\)data\.append\('thumbnail'/);
   assert.match(media,/decodeFallback:true/);
-  assert.match(app,/from '.\\/media-upload-ui\\.js'/);
+  assert.match(app,/from '.\/media-upload-ui\.js'/);
   assert.match(app,/function upload\(file,onProgress,showBusy=true\)\{return mediaUpload\.upload/);
   assert.match(features,/if\(preview\)preview\.hidden=true/);
   assert.match(features,/releasePending\(item\);if\(preview\)preview\.hidden=false/);
