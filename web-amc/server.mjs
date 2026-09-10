@@ -8,6 +8,7 @@ import {quoteWorkRoutes} from './quote-work-routes.mjs';
 import {stateRoutes} from './state-routes.mjs';
 import {communityRoutes} from './community-routes.mjs';
 import {adminUtilityRoutes} from './admin-utility-routes.mjs';
+import {profileRoutes} from './profile-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
@@ -82,6 +83,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const handleState=stateRoutes({db,all,userView,chatSummary,planning,services,serviceCatalog,team,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
  const handleCommunity=communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmins,send,fail,text,services,now,id});
  const handleAdminUtility=adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now});
+ const handleProfile=profileRoutes({db,put,send,fail,text});
  async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method,estimatorPage=p==='/presupuestos';
   if(origin.startsWith('https:'))res.setHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
@@ -119,7 +121,7 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
     if(await handleFeature({p,method,b,user,res}))return;
     if(await clientRequests.route({p,method,b,user,res}))return;
     if(authentication.logout({p,method,user,session,b,res}))return;
-    if(method==='POST'&&p==='/api/profile'){if(!text(b.name))fail(400,'El nombre es obligatorio.');db.prepare('UPDATE users SET name=?,phone=?,town=?,sound=? WHERE id=?').run(text(b.name),text(b.phone),text(b.town),b.sound?1:0,user.id);if(user.role==='client')put('clientProfile',user.id,{id:'profile-'+user.id,userId:user.id,address:text(b.address,500)});return send(res,200,{ok:true});}
+    if(handleProfile({p,method,b,user,res}))return;
     if(method==='POST'&&p==='/api/upload')return send(res,201,await mediaStorage.upload(user,b));
     if(await handleQuoteWork({p,method,b,user,res}))return;
     if(handleCommunity({p,method,b,user,res}))return;
