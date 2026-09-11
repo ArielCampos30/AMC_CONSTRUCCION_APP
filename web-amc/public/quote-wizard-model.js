@@ -56,6 +56,14 @@ export function jornalReference(work,settings=DEFAULT_QUOTE_SETTINGS){
  return tier.days*Math.max(1,Math.ceil(amount(work?.workers,1)||1))*tier.rate;
 }
 
+export function commercialReferenceTotal(work,settings=DEFAULT_QUOTE_SETTINGS){
+ if(!work||work.tariffKind==='visit-pending')return 0;
+ if(work.tariffKind==='jornal')return jornalReference(work,settings);
+ if(amount(work.tariffPrice)>0)return tariffReferenceTotal(work);
+ if(work.tariffKind==='manual-reference'||amount(work.unitPrice)>0)return measuredReference(work);
+ return 0;
+}
+
 const STOP_WORDS=new Set(['de','del','la','las','el','los','un','una','unos','unas','y','o','en','para','por','con','sin','al','a','que','se','hacer','trabajo','trabajos','servicio','servicios']);
 const GENERIC_PATTERNS=[
  /\barreglos? varios?\b/,
