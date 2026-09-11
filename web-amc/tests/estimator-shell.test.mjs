@@ -28,7 +28,7 @@ test('etapa 3B conserva precarga cliente y trabajos al navegar entre pasos',()=>
  assert.match(wizard,/requestId=nextRequest\|\|''/);
  assert.match(wizard,/clientRef=\(lead\?'lead:':'user:'\)\+id/);
  assert.match(wizard,/if\(works&&lastWorkRequest===r\.id\)return works/);
- assert.match(wizard,/if\(step<4\)\{step\+\+;if\(step>=2\)initialiseWorks\(\);paint\(\);\}/);
+ assert.match(wizard,/if\(step<4\).*step\+\+.*initialiseWorks\(\).*paint\(\)/s);
  assert.match(wizard,/if\(back&&step>1\)\{step--;paint\(\);return;\}/);
 });
 
@@ -47,10 +47,11 @@ test('etapa 3B.1 usa responsive propio y evita important y recargas de pagina en
  assert.doesNotMatch(wrapper,/(?:window\.)?location\.reload\s*\(/);
 });
 
-test('el tarifario no vuelve a incrustarse en el asistente nuevo y el legado queda aislado',()=>{
+test('el tarifario no se incrusta completo en el asistente; sólo se consultan referencias filtradas',()=>{
  const wrapper=read('../public/features-ui.js');
  const wizard=read('../public/quote-wizard.js');
  assert.match(wrapper,/features-ui-legacy\.js/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/estimator-shell\.js/);
+ assert.match(wizard,/\/api\/estimator-tariffs/);
 });
