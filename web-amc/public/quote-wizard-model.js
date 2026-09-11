@@ -22,6 +22,7 @@ export function normaliseWork(raw={},fallbackDescription=''){
   materials:amount(raw.materials??details.materials,0),
   tools:amount(raw.tools??details.tools,0),
   other:amount(raw.other??details.other,0),
+  labor:amount(raw.labor??details.labor,0),
   workers:Math.max(1,Math.ceil(amount(raw.workers??details.workers,1)||1)),
   days:Math.max(1,Math.ceil(amount(raw.days??raw.m2Days??details.m2Days,1)||1)),
   hours:Math.max(.25,amount(raw.hours??details.hours,8)||8),
@@ -36,6 +37,7 @@ export function normaliseWork(raw={},fallbackDescription=''){
 
 export const workDirectCost=work=>amount(work?.materials)+amount(work?.tools)+amount(work?.other);
 export const directCostTotal=(works=[],travel=0)=>amount(travel)+works.reduce((sum,work)=>sum+workDirectCost(work),0);
+export const workLoadedInternalCost=work=>workDirectCost(work)+amount(work?.labor);
 export const measuredReference=work=>amount(work?.quantity,1)*amount(work?.unitPrice);
 export const tariffReferenceTotal=work=>amount(work?.quantity,1)*amount(work?.tariffPrice);
 export const workLaborCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>Math.max(1,Math.ceil(amount(work?.workers,1)||1))*Math.max(1,Math.ceil(amount(work?.days,1)||1))*amount(employeeDay);
@@ -62,6 +64,23 @@ export function commercialReferenceTotal(work,settings=DEFAULT_QUOTE_SETTINGS){
  if(amount(work.tariffPrice)>0)return tariffReferenceTotal(work);
  if(work.tariffKind==='manual-reference'||amount(work.unitPrice)>0)return measuredReference(work);
  return 0;
+}
+
+export function profitabilityCostTotal(works=[],travel=0){
+ const priced=(Array.isArray(works)?works:[]).filter(work=>work?.tariffKind!=='visit-pending'&&commercialReferenceTotal(work)>0);
+ if(!priced.length)return 0;
+ return amount(travel)+priced.reduce((sum,work)=>sum+workLoadedInternalCost(work),0);
+}
+
+export function profitabilitySnapshot(price,cost){
+ const sale=amount(price),internal=amount(cost),gain=sale-internal;
+ return {price:sale,cost:internal,gain,margin:sale>0?gain/sale*100:0};
+}
+
+export function suggestedPriceForMargin(cost,margin){
+ const internal=amount(cost),goal=Math.min(95,amount(margin));
+ const ratio=goal/100;
+ return ratio>=0&&ratio<1?internal/(1-ratio):0;
 }
 
 const STOP_WORDS=new Set(['de','del','la','las','el','los','un','una','unos','unas','y','o','en','para','por','con','sin','al','a','que','se','hacer','trabajo','trabajos','servicio','servicios']);
