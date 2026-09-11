@@ -16,28 +16,26 @@ async function csrf(){const response=await fetch('/api/state',{credentials:'same
 async function post(path,body={}){const token=await csrf(),response=await fetch(path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':token},body:JSON.stringify(body)}),value=await response.json().catch(()=>({}));if(!response.ok)throw Error(value.error||'No se pudo completar la operación.');return value;}
 const confirmAction=(message,title,confirmLabel)=>window.AMCConfirm?window.AMCConfirm(message,{title,confirmLabel}):Promise.resolve(confirm(message));
 
-// El diálogo flotante es modal: un toque real sobre el fondo debe cerrarlo, pero nunca
-// un toque dentro del chat, en el teclado/compositor o en sus controles.
 document.addEventListener('pointerdown',event=>{
  const dialog=document.querySelector('#amc-chat-dialog[open]');if(!dialog)return;
  const rect=dialog.getBoundingClientRect(),outside=event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom;
  if(outside){event.preventDefault();dialog.close();}
 },true);
 
-function refreshAppearanceLabels(){const cards=[...document.querySelectorAll('.appearance-photo-card')];cards.forEach((card,index)=>{const badge=card.querySelector('[data-photo-role]');if(badge)badge.textContent=index===0?'Foto principal':'Galería';});}
+function refreshAppearanceLabels(){const list=document.querySelector('#appearance-form .appearance-photo-list');if(!list)return;[...list.querySelectorAll('.appearance-photo-card')].forEach((card,index)=>{const badge=card.querySelector('[data-photo-role]');if(badge)badge.textContent=index===0?'Foto principal':'Galería';});}
 
 document.addEventListener('click',async event=>{
  const button=event.target.closest('[data-maintenance-action]');if(!button)return;
  const action=button.dataset.maintenanceAction;
  if(action==='appearance-remove-photo'){button.closest('.appearance-photo-card')?.remove();refreshAppearanceLabels();return;}
  if(action==='appearance-main-photo'){const card=button.closest('.appearance-photo-card'),list=card?.parentElement;if(card&&list){list.prepend(card);refreshAppearanceLabels();}return;}
- if(action==='appearance-clear-photos'){if(await confirmAction('La portada volverá a mostrar sólo la marca AMC cuando guardes los cambios.','Quitar fotos de portada','Dejar sólo el logo')){document.querySelector('.appearance-photo-list')?.replaceChildren();refreshAppearanceLabels();}return;}
+ if(action==='appearance-clear-photos'){if(await confirmAction('La portada volverá a mostrar sólo la marca AMC cuando guardes los cambios.','Quitar fotos de portada','Dejar sólo el logo')){document.querySelector('#appearance-form .appearance-photo-list')?.replaceChildren();refreshAppearanceLabels();}return;}
  if(!['delete-notice','delete-read-notices','delete-all-notices','restore-appearance','archive-quote','unarchive-quote','delete-quote'].includes(action))return;
  event.preventDefault();event.stopImmediatePropagation();if(button.disabled)return;button.disabled=true;
  try{
-  if(action==='delete-notice'){if(!await confirmAction('¿Borrar este aviso de la bandeja?','Borrar aviso','Borrar'))return;await post('/api/notices/delete',{id:button.dataset.id});toast('Aviso borrado.');}
-  if(action==='delete-read-notices'){if(!await confirmAction('¿Borrar todos los avisos que ya están leídos?','Limpiar avisos','Borrar leídos'))return;await post('/api/notices/delete',{scope:'read'});toast('Avisos leídos borrados.');}
-  if(action==='delete-all-notices'){if(!await confirmAction('¿Borrar toda la bandeja de avisos? Esta acción no elimina presupuestos, obras ni mensajes.','Vaciar bandeja','Borrar todos'))return;await post('/api/notices/delete',{scope:'all'});toast('Bandeja de avisos vaciada.');}
+  if(action==='delete-notice'){if(!await confirmAction('¿Borrar este aviso de la bandeja?','Borrar aviso','Borrar'))return;await post('/api/notices/read',{deleteId:button.dataset.id});toast('Aviso borrado.');}
+  if(action==='delete-read-notices'){if(!await confirmAction('¿Borrar todos los avisos que ya están leídos?','Limpiar avisos','Borrar leídos'))return;await post('/api/notices/read',{deleteScope:'read'});toast('Avisos leídos borrados.');}
+  if(action==='delete-all-notices'){if(!await confirmAction('¿Borrar toda la bandeja de avisos? Esta acción no elimina presupuestos, obras ni mensajes.','Vaciar bandeja','Borrar todos'))return;await post('/api/notices/read',{deleteScope:'all'});toast('Bandeja de avisos vaciada.');}
   if(action==='restore-appearance'){if(!await confirmAction('¿Restaurar esta versión de la portada pública? La portada actual quedará guardada en el historial.','Restaurar portada','Restaurar'))return;await post('/api/appearance/restore',{versionAt:button.dataset.version});toast('Portada restaurada.');}
   if(action==='archive-quote'){if(!await confirmAction('El presupuesto saldrá de Pendientes y quedará disponible en Archivados.','Archivar presupuesto','Archivar'))return;await post('/api/quotes/'+encodeURIComponent(button.dataset.id)+'/archive');toast('Presupuesto archivado.');}
   if(action==='unarchive-quote'){await post('/api/quotes/'+encodeURIComponent(button.dataset.id)+'/unarchive');toast('Presupuesto recuperado.');}
