@@ -8,9 +8,11 @@ style.textContent=`
 #amc-chat-dialog .compact-composer.no-attach{display:grid!important;grid-template-columns:minmax(0,1fr) 44px!important;align-items:end!important;gap:6px!important}
 #amc-chat-dialog .compact-composer.no-attach textarea{grid-column:1!important;min-width:0!important;width:100%!important;max-width:none!important}
 #amc-chat-dialog .compact-composer.no-attach .chat-send-icon{grid-column:2!important;width:44px!important;min-width:44px!important;height:44px!important;margin:0!important;padding:0!important}
+@media(max-width:560px){
 #amc-chat-dialog.amc-keyboard-open{position:fixed!important;inset:auto!important;top:var(--amc-vv-top,6px)!important;left:12px!important;right:12px!important;bottom:auto!important;width:auto!important;height:var(--amc-vv-height,60dvh)!important;max-height:var(--amc-vv-height,60dvh)!important;margin:0!important}
 #amc-chat-dialog.amc-keyboard-open .message-log{min-height:0!important;flex:1 1 auto!important}
 #amc-chat-dialog.amc-keyboard-open .compact-composer{flex:0 0 auto!important;padding-bottom:max(7px,env(safe-area-inset-bottom))!important}
+}
 `;
 document.head.append(style);
 
@@ -42,9 +44,9 @@ function publishActiveChatRoute(){
 function fitChatToViewport(){
  const dialog=document.getElementById('amc-chat-dialog'),vv=window.visualViewport;
  if(!dialog?.open||!vv)return;
- const focused=dialog.contains(document.activeElement)&&['INPUT','TEXTAREA'].includes(document.activeElement?.tagName);
- dialog.classList.toggle('amc-keyboard-open',focused);
- if(!focused){dialog.style.removeProperty('--amc-vv-top');dialog.style.removeProperty('--amc-vv-height');return;}
+ const focused=dialog.contains(document.activeElement)&&['INPUT','TEXTAREA'].includes(document.activeElement?.tagName),narrow=window.matchMedia('(max-width:560px)').matches,keyboardOpen=focused&&narrow;
+ dialog.classList.toggle('amc-keyboard-open',keyboardOpen);
+ if(!keyboardOpen){dialog.style.removeProperty('--amc-vv-top');dialog.style.removeProperty('--amc-vv-height');return;}
  dialog.style.setProperty('--amc-vv-top',Math.max(6,Math.round(vv.offsetTop+6))+'px');
  dialog.style.setProperty('--amc-vv-height',Math.max(220,Math.round(vv.height-12))+'px');
  requestAnimationFrame(()=>{const log=dialog.querySelector('.message-log');if(log)log.scrollTop=log.scrollHeight;});
