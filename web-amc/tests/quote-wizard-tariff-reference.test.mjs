@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {findTariffMatches,isGenericWorkDescription,tariffReferenceTotal,normaliseWork} from '../public/quote-wizard-model.js';
+import {findTariffMatches,isGenericWorkDescription,tariffReferenceTotal,normaliseWork,commercialReferenceTotal} from '../public/quote-wizard-model.js';
 import {baseTariffCount,estimatorTariffs} from '../legacy-tariff-catalog.mjs';
 import {adminUtilityRoutes} from '../admin-utility-routes.mjs';
 
@@ -13,7 +13,7 @@ const sample=[
  {key:'d',rubro:'Jornales y estructura',tarea:'Salida corta hasta 2 h - 1 operario',unidad:'salida',precio:55000,obs:''}
 ];
 
-test('3B.2.1 reconoce referencias claras y no toma arreglos varios como tarifa literal',()=>{
+test('reconoce referencias claras y no toma arreglos varios como tarifa literal',()=>{
  const revoque=findTariffMatches(sample,'revoque fino');
  assert.equal(revoque.status,'matched');
  assert.equal(revoque.matches[0].tariff.tarea,'Revoque fino');
@@ -22,9 +22,10 @@ test('3B.2.1 reconoce referencias claras y no toma arreglos varios como tarifa l
  assert.equal(findTariffMatches(sample,'Revisar humedad').status,'visit');
  const work=normaliseWork({quantity:12,tariffPrice:18000});
  assert.equal(tariffReferenceTotal(work),216000);
+ assert.equal(commercialReferenceTotal(work),216000);
 });
 
-test('3B.2.1 usa como fuente el tarifario legado con overrides y trabajos propios hasta migrar Tarifario',()=>{
+test('usa como fuente el tarifario legado con overrides y trabajos propios hasta migrar Tarifario',()=>{
  assert.ok(baseTariffCount()>20);
  const base=estimatorTariffs({overrides:{'Revoque fino':19999},customTariffs:[{id:'propio-1',rubro:'Propios',tarea:'Prueba propia',unidad:'unidad',precio:77777,custom:true}]});
  assert.equal(base.find(item=>item.tarea==='Revoque fino')?.precio,19999);
@@ -46,13 +47,14 @@ test('endpoint de referencias exige administrador y devuelve el tarifario vigent
  assert.ok(sent.payload.items.some(item=>item.tarea==='Revoque fino'&&item.precio===21000));
 });
 
-test('Costos deja de pedir precio manual y sólo muestra referencias filtradas del Tarifario',()=>{
+test('editor consulta referencias filtradas sin incrustar Tarifario completo ni cobrar visita automaticamente',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.doesNotMatch(wizard,/Precio base AMC \/ unidad/);
  assert.match(wizard,/\/api\/estimator-tariffs/);
- assert.match(wizard,/Este valor viene del Tarifario; no tenés que escribir el precio acá/);
- assert.match(wizard,/Requiere visita \/ relevamiento/);
- assert.match(wizard,/AMC no inventa un precio/);
+ assert.match(wizard,/Referencia del Tarifario/);
+ assert.match(wizard,/findTariffMatches\(tariffs,query,3\)/);
+ assert.match(wizard,/no suma una visita automáticamente/i);
+ assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/<iframe/i);
  assert.doesNotMatch(wizard,/!important/);
  assert.doesNotMatch(wizard,/(?:window\.)?location\.reload\s*\(/);
