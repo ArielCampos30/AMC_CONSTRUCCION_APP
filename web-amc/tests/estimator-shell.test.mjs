@@ -3,15 +3,19 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('etapa 3B.1 reemplaza el cotizador embebido por un asistente nativo',()=>{
+test('etapa 3B.1 carga el cotizador nativo sin importmap ni iframe visible',()=>{
  const index=read('../public/index.html');
- const wrapper=read('../public/features-ui-v2.js');
+ const app=read('../public/app.js');
+ const wrapper=read('../public/features-ui.js');
+ const legacy=read('../public/features-ui-legacy.js');
  const wizard=read('../public/quote-wizard.js');
- assert.match(index,/type="importmap"/);
- assert.match(index,/"\/features-ui\.js":"\/features-ui-v2\.js"/);
+ assert.doesNotMatch(index,/type="importmap"/);
  assert.doesNotMatch(index,/\/estimator-shell\.js/);
+ assert.match(app,/import \{createFeatures\} from '\.\/features-ui\.js'/);
+ assert.match(wrapper,/features-ui-legacy\.js/);
+ assert.match(wrapper,/createQuoteWizard/);
  assert.match(wrapper,/name==='cotizador'\?wizard\.render\(\):legacy\.render\(name\)/);
- assert.match(wrapper,/wizard\.open\(requestId,quoteId,mode\)/);
+ assert.match(legacy,/createFloatingChat/);
  assert.doesNotMatch(wizard,/<iframe/i);
  assert.match(wizard,/PASO 1 DE 7/);
  assert.match(wizard,/PASO 2 DE 7/);
@@ -28,21 +32,25 @@ test('etapa 3B.1 precarga cliente y conserva trabajos al volver dentro del asist
  assert.match(wizard,/if\(back&&step>1\)\{step--;paint\(\);return;\}/);
 });
 
-test('etapa 3B.1 usa responsive propio y no agrega important',()=>{
+test('etapa 3B.1 usa responsive propio y evita important y recargas de pagina en codigo nuevo',()=>{
  const css=read('../public/quote-wizard.css');
  const wizard=read('../public/quote-wizard.js');
+ const wrapper=read('../public/features-ui.js');
  assert.match(css,/@media\(max-width:700px\)/);
  assert.match(css,/@media\(max-width:480px\)/);
  assert.match(css,/@media\(max-width:360px\)/);
  assert.match(css,/width:min\(1120px,94vw\)/);
  assert.doesNotMatch(css,/!important/);
  assert.doesNotMatch(wizard,/!important/);
+ assert.doesNotMatch(wrapper,/!important/);
+ assert.doesNotMatch(wizard,/(?:window\.)?location\.reload\s*\(/);
+ assert.doesNotMatch(wrapper,/(?:window\.)?location\.reload\s*\(/);
 });
 
-test('el tarifario queda fuera del asistente nuevo y el legado sigue aislado para cortes posteriores',()=>{
- const wrapper=read('../public/features-ui-v2.js');
+test('el tarifario queda fuera del asistente nuevo y el legado queda aislado para cortes posteriores',()=>{
+ const wrapper=read('../public/features-ui.js');
  const wizard=read('../public/quote-wizard.js');
- assert.match(wrapper,/features-ui\.js\?legacy=1/);
+ assert.match(wrapper,/features-ui-legacy\.js/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.match(wizard,/Tarifario independiente/);
 });
