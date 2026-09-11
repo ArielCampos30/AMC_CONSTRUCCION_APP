@@ -57,5 +57,5 @@ test('tarifario sigue separado y sólo entrega referencias filtradas al cotizado
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/estimator-shell\.js/);
  assert.match(wizard,/\/api\/estimator-tariffs/);
- assert.match(wizard,/findTariffMatches\(tariffs,query,3\)/);
+ assert.match(wizard,/findTariffMatches\(tariffs,query,5\)/);
 });
