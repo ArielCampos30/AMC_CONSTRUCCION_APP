@@ -45,14 +45,26 @@ export function notificationFeatures({db,all,put,origin,now,id,schedulePush,send
   }
   return ids;
  };
+ const deleteNotices=(user,{id:noticeId,scope}={})=>{
+  let targets=all('notice',user.id);
+  if(noticeId)targets=targets.filter(notice=>notice.id===noticeId);
+  else if(scope==='read')targets=targets.filter(notice=>notice.read);
+  else if(scope!=='all')fail(400,'Indicá qué avisos querés borrar.');
+  for(const notice of targets){db.prepare('DELETE FROM delivery WHERE noticeId=?').run(notice.id);db.prepare("DELETE FROM docs WHERE id=? AND kind='notice' AND owner=?").run(notice.id,user.id);}
+  return targets.map(notice=>notice.id);
+ };
  function route({p,method,b,user,res}){
   if(method!=='POST')return false;
   if(p==='/api/notices/read'){
+   if(b.deleteId||b.deleteScope){const noticeIds=deleteNotices(user,{id:b.deleteId,scope:b.deleteScope});send(res,200,{ok:true,noticeIds,deleted:true});return true;}
    let noticeIds=[];
    if(b.route)noticeIds=markNoticesForRoute(user,b.route);
    else for(const notice of all('notice',user.id).filter(notice=>!notice.read&&(!b.id||notice.id===b.id)))if(markNoticeRead(user,notice))noticeIds.push(notice.id);
    send(res,200,{ok:true,noticeIds});
    return true;
+  }
+  if(p==='/api/notices/delete'){
+   const noticeIds=deleteNotices(user,b||{});send(res,200,{ok:true,noticeIds,deleted:true});return true;
   }
   if(p==='/api/notices/test'){
    notify(user.id,'Notificación de prueba','Si habilitaste los avisos, revisá tu dispositivo.');

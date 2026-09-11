@@ -3,11 +3,13 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
  let lastNoticeRouteKey='';
  const notices=()=>getState().notices||[];
  const routeKey=value=>{try{return new URL(String(value||''),location.href).hash.replace(/^#/,'');}catch{return String(value||'').replace(/^\/?#/,'');}};
- const activeChatRoute=()=>document.documentElement?.dataset.amcActiveChatRoute||'';
+ const pageChatRoute=()=>{const hash=location.hash.replace(/^#/,'');return /^(chat-admin|chat|chat-equipo)\/[A-Za-z0-9_-]+$/.test(hash)?'/#'+hash:'';};
+ const activeChatRoute=()=>pageChatRoute()||document.documentElement?.dataset.amcActiveChatRoute||'';
  function suppressActiveChat(notice){
   const active=activeChatRoute();
   if(!notice||!active||routeKey(notice.url)!==routeKey(active))return false;
   shownLiveNotices.add(notice.id);
+  document.querySelector('#amc-live-alert')?.replaceChildren();
   queueMicrotask(async()=>{try{const result=await api('/api/notices/read',{route:active});applyRead(result.noticeIds||[notice.id]);}catch{}});
   return true;
  }
@@ -48,10 +50,10 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
   try{const result=await api('/api/notices/read',{route});applyRead(result.noticeIds||[]);}catch{lastNoticeRouteKey='';}
  }
  function view(){
-  const state=getState(),unread=notices().filter(n=>!n.read).length;
+  const state=getState(),items=notices(),unread=items.filter(n=>!n.read).length,read=items.length-unread;
   return (state.user?.role==='employee'?'<a class="inline-action" href="/offline.html">Trabajo sin conexión →</a>':'')+
    heading('SIEMPRE AL TANTO','Avisos',unread?unread+' pendiente'+(unread===1?'':'s')+' de revisar.':'No tenés avisos pendientes.')+
-   `<div class="pill-nav">${btn('Habilitar avisos en este dispositivo','enable-push')}${btn('Escuchar sonido','test-sound','','outline')}${unread?btn('Marcar todos como leídos','read','','outline'):''}</div><p class="muted">Cuando abrís el contenido relacionado —por ejemplo un chat, presupuesto, tarea o cierre— el aviso se marca leído automáticamente.</p>${notices().map(n=>`<article class="notification ${n.read?'':'unread'}" data-notice-card="${esc(n.id)}" data-priority="${esc(n.priority||'normal')}"><div><div class="title-row"><strong>${esc(n.title)}</strong><small data-notice-state>${n.read?'Leído':'Pendiente'}</small></div><p>${esc(n.body)}</p><small>${date(n.date)}</small><a data-notice="${n.id}" href="${esc(n.url)}">${n.read?'Ver de nuevo':'Ver'} →</a></div></article>`).join('')||empty('No tenés avisos','Las novedades de tus pedidos aparecerán acá.')}`;
+   `<div class="pill-nav">${btn('Habilitar avisos en este dispositivo','enable-push')}${btn('Escuchar sonido','test-sound','','outline')}${unread?btn('Marcar todos como leídos','read','','outline'):''}${read?'<button type="button" class="outline" data-maintenance-action="delete-read-notices">Borrar leídos</button>':''}${items.length?'<button type="button" class="outline danger" data-maintenance-action="delete-all-notices">Borrar todos</button>':''}</div><p class="muted">Cuando abrís el contenido relacionado —por ejemplo un chat, presupuesto, tarea o cierre— el aviso se marca leído automáticamente. También podés limpiar esta bandeja cuando ya no necesites conservar un aviso.</p>${items.map(n=>`<article class="notification ${n.read?'':'unread'}" data-notice-card="${esc(n.id)}" data-priority="${esc(n.priority||'normal')}"><div><div class="title-row"><strong>${esc(n.title)}</strong><small data-notice-state>${n.read?'Leído':'Pendiente'}</small></div><p>${esc(n.body)}</p><small>${date(n.date)}</small><div class="notice-card-actions"><a data-notice="${n.id}" href="${esc(n.url)}">${n.read?'Ver de nuevo':'Ver'} →</a><button type="button" class="outline" data-maintenance-action="delete-notice" data-id="${esc(n.id)}">Borrar</button></div></div></article>`).join('')||empty('No tenés avisos','Las novedades de tus pedidos aparecerán acá.')}`;
  }
  function resetRoute(){lastNoticeRouteKey='';}
  return {showInternal,paintCount,applyRead,syncVisible,view,resetRoute};
