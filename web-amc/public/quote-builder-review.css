@@ -1,0 +1,19 @@
+.quote-review-stage{max-width:980px}
+.quote-review-context{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.quote-review-context>div{display:grid;gap:4px;padding:13px 14px;border:1px solid #cde1dc;border-radius:13px;background:#fff}
+.quote-review-context span{font-size:11px;color:#708781;text-transform:uppercase;letter-spacing:.04em}
+.quote-review-list{display:grid;gap:8px}
+.quote-review-list article{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 13px;border:1px solid #d2e2df;border-radius:13px;background:#fff}
+.quote-review-list article>div{display:grid;gap:3px;min-width:0}
+.quote-review-list article>div:last-child{grid-template-columns:auto auto;align-items:center;gap:9px;text-align:right}
+.quote-review-list strong{overflow-wrap:anywhere}
+.quote-review-list small{color:#708781}
+.quote-review-list button{border:1px solid #a9ccc4;border-radius:9px;background:#fff;color:#0b675f;padding:7px 9px;cursor:pointer;font-weight:700}
+.quote-review-totals{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid #dceae6}
+.quote-review-totals>div{display:grid;gap:4px;padding:14px;border-radius:13px;background:#eaf5f2}
+.quote-review-totals span{font-size:11px;color:#617a74}
+.quote-review-totals strong{font-size:21px;color:#0b675f}
+.quote-review-totals p{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:10px;background:#fff7e8;color:#6e5930;line-height:1.4}
+@media(min-width:701px) and (max-width:800px){.quote-mobile-summary button{display:none}}
+@media(max-width:700px){.quote-review-context,.quote-review-totals{grid-template-columns:1fr}.quote-review-totals p{grid-column:auto}.quote-review-list article{grid-template-columns:1fr}.quote-review-list article>div:last-child{grid-template-columns:1fr auto;text-align:left}}
+@media(max-width:480px){.quote-review-list article{padding:10px}.quote-review-list article>div:last-child{grid-template-columns:1fr}.quote-review-list button{justify-self:start}.quote-review-totals strong{font-size:19px}}

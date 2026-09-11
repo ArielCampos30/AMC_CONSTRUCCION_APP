@@ -1,40 +1,46 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {normaliseWork,commercialReferenceTotal,jornalReference} from '../public/quote-wizard-model.js';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('3B.2.2 ofrece una salida concreta cuando no hay referencia segura',()=>{
+test('editor ofrece las cuatro formas de resolver el precio dentro del trabajo seleccionado',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/Buscar en Tarifario/);
- assert.match(wizard,/Ingresar referencia manual/);
- assert.match(wizard,/Calcular por jornal/);
- assert.match(wizard,/Requiere visita/);
- assert.match(wizard,/data-qw-reference-action/);
- assert.match(wizard,/Sin referencia automática/);
- assert.match(wizard,/Elegí cómo querés seguir con este trabajo/);
+ assert.match(wizard,/data-qw-pricing-mode="tariff"/);
+ assert.match(wizard,/data-qw-pricing-mode="manual"/);
+ assert.match(wizard,/data-qw-pricing-mode="jornal"/);
+ assert.match(wizard,/data-qw-pricing-mode="visit"/);
+ assert.match(wizard,/Tarifario/);
+ assert.match(wizard,/Manual/);
+ assert.match(wizard,/Jornal/);
+ assert.match(wizard,/Relevamiento/);
 });
 
-test('3B.2.2 no incrusta el Tarifario completo y limita la búsqueda relacionada',()=>{
+test('no incrusta Tarifario completo y limita la búsqueda relacionada a tres opciones',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.match(wizard,/findTariffMatches\(tariffs,query,3\)/);
- assert.match(wizard,/como máximo tres coincidencias/);
+ assert.match(wizard,/quote-tariff-results/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/<iframe/i);
 });
 
-test('3B.2.2 distingue referencia manual, jornal y visita sin inventar precio',()=>{
+test('manual, jornal y relevamiento tienen impacto comercial explícito',()=>{
+ const manual=normaliseWork({quantity:3,unitPrice:20000,tariffKind:'manual-reference'});
+ const jornal=normaliseWork({workers:2,hours:4,tariffKind:'jornal'});
+ const visit=normaliseWork({tariffKind:'visit-pending',tariffPrice:55000});
+ assert.equal(commercialReferenceTotal(manual),60000);
+ assert.equal(commercialReferenceTotal(jornal),jornalReference(jornal));
+ assert.equal(commercialReferenceTotal(visit),0);
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/manual-reference/);
- assert.match(wizard,/visit-pending/);
- assert.match(wizard,/tariffKind='jornal'/);
  assert.match(wizard,/No modifica el Tarifario/);
- assert.match(wizard,/No se inventa un precio de obra/);
- assert.match(wizard,/referencesResolved/);
+ assert.match(wizard,/suma esta referencia al total del presupuesto inmediatamente/);
+ assert.match(wizard,/No se suma un precio de obra ni una visita automática al presupuesto/);
 });
 
-test('3B.2.2 mantiene prohibidos important y reload',()=>{
+test('mantiene prohibidos important, reload e iframe',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.doesNotMatch(wizard,/!important/);
  assert.doesNotMatch(wizard,/(?:window\.)?location\.reload\s*\(/);
+ assert.doesNotMatch(wizard,/<iframe/i);
 });
