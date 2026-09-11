@@ -19,7 +19,7 @@ test('portada pública no usa observadores profundos que se autoalimentan',async
 test('Más deja un único chat global y no duplica la bandeja completa',async()=>{
  const [system,features,legacy]=await Promise.all([
   source('public/admin-system-ui.js'),
-  source('public/features-ui.js'),
+  source('public/features-ui-legacy.js'),
   source('public/admin-chat-ui.js')
  ]);
  assert.doesNotMatch(system,/\['chat-admin','Chat'\]/);
