@@ -23,6 +23,17 @@ test('estado general del empleado conserva placeholders y el historial se obtien
  assert.match(stateSource,/staffMessages:\[\],staffUnread:staffUnread\(user\),staffReadByAdmin:''/);
  assert.doesNotMatch(stateSource,/staffMessages:staffMessages\(user\),staffUnread:staffUnread\(user\),staffReadByAdmin:staffReadByAdmin\(user\.id\)/);
  assert.match(lazySource,/fetchImpl\('\/api\/staff-chat\/messages',\{credentials:'same-origin'\}\)/);
- assert.match(lazySource,/MutationObserver/);
+ assert.match(lazySource,/new MutationObserver\(hydrateVisible\)\.observe\(target,\{childList:true\}\)/);
  assert.match(indexSource,/employee-staff-chat-lazy\.js/);
+});
+
+test('chat móvil del empleado muestra spinner y evita saltos molestos del teclado',async()=>{
+ const lazySource=await readFile(new URL('../public/employee-staff-chat-lazy.js',import.meta.url),'utf8');
+ assert.match(lazySource,/employee-send-spinner/);
+ assert.match(lazySource,/data-amc-sending/);
+ assert.match(lazySource,/font-size:16px!important/);
+ assert.match(lazySource,/visualViewport\?\.addEventListener\('resize'/);
+ assert.match(lazySource,/textarea\.blur\(\)/);
+ assert.match(lazySource,/restoreComposer/);
+ assert.match(lazySource,/focus\(\{preventScroll:true\}\)/);
 });
