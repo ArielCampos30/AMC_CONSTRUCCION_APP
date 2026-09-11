@@ -21,7 +21,7 @@ test('etapa 3A expone tarifario sin cambiar calculos ni enviar operaciones nueva
  const shell=read('../public/estimator-shell.js');
  const inner=read('../public/estimator-shell-inner.js');
  assert.match(route,/\/estimator-shell-inner\.js/);
- assert.match(shell,/data-estimator-view=\\?"tariff\\?"/);
+ assert.match(shell,/data-estimator-view="tariff"/);
  assert.match(shell,/postMessage\(\{type:'amc:estimator-view',view\},location\.origin\)/);
  assert.match(inner,/event\.origin!==location\.origin/);
  assert.match(inner,/event\.source!==parent/);
