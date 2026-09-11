@@ -1,4 +1,4 @@
-import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,workDirectCost,directCostTotal,workLaborCost,laborCostTotal,internalCostTotal,jornalReference,tariffReferenceTotal,findTariffMatches,visitTariff} from './quote-wizard-model.js';
+import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,workDirectCost,directCostTotal,measuredReference,workLaborCost,laborCostTotal,internalCostTotal,jornalReference,tariffReferenceTotal,findTariffMatches,visitTariff} from './quote-wizard-model.js';
 
 const STEPS=['Cliente','Trabajos','Costos','Mano de obra','Rentabilidad','Precio final','Enviar'];
 const UNITS=['m²','ml','unidad','día','hora','servicio','obra','punto','salida'];
@@ -20,7 +20,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function choosePrefilledRequest(){if(requestId||!clientRef)return;const list=availableRequests();if(list.length)requestId=list[0].id;}
  function selectedRequest(){choosePrefilledRequest();return requests().find(r=>r.id===requestId)||null;}
  function resetWorks(){works=null;lastWorkRequest='';travel=DEFAULT_QUOTE_SETTINGS.travelDefault;employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;}
- function createWork(source={}){const work=normaliseWork(source);work.id=work.id||uid();return work;}
+ function createWork(source={}){const work=normaliseWork(source);work.id=work.id||uid();work.referenceSearch=String(source.referenceSearch||source.details?.referenceSearch||'');return work;}
  function initialiseWorks(){
   const r=selectedRequest();if(!r)return [];
   if(works&&lastWorkRequest===r.id)return works;
@@ -55,42 +55,80 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function selectedTariff(work){return tariffs.find(item=>item.key===work.tariffKey)||null;}
  function applyTariff(work,tariff,kind='tariff'){
   if(!work||!tariff)return;
-  work.tariffKey=tariff.key;work.tariffTask=tariff.tarea;work.tariffRubric=tariff.rubro;work.tariffUnit=tariff.unidad;work.tariffPrice=amount(tariff.precio);work.tariffKind=kind;
+  work.tariffKey=tariff.key;work.tariffTask=tariff.tarea;work.tariffRubric=tariff.rubro;work.tariffUnit=tariff.unidad;work.tariffPrice=amount(tariff.precio);work.tariffKind=kind;work.referenceSearch='';
   work.unit=tariff.unidad||work.unit;
  }
- function clearTariff(work){if(!work)return;work.tariffKey='';work.tariffTask='';work.tariffRubric='';work.tariffUnit='';work.tariffPrice=0;work.tariffKind='';}
+ function clearTariffSelection(work){if(!work)return;work.tariffKey='';work.tariffTask='';work.tariffRubric='';work.tariffUnit='';work.tariffPrice=0;}
+ function clearReference(work){if(!work)return;clearTariffSelection(work);work.tariffKind='';work.referenceSearch='';work.unitPrice=0;}
  function resolveTariff(work){
   const chosen=selectedTariff(work);if(chosen)return {status:'matched',matches:[{tariff:chosen,score:999}],chosen};
+  if(['manual-reference','jornal','visit-pending','search'].includes(work.tariffKind))return {status:work.tariffKind,matches:[]};
   const result=findTariffMatches(tariffs,work.description,3);
   if(result.status==='matched'&&result.matches[0]?.tariff){applyTariff(work,result.matches[0].tariff,'auto');return {...result,chosen:result.matches[0].tariff};}
   return result;
  }
  function visitReference(){return visitTariff(tariffs);}
  function tariffOption(work,item){const tariff=item.tariff;return `<button type="button" data-qw-select-tariff="${esc(tariff.key)}" data-qw-tariff-work="${esc(work.id)}">${esc(tariff.tarea)} · ${money(tariff.precio)} / ${esc(tariff.unidad||'unidad')}</button>`;}
+ function referenceActionButtons(work,recommended=''){
+  const label=(action,text)=>`${text}${recommended===action?' · recomendado':''}`;
+  return `<div class="quote-wizard-suggestions"><button type="button" data-qw-reference-action="search" data-qw-reference-work="${esc(work.id)}">${label('search','Buscar en Tarifario')}</button><button type="button" data-qw-reference-action="manual" data-qw-reference-work="${esc(work.id)}">${label('manual','Ingresar referencia manual')}</button><button type="button" data-qw-reference-action="jornal" data-qw-reference-work="${esc(work.id)}">${label('jornal','Calcular por jornal')}</button><button type="button" data-qw-reference-action="visit" data-qw-reference-work="${esc(work.id)}">${label('visit','Requiere visita')}</button></div>`;
+ }
+ function manualReferenceBlock(work){return `<div class="quote-wizard-request-note"><span>Referencia manual · sólo este presupuesto</span><p>Usá esta opción cuando conocés el valor comercial pero todavía no existe como trabajo en el Tarifario. No modifica el Tarifario.</p><label class="quote-wizard-field">Precio de referencia por ${esc(work.unit||'unidad')}<input type="number" min="0" step="100" value="${amount(work.unitPrice)}" data-qw-work-input data-qw-key="unitPrice" data-qw-work-id="${esc(work.id)}"></label><div class="quote-wizard-inline-summary"><span>Referencia manual total <strong data-qw-manual-total="${esc(work.id)}">${money(measuredReference(work))}</strong></span></div>${referenceActionButtons(work)}</div>`;}
+ function jornalReferenceBlock(work){return `<div class="quote-wizard-request-note"><span>Referencia por jornal</span><p>Este trabajo se va a valorar por tiempo y cantidad de operarios. En el Paso 4 ajustás horas, días y equipo.</p><div class="quote-wizard-inline-summary"><span>Referencia comercial actual por jornal <strong>${money(jornalReference(work))}</strong></span></div>${referenceActionButtons(work)}</div>`;}
+ function visitPendingBlock(work){const visit=visitReference();return `<div class="quote-wizard-request-note"><span>Requiere visita / relevamiento</span><p>Este trabajo queda pendiente de definir hasta verlo. No se inventa un precio de obra y podés continuar con el presupuesto dejando constancia de la visita.</p>${visit?`<div class="quote-wizard-suggestions"><button type="button" data-qw-select-tariff="${esc(visit.key)}" data-qw-tariff-work="${esc(work.id)}" data-qw-visit-reference>Usar tarifa de visita: ${money(visit.precio)} / ${esc(visit.unidad||'salida')}</button></div>`:'<p>No hay una tarifa de visita cargada; la visita queda pendiente sin precio automático.</p>'}${referenceActionButtons(work)}</div>`;}
+ function searchReferenceBlock(work){
+  const query=String(work.referenceSearch||'').trim();
+  const result=query?findTariffMatches(tariffs,query,3):{status:'none',matches:[]};
+  const matches=result.matches||[];
+  return `<div class="quote-wizard-request-note"><span>Buscar otra referencia relacionada</span><p>Escribí una forma más concreta de nombrar el trabajo. AMC muestra como máximo tres coincidencias; no abre ni incrusta el Tarifario completo.</p><div class="quote-wizard-fields"><label>Buscar referencia<input value="${esc(work.referenceSearch||'')}" data-qw-reference-search-input data-qw-work-id="${esc(work.id)}" placeholder="Ej. reparación de revoque"></label><button type="button" class="quote-wizard-add" data-qw-run-tariff-search data-qw-reference-work="${esc(work.id)}">Buscar referencias</button></div>${query?(matches.length?`<div class="quote-wizard-suggestions">${matches.map(item=>tariffOption(work,item)).join('')}</div>`:'<p>No encontré coincidencias seguras con esa búsqueda. Elegí otra forma de calcularlo.</p>'):''}${referenceActionButtons(work)}</div>`;
+ }
  function tariffReferenceBlock(work){
   if(tariffState==='loading'||tariffState==='idle')return `<div class="quote-wizard-request-note"><span>Referencia del Tarifario</span><p>Buscando una referencia relacionada con este trabajo…</p></div>`;
   if(tariffState==='error')return `<div class="quote-wizard-request-note"><span>Referencia del Tarifario</span><p>No pude consultar el Tarifario ahora. Tus costos internos siguen disponibles y AMC no va a inventar un precio. ${esc(tariffError)}</p></div>`;
-  const result=resolveTariff(work),chosen=result.chosen||selectedTariff(work);
+  const chosen=selectedTariff(work);
   if(chosen){
-   return `<div class="quote-wizard-request-note"><span>Referencia del Tarifario</span><p><strong>${esc(chosen.tarea)}</strong><br>${esc(chosen.rubro||'Tarifario AMC')} · ${money(chosen.precio)} / ${esc(chosen.unidad||'unidad')}${chosen.fecha?` · actualizado ${esc(chosen.fecha)}`:''}</p><div class="quote-wizard-inline-summary"><span>Referencia para ${work.quantity} ${esc(chosen.unidad||'unidad')}: <strong data-qw-tariff-total="${esc(work.id)}">${money(tariffReferenceTotal(work))}</strong></span><span>Este valor viene del Tarifario; no tenés que escribir el precio acá.</span></div></div>`;
+   return `<div class="quote-wizard-request-note"><span>Referencia del Tarifario</span><p><strong>${esc(chosen.tarea)}</strong><br>${esc(chosen.rubro||'Tarifario AMC')} · ${money(chosen.precio)} / ${esc(chosen.unidad||'unidad')}${chosen.fecha?` · actualizado ${esc(chosen.fecha)}`:''}</p><div class="quote-wizard-inline-summary"><span>Referencia para ${work.quantity} ${esc(chosen.unidad||'unidad')}: <strong data-qw-tariff-total="${esc(work.id)}">${money(tariffReferenceTotal(work))}</strong></span><span>Este valor viene del Tarifario; no tenés que escribir el precio acá.</span></div><div class="quote-wizard-suggestions"><button type="button" data-qw-reference-action="search" data-qw-reference-work="${esc(work.id)}">Cambiar referencia</button></div></div>`;
   }
+  if(work.tariffKind==='manual-reference')return manualReferenceBlock(work);
+  if(work.tariffKind==='jornal')return jornalReferenceBlock(work);
+  if(work.tariffKind==='visit-pending')return visitPendingBlock(work);
+  if(work.tariffKind==='search')return searchReferenceBlock(work);
+  const result=resolveTariff(work),resolved=selectedTariff(work);
+  if(resolved)return tariffReferenceBlock(work);
   if(result.status==='visit'){
-   const visit=visitReference();
-   return `<div class="quote-wizard-request-note"><span>Requiere visita / relevamiento</span><p>El pedido es general, por ejemplo “arreglos varios”. AMC no lo toma como un trabajo con precio cerrado porque primero hay que ver qué tareas reales hacen falta.</p>${visit?`<div class="quote-wizard-suggestions"><button type="button" data-qw-select-tariff="${esc(visit.key)}" data-qw-tariff-work="${esc(work.id)}" data-qw-visit-reference>Usar referencia de visita: ${money(visit.precio)} / ${esc(visit.unidad||'salida')}</button></div>`:''}</div>`;
+   return `<div class="quote-wizard-request-note"><span>Requiere visita / relevamiento</span><p>El pedido es general, por ejemplo “arreglos varios”. AMC no lo toma como un trabajo con precio cerrado porque primero hay que ver qué tareas reales hacen falta.</p><p><strong>Recomendación:</strong> marcar este trabajo como visita/relevamiento.</p>${referenceActionButtons(work,'visit')}</div>`;
   }
   if(result.status==='ambiguous'){
-   return `<div class="quote-wizard-request-note"><span>Referencia del Tarifario</span><p>Encontré más de una referencia posible. Para no asignar un precio incorrecto, elegí solamente entre estas coincidencias filtradas:</p><div class="quote-wizard-suggestions">${result.matches.map(item=>tariffOption(work,item)).join('')}</div></div>`;
+   return `<div class="quote-wizard-request-note"><span>Referencia del Tarifario</span><p>Encontré más de una referencia posible. Para no asignar un precio incorrecto, elegí solamente entre estas coincidencias filtradas:</p><div class="quote-wizard-suggestions">${result.matches.map(item=>tariffOption(work,item)).join('')}</div>${referenceActionButtons(work,'search')}</div>`;
   }
-  return `<div class="quote-wizard-request-note"><span>Sin referencia automática</span><p>No encontré una coincidencia suficientemente segura en el Tarifario para “${esc(work.description||'este trabajo')}”. AMC no inventa un precio: podés seguir cargando costos y definir la referencia cuando el trabajo esté mejor identificado.</p></div>`;
+  return `<div class="quote-wizard-request-note"><span>Sin referencia automática</span><p>No encontré una coincidencia suficientemente segura en el Tarifario para “${esc(work.description||'este trabajo')}”. AMC no inventa un precio.</p><p><strong>Elegí cómo querés seguir con este trabajo:</strong></p>${referenceActionButtons(work,'manual')}</div>`;
  }
- function measureFields(work){const chosen=selectedTariff(work);if(chosen)return `<div class="quote-wizard-fields"><label>Cantidad<input type="number" min="0" step="0.01" value="${work.quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}"></label><label>Unidad del Tarifario<input value="${esc(chosen.unidad||'unidad')}" disabled aria-label="Unidad del Tarifario"></label></div>`;return `<div class="quote-wizard-fields"><label>Cantidad<input type="number" min="0" step="0.01" value="${work.quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}"></label><label>Unidad<select data-qw-work-input data-qw-key="unit" data-qw-work-id="${esc(work.id)}">${unitOptions(work.unit)}</select></label></div>`;}
+ function measureFields(work){
+  const chosen=selectedTariff(work);
+  if(chosen)return `<div class="quote-wizard-fields"><label>Cantidad<input type="number" min="0" step="0.01" value="${work.quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}"></label><label>Unidad del Tarifario<input value="${esc(chosen.unidad||'unidad')}" disabled aria-label="Unidad del Tarifario"></label></div>`;
+  if(work.tariffKind==='jornal')return `<div class="quote-wizard-next-note">La referencia comercial se calcula por tiempo y operarios; no necesitás un precio por unidad en este paso.</div>`;
+  if(work.tariffKind==='visit-pending')return `<div class="quote-wizard-next-note">La cantidad y el precio de obra se definen después del relevamiento. La visita puede tener su propia tarifa si decidís cobrarla.</div>`;
+  return `<div class="quote-wizard-fields"><label>Cantidad<input type="number" min="0" step="0.01" value="${work.quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}"></label><label>Unidad<select data-qw-work-input data-qw-key="unit" data-qw-work-id="${esc(work.id)}">${unitOptions(work.unit)}</select></label></div>`;
+ }
  function costCard(work,index){return `<article class="quote-wizard-detail-card" data-qw-cost-card="${esc(work.id)}"><header><span>${index+1}</span><div><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small>Referencia comercial separada de tus costos internos</small></div></header>${tariffReferenceBlock(work)}${measureFields(work)}<div class="quote-wizard-next-note"><strong>Costos internos de este trabajo</strong><br>Estos importes son lo que realmente te cuesta ejecutarlo y no se muestran al cliente.</div><div class="quote-wizard-fields quote-wizard-fields-3"><label>Materiales<input type="number" min="0" step="100" value="${work.materials}" data-qw-work-input data-qw-key="materials" data-qw-work-id="${esc(work.id)}"></label><label>Herramientas / consumibles<input type="number" min="0" step="100" value="${work.tools}" data-qw-work-input data-qw-key="tools" data-qw-work-id="${esc(work.id)}"></label><label>Otros / contingencia<input type="number" min="0" step="100" value="${work.other}" data-qw-work-input data-qw-key="other" data-qw-work-id="${esc(work.id)}"></label></div><div class="quote-wizard-inline-summary"><span>Costos directos de este trabajo <strong data-qw-direct="${esc(work.id)}">${money(workDirectCost(work))}</strong></span></div></article>`;}
- function costsStep(){const rows=initialiseWorks();if(tariffState==='ready')rows.forEach(resolveTariff);const direct=directCostTotal(rows,travel);return `<div class="quote-wizard-step"><div class="quote-wizard-step-copy"><span class="eyebrow">PASO 3 DE 7</span><h2>Costos directos</h2><p>Acá cargás solamente tus costos reales. Los precios de referencia se consultan automáticamente en el Tarifario y aparecen separados para que no tengas que copiarlos a mano.</p></div><div class="quote-wizard-kpis"><div><span>Costos directos internos</span><strong data-qw-direct-total>${money(direct)}</strong></div><div><span>Tarifario</span><strong>${tariffState==='ready'?'Conectado':tariffState==='error'?'No disponible':'Consultando…'}</strong></div></div><label class="quote-wizard-field quote-wizard-single-cost">Movilidad total del presupuesto<input type="number" min="0" step="100" value="${travel}" data-qw-travel><small>Se carga una sola vez para todo el presupuesto y forma parte de tus costos internos.</small></label><div class="quote-wizard-detail-list">${rows.map(costCard).join('')}</div><div class="quote-wizard-next-note">Después AMC suma la <strong>mano de obra real</strong>. Precio del Tarifario, costos internos y mano de obra quedan separados para calcular la rentabilidad correctamente.</div></div>`;}
+ function referenceResolved(work){
+  if(tariffState!=='ready')return true;
+  if(selectedTariff(work))return true;
+  if(work.tariffKind==='jornal'||work.tariffKind==='visit-pending')return true;
+  if(work.tariffKind==='manual-reference')return amount(work.unitPrice)>0;
+  const result=resolveTariff(work);return Boolean(result.chosen||selectedTariff(work));
+ }
+ function referencesResolved(){return initialiseWorks().every(referenceResolved);}
+ function costsStep(){
+  const rows=initialiseWorks();if(tariffState==='ready')rows.forEach(resolveTariff);
+  const direct=directCostTotal(rows,travel),pending=tariffState==='ready'?rows.filter(work=>!referenceResolved(work)).length:0;
+  return `<div class="quote-wizard-step"><div class="quote-wizard-step-copy"><span class="eyebrow">PASO 3 DE 7</span><h2>Costos directos</h2><p>Acá cargás solamente tus costos reales. Los precios de referencia se consultan automáticamente en el Tarifario y aparecen separados para que no tengas que copiarlos a mano.</p></div><div class="quote-wizard-kpis"><div><span>Costos directos internos</span><strong data-qw-direct-total>${money(direct)}</strong></div><div><span>Tarifario</span><strong>${tariffState==='ready'?'Conectado':tariffState==='error'?'No disponible':'Consultando…'}</strong></div></div>${pending?`<div class="quote-wizard-next-note"><strong>${pending} trabajo${pending===1?'':'s'} sin forma de cálculo definida.</strong><br>Elegí una referencia del Tarifario, una referencia manual, cálculo por jornal o visita/relevamiento para poder continuar.</div>`:''}<label class="quote-wizard-field quote-wizard-single-cost">Movilidad total del presupuesto<input type="number" min="0" step="100" value="${travel}" data-qw-travel><small>Se carga una sola vez para todo el presupuesto y forma parte de tus costos internos.</small></label><div class="quote-wizard-detail-list">${rows.map(costCard).join('')}</div><div class="quote-wizard-next-note">Después AMC suma la <strong>mano de obra real</strong>. Precio del Tarifario, costos internos y mano de obra quedan separados para calcular la rentabilidad correctamente.</div></div>`;
+ }
  function laborCard(work,index){return `<article class="quote-wizard-detail-card" data-qw-labor-card="${esc(work.id)}"><header><span>${index+1}</span><div><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small>Estimación de ejecución</small></div></header><div class="quote-wizard-fields quote-wizard-fields-3"><label>Operarios<input type="number" min="1" step="1" value="${work.workers}" data-qw-work-input data-qw-key="workers" data-qw-work-id="${esc(work.id)}"></label><label>Días estimados<input type="number" min="1" step="1" value="${work.days}" data-qw-work-input data-qw-key="days" data-qw-work-id="${esc(work.id)}"></label><label>Horas estimadas si fuera jornal<input type="number" min="0.25" step="0.25" value="${work.hours}" data-qw-work-input data-qw-key="hours" data-qw-work-id="${esc(work.id)}"></label></div><div class="quote-wizard-inline-summary"><span>Costo interno de mano de obra <strong data-qw-labor="${esc(work.id)}">${money(workLaborCost(work,employeeDay))}</strong></span><span>Referencia comercial por jornal <strong data-qw-jornal="${esc(work.id)}">${money(jornalReference(work))}</strong></span></div></article>`;}
  function laborStep(){const rows=initialiseWorks(),labor=laborCostTotal(rows,employeeDay),direct=directCostTotal(rows,travel),internal=internalCostTotal(rows,travel,employeeDay);return `<div class="quote-wizard-step"><div class="quote-wizard-step-copy"><span class="eyebrow">PASO 4 DE 7</span><h2>Mano de obra</h2><p>Estimá cuántas personas y cuántos días requiere cada trabajo. AMC separa el costo interno del jornal comercial para que después puedas decidir la rentabilidad con claridad.</p></div><div class="quote-wizard-kpis quote-wizard-kpis-3"><div><span>Mano de obra interna</span><strong data-qw-labor-total>${money(labor)}</strong></div><div><span>Costos directos</span><strong data-qw-direct-total>${money(direct)}</strong></div><div><span>Costo interno acumulado</span><strong data-qw-internal-total>${money(internal)}</strong></div></div><label class="quote-wizard-field quote-wizard-single-cost">Jornal interno por operario<input type="number" min="0" step="100" value="${employeeDay}" data-qw-employee-day><small>Valor que realmente te cuesta cada operario por día. No se muestra al cliente.</small></label><div class="quote-wizard-detail-list">${rows.map(laborCard).join('')}</div><div class="quote-wizard-next-note"><strong>Regla de referencia por jornal:</strong> hasta 2 h salida mínima, hasta 4 h media jornada, hasta 8 h jornada completa y luego se suman jornadas. El próximo corte habilitará <strong>Rentabilidad</strong>.</div></div>`;}
  function body(){if(step===2)return worksStep();if(step===3)return costsStep();if(step===4)return laborStep();return clientStep();}
  function validWorks(){const rows=initialiseWorks();return rows.length>0&&rows.every(work=>String(work.description||'').trim());}
- function canAdvance(){if(step===1)return !!selectedRequest();if(step===2)return validWorks();if(step===3)return validWorks();return false;}
+ function canAdvance(){if(step===1)return !!selectedRequest();if(step===2)return validWorks();if(step===3)return validWorks()&&referencesResolved();return false;}
  function nextLabel(){if(step===1)return 'Continuar →';if(step===2)return 'Continuar a Costos →';if(step===3)return 'Continuar a Mano de obra →';return 'Continuar a Rentabilidad →';}
  function controls(){const allowed=canAdvance();return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back ${step===1?'disabled':''}>← Volver</button><span class="quote-wizard-mobile-progress">Paso ${step} de ${STEPS.length}</span><button type="button" class="primary" data-qw-next ${allowed?'':'disabled'}>${nextLabel()}</button></div>`;}
  function markup(){return `<div class="quote-wizard-layer"><section class="quote-wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="quote-wizard-title"><header class="quote-wizard-header"><div><span class="eyebrow">COTIZADOR AMC</span><h1 id="quote-wizard-title">Nuevo presupuesto</h1></div><button type="button" class="quote-wizard-close" data-qw-close aria-label="Cerrar cotizador">×</button></header>${stepper()}<div class="quote-wizard-content">${body()}</div>${controls()}</section></div>`;}
@@ -99,7 +137,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function addWork(description=''){initialiseWorks();const value=String(description||'').trim();if(value&&works.some(w=>w.description.toLowerCase()===value.toLowerCase()))return;works.push(createWork({description:value}));paint('.quote-wizard-work:last-child input');}
  function close(){const target=(origin||'#presupuestos').replace(/^#/,'')||'presupuestos';navigate(target);}
  function updateAdvanceButton(){const button=document.querySelector('.quote-wizard-host [data-qw-next]');if(button)button.disabled=!canAdvance();}
- function updateCostPreview(){if(step!==3)return;const rows=initialiseWorks(),direct=directCostTotal(rows,travel),host=document.querySelector('.quote-wizard-host');if(!host)return;const directTotal=host.querySelector('[data-qw-direct-total]');if(directTotal)directTotal.textContent=money(direct);rows.forEach(work=>{const tariffNode=host.querySelector(`[data-qw-tariff-total="${CSS.escape(work.id)}"]`),directNode=host.querySelector(`[data-qw-direct="${CSS.escape(work.id)}"]`);if(tariffNode)tariffNode.textContent=money(tariffReferenceTotal(work));if(directNode)directNode.textContent=money(workDirectCost(work));});}
+ function updateCostPreview(){if(step!==3)return;const rows=initialiseWorks(),direct=directCostTotal(rows,travel),host=document.querySelector('.quote-wizard-host');if(!host)return;const directTotal=host.querySelector('[data-qw-direct-total]');if(directTotal)directTotal.textContent=money(direct);rows.forEach(work=>{const tariffNode=host.querySelector(`[data-qw-tariff-total="${CSS.escape(work.id)}"]`),manualNode=host.querySelector(`[data-qw-manual-total="${CSS.escape(work.id)}"]`),directNode=host.querySelector(`[data-qw-direct="${CSS.escape(work.id)}"]`);if(tariffNode)tariffNode.textContent=money(tariffReferenceTotal(work));if(manualNode)manualNode.textContent=money(measuredReference(work));if(directNode)directNode.textContent=money(workDirectCost(work));});updateAdvanceButton();}
  function updateLaborPreview(){if(step!==4)return;const rows=initialiseWorks(),host=document.querySelector('.quote-wizard-host');if(!host)return;const labor=laborCostTotal(rows,employeeDay),direct=directCostTotal(rows,travel),internal=internalCostTotal(rows,travel,employeeDay);const laborTotal=host.querySelector('[data-qw-labor-total]'),directTotal=host.querySelector('[data-qw-direct-total]'),internalTotal=host.querySelector('[data-qw-internal-total]');if(laborTotal)laborTotal.textContent=money(labor);if(directTotal)directTotal.textContent=money(direct);if(internalTotal)internalTotal.textContent=money(internal);rows.forEach(work=>{const laborNode=host.querySelector(`[data-qw-labor="${CSS.escape(work.id)}"]`),jornalNode=host.querySelector(`[data-qw-jornal="${CSS.escape(work.id)}"]`);if(laborNode)laborNode.textContent=money(workLaborCost(work,employeeDay));if(jornalNode)jornalNode.textContent=money(jornalReference(work));});}
  async function ensureTariffs(){
   if(tariffState==='ready'||tariffState==='loading')return;
@@ -115,6 +153,14 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function chooseTariff(workId,key,kind='tariff'){
   initialiseWorks();const work=works.find(item=>item.id===workId),tariff=tariffs.find(item=>item.key===key);if(!work||!tariff)return;applyTariff(work,tariff,kind);paint();
  }
+ function setReferenceAction(workId,action){
+  initialiseWorks();const work=works.find(item=>item.id===workId);if(!work)return;clearTariffSelection(work);
+  if(action==='manual'){work.tariffKind='manual-reference';}
+  else if(action==='jornal'){work.tariffKind='jornal';}
+  else if(action==='visit'){work.tariffKind='visit-pending';}
+  else {work.tariffKind='search';work.referenceSearch=work.referenceSearch||work.description||'';}
+  paint(action==='search'?'[data-qw-reference-search-input]':'');
+ }
  document.addEventListener('click',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
   const closeButton=event.target.closest('[data-qw-close]');if(closeButton){event.preventDefault();close();return;}
@@ -123,7 +169,9 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const add=event.target.closest('[data-qw-add-work]');if(add){addWork();return;}
   const remove=event.target.closest('[data-qw-remove-work]');if(remove){initialiseWorks();works=works.filter(w=>w.id!==remove.dataset.qwRemoveWork);paint();return;}
   const suggestion=event.target.closest('[data-qw-suggestion]');if(suggestion){addWork(suggestion.dataset.qwSuggestion);return;}
-  const tariffChoice=event.target.closest('[data-qw-select-tariff]');if(tariffChoice){chooseTariff(tariffChoice.dataset.qwTariffWork,tariffChoice.dataset.qwSelectTariff,tariffChoice.hasAttribute('data-qw-visit-reference')?'visit':'manual');return;}
+  const tariffChoice=event.target.closest('[data-qw-select-tariff]');if(tariffChoice){chooseTariff(tariffChoice.dataset.qwTariffWork,tariffChoice.dataset.qwSelectTariff,tariffChoice.hasAttribute('data-qw-visit-reference')?'visit':'manual-tariff');return;}
+  const referenceAction=event.target.closest('[data-qw-reference-action]');if(referenceAction){setReferenceAction(referenceAction.dataset.qwReferenceWork,referenceAction.dataset.qwReferenceAction);return;}
+  const searchButton=event.target.closest('[data-qw-run-tariff-search]');if(searchButton){paint();return;}
  });
  document.addEventListener('change',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
@@ -132,7 +180,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  });
  function handleWorkInput(target){
   initialiseWorks();const rowId=target.dataset.qwWorkId||target.closest?.('[data-qw-work]')?.dataset.qwWork;const item=works.find(work=>work.id===rowId);if(!item)return;const key=target.dataset.qwKey;
-  if(key==='description'){item.description=target.value;clearTariff(item);}
+  if(key==='description'){item.description=target.value;clearReference(item);}
   else if(key==='unit')item.unit=target.value;
   else if(['workers','days'].includes(key))item[key]=Math.max(1,Math.ceil(amount(target.value,1)||1));
   else if(key==='hours')item[key]=Math.max(.25,amount(target.value,8)||8);
@@ -141,6 +189,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  }
  document.addEventListener('input',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
+  if(event.target.matches('[data-qw-reference-search-input]')){initialiseWorks();const item=works.find(work=>work.id===event.target.dataset.qwWorkId);if(item)item.referenceSearch=event.target.value;return;}
   if(event.target.matches('[data-qw-work-input]')){handleWorkInput(event.target);return;}
   if(event.target.matches('[data-qw-travel]')){travel=amount(event.target.value);updateCostPreview();return;}
   if(event.target.matches('[data-qw-employee-day]')){employeeDay=amount(event.target.value);updateLaborPreview();}
