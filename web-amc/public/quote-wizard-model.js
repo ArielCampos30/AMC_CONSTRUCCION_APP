@@ -107,10 +107,11 @@ function scoreTariff(tariff,description){
 
 export function findTariffMatches(catalog=[],description='',limit=3){
  if(isGenericWorkDescription(description))return {status:'visit',matches:[]};
+ const query=normalizeSearchText(description),terms=searchTerms(description);
  const ranked=(Array.isArray(catalog)?catalog:[]).map(tariff=>({tariff,score:scoreTariff(tariff,description)})).filter(item=>item.score>0&&amount(item.tariff?.precio)>0).sort((a,b)=>b.score-a.score||String(a.tariff?.tarea||'').localeCompare(String(b.tariff?.tarea||''))).slice(0,Math.max(1,limit));
  if(!ranked.length||ranked[0].score<42)return {status:'none',matches:ranked};
- const best=ranked[0],second=ranked[1];
- const clear=best.score>=72||!second||best.score-second.score>=18;
+ const best=ranked[0],second=ranked[1],exact=normalizeSearchText(best.tariff?.tarea)===query,gap=second?best.score-second.score:best.score;
+ const clear=exact||!second||gap>=18||(terms.length>=2&&best.score>=72&&gap>=8);
  return {status:clear?'matched':'ambiguous',matches:ranked};
 }
 
