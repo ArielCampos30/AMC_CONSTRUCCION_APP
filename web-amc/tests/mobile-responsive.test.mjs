@@ -21,7 +21,7 @@ test('móvil compacto no agrega huecos innecesarios ni mueve el fondo al abrir c
     readFile(new URL('../public/styles.css',import.meta.url),'utf8'),
     readFile(new URL('../public/chat-view.js',import.meta.url),'utf8'),
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/media-upload-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(styles,/@media\(max-width:850px\)[\s\S]*header\{height:62px;padding:0 16px/);
