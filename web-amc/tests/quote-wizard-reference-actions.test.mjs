@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {normaliseWork,commercialReferenceTotal,jornalReference} from '../public/quote-wizard-model.js';
+import {normaliseWork,commercialReferenceTotal,jornalReference,findTariffMatches} from '../public/quote-wizard-model.js';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
@@ -17,12 +17,34 @@ test('editor ofrece las cuatro formas de resolver el precio dentro del trabajo s
  assert.match(wizard,/Relevamiento/);
 });
 
-test('no incrusta Tarifario completo y limita la búsqueda relacionada a tres opciones',()=>{
+test('el mismo campo Trabajo filtra el Tarifario en vivo con precio y hasta cinco opciones',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/findTariffMatches\(tariffs,query,3\)/);
- assert.match(wizard,/quote-tariff-results/);
+ assert.match(wizard,/data-qw-live-tariffs/);
+ assert.match(wizard,/findTariffMatches\(tariffs,query,5\)/);
+ assert.match(wizard,/Coincidencias del Tarifario/);
+ assert.match(wizard,/money\(tariff\.precio\).*tariff\.unidad/s);
+ assert.doesNotMatch(wizard,/data-qw-run-tariff-search/);
+ assert.doesNotMatch(wizard,/data-qw-reference-search-input/);
+ assert.doesNotMatch(wizard,/Buscar referencia/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/<iframe/i);
+});
+
+test('la búsqueda parcial encuentra referencias sin exigir el nombre exacto',()=>{
+ const catalog=[
+  {key:'1',tarea:'Revoque fino interior',rubro:'Revoques',unidad:'m²',precio:18000},
+  {key:'2',tarea:'Pintura látex interior',rubro:'Pintura',unidad:'m²',precio:12000}
+ ];
+ const result=findTariffMatches(catalog,'revo',5);
+ assert.ok(result.matches.length>0);
+ assert.equal(result.matches[0].tariff.key,'1');
+});
+
+test('editar el nombre del trabajo no borra Manual, Jornal ni Relevamiento',()=>{
+ const wizard=read('../public/quote-wizard.js');
+ const handler=wizard.slice(wizard.indexOf('function handleWorkInput'),wizard.indexOf("document.addEventListener('click'"));
+ assert.match(handler,/if\(key==='description'\)item\.description=target\.value/);
+ assert.doesNotMatch(handler,/clearReference\(item\)/);
 });
 
 test('manual, jornal y relevamiento tienen impacto comercial explícito',()=>{
