@@ -64,7 +64,8 @@ try:
     call("DELETE",prefix+"/cookie")
     login("cliente@amc.test","Cliente-Prueba-2026!","client-v5")
     text=js("return document.body.innerText")
-    assert "Mis trabajos" in text and "Chat" in text and "Perfil" in text
+    assert "Mis trabajos" in text and "Perfil" in text
+    assert not js("return !!document.querySelector('[data-nav=\"chat-cliente\"],.bottom-nav a[href=\"#chat-cliente\"]')")
 finally:
     try: call("DELETE",prefix)
     except Exception: pass
