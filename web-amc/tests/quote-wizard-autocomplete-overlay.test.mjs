@@ -7,6 +7,7 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 test('el Tarifario usa un desplegable flotante sin empujar el detalle central',()=>{
  const css=read('../public/quote-wizard-autocomplete.css');
  const js=read('../public/quote-wizard-autocomplete.js');
+ const rootRule=css.match(/\.quote-tariff-overlay\{([^}]*)\}/)?.[1]||'';
  assert.match(css,/\.quote-tariff-overlay\{position:fixed/);
  assert.match(css,/quote-tariff-overlay-ready \.quote-builder-detail \.quote-tariff-results\{display:none\}/);
  assert.match(css,/quote-tariff-overlay-ready \.quote-builder-detail\{overflow:visible/);
@@ -14,7 +15,7 @@ test('el Tarifario usa un desplegable flotante sin empujar el detalle central',(
  assert.match(js,/buttons\.slice\(0,fitCount\(input,buttons\.length\)\)/);
  assert.match(js,/dataset\.qwSelectTariff/);
  assert.match(js,/dataset\.qwTariffWork/);
- assert.doesNotMatch(css,/\.quote-tariff-overlay[^\n]*overflow\s*:\s*auto/);
+ assert.doesNotMatch(rootRule,/overflow\s*:\s*auto/);
 });
 
 test('el desplegable decide si abre arriba o abajo según el espacio disponible',()=>{
