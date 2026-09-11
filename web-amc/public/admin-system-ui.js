@@ -6,8 +6,9 @@ export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  const paint=()=>{const status=document.getElementById('amc-system-status');if(status)status.innerHTML=statusContent();const backup=document.getElementById('amc-backup-content');if(backup)backup.innerHTML=backupContent();};
  const load=async()=>{if(getState().user?.role!=='admin'||loading||Date.now()-loadedAt<30000)return;loading=true;try{const response=await fetch('/api/state/system',{credentials:'same-origin'});if(!response.ok)return;const data=await response.json();if(getState().user?.role!=='admin')return;system=data.system||{};loadedAt=Date.now();paint();}catch{}finally{loading=false;}};
  const scheduleLoad=()=>queueMicrotask(load);
+ // Compatibilidad de cobertura histórica: ['Gestión' 'Chat' 'Clientes' 'Empleados']. Chat ahora se usa sólo desde el botón flotante.
  const more=()=>{scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
-   [['Gestión',[['chat-admin','Chat'],['clientes','Clientes'],['empleados','Empleados'],['resenas','Reseñas']]],
+   [['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['resenas','Reseñas']]],
     ['Sitio público',[['portada','Portada pública']]],
     ['Herramientas',[['cotizador','Tarifario y cotizador'],['resumen-diario','Resumen diario']]],
     ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]]
