@@ -24,13 +24,20 @@ export function normaliseWork(raw={},fallbackDescription=''){
   other:amount(raw.other??details.other,0),
   workers:Math.max(1,Math.ceil(amount(raw.workers??details.workers,1)||1)),
   days:Math.max(1,Math.ceil(amount(raw.days??raw.m2Days??details.m2Days,1)||1)),
-  hours:Math.max(.25,amount(raw.hours??details.hours,8)||8)
+  hours:Math.max(.25,amount(raw.hours??details.hours,8)||8),
+  tariffKey:String(raw.tariffKey??details.tariffKey??''),
+  tariffTask:String(raw.tariffTask??details.tariffTask??''),
+  tariffRubric:String(raw.tariffRubric??details.tariffRubric??''),
+  tariffUnit:String(raw.tariffUnit??details.tariffUnit??''),
+  tariffPrice:amount(raw.tariffPrice??details.tariffPrice,0),
+  tariffKind:String(raw.tariffKind??details.tariffKind??'')
  };
 }
 
 export const workDirectCost=work=>amount(work?.materials)+amount(work?.tools)+amount(work?.other);
 export const directCostTotal=(works=[],travel=0)=>amount(travel)+works.reduce((sum,work)=>sum+workDirectCost(work),0);
 export const measuredReference=work=>amount(work?.quantity,1)*amount(work?.unitPrice);
+export const tariffReferenceTotal=work=>amount(work?.quantity,1)*amount(work?.tariffPrice);
 export const workLaborCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>Math.max(1,Math.ceil(amount(work?.workers,1)||1))*Math.max(1,Math.ceil(amount(work?.days,1)||1))*amount(employeeDay);
 export const laborCostTotal=(works=[],employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>works.reduce((sum,work)=>sum+workLaborCost(work,employeeDay),0);
 export const internalCostTotal=(works=[],travel=0,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>directCostTotal(works,travel)+laborCostTotal(works,employeeDay);
@@ -47,4 +54,68 @@ export function jornalTier(hours,settings=DEFAULT_QUOTE_SETTINGS){
 export function jornalReference(work,settings=DEFAULT_QUOTE_SETTINGS){
  const tier=jornalTier(work?.hours,settings);
  return tier.days*Math.max(1,Math.ceil(amount(work?.workers,1)||1))*tier.rate;
+}
+
+const STOP_WORDS=new Set(['de','del','la','las','el','los','un','una','unos','unas','y','o','en','para','por','con','sin','al','a','que','se','hacer','trabajo','trabajos','servicio','servicios']);
+const GENERIC_PATTERNS=[
+ /\barreglos? varios?\b/,
+ /\bvarios arreglos?\b/,
+ /\breparaciones? varias?\b/,
+ /\bvarias reparaciones?\b/,
+ /\bcosas? varias?\b/,
+ /\bmantenimiento general\b/,
+ /\btrabajos? varios?\b/
+];
+
+export function normalizeSearchText(value=''){
+ return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9²]+/g,' ').replace(/\s+/g,' ').trim();
+}
+
+function searchTerms(value){return normalizeSearchText(value).split(' ').filter(word=>word.length>2&&!STOP_WORDS.has(word));}
+
+export function isGenericWorkDescription(description=''){
+ const value=normalizeSearchText(description);
+ if(!value)return false;
+ if(GENERIC_PATTERNS.some(pattern=>pattern.test(value)))return true;
+ if(/^(ver|revisar|visita|presupuestar|cotizar|diagnosticar)\b/.test(value))return true;
+ if(/\b(no se|a revisar|para revisar|hay que ver|ver que|revisar que)\b/.test(value))return true;
+ return false;
+}
+
+function scoreTariff(tariff,description){
+ const query=normalizeSearchText(description),task=normalizeSearchText(tariff?.tarea),rubric=normalizeSearchText(tariff?.rubro),notes=normalizeSearchText(tariff?.obs);
+ if(!query||!task)return 0;
+ if(task===query)return 140;
+ let score=0;
+ if(task.includes(query))score+=80;
+ if(query.includes(task)&&task.length>5)score+=68;
+ const terms=searchTerms(query),taskTerms=new Set(searchTerms(task)),haystack=`${task} ${rubric} ${notes}`;
+ let matched=0;
+ for(const term of terms){
+  if(taskTerms.has(term)){score+=18;matched++;continue;}
+  if(task.includes(term)){score+=12;matched++;continue;}
+  if(haystack.includes(term)){score+=5;matched++;}
+ }
+ if(terms.length){
+  const coverage=matched/terms.length;
+  score+=Math.round(coverage*32);
+  if(coverage<.5)score-=20;
+ }
+ if(rubric&&query.includes(rubric))score+=8;
+ return Math.max(0,score);
+}
+
+export function findTariffMatches(catalog=[],description='',limit=3){
+ if(isGenericWorkDescription(description))return {status:'visit',matches:[]};
+ const query=normalizeSearchText(description),terms=searchTerms(description);
+ const ranked=(Array.isArray(catalog)?catalog:[]).map(tariff=>({tariff,score:scoreTariff(tariff,description)})).filter(item=>item.score>0&&amount(item.tariff?.precio)>0).sort((a,b)=>b.score-a.score||String(a.tariff?.tarea||'').localeCompare(String(b.tariff?.tarea||''))).slice(0,Math.max(1,limit));
+ if(!ranked.length||ranked[0].score<42)return {status:'none',matches:ranked};
+ const best=ranked[0],second=ranked[1],exact=normalizeSearchText(best.tariff?.tarea)===query,gap=second?best.score-second.score:best.score;
+ const clear=exact||!second||gap>=18||(terms.length>=2&&best.score>=72&&gap>=8);
+ return {status:clear?'matched':'ambiguous',matches:ranked};
+}
+
+export function visitTariff(catalog=[]){
+ const list=Array.isArray(catalog)?catalog:[];
+ return list.find(tariff=>normalizeSearchText(tariff?.tarea).includes('salida corta hasta 2 h'))||null;
 }
