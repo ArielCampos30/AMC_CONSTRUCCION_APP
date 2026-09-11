@@ -145,17 +145,23 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function mobileWorkSelector(rows){return `<div class="quote-builder-mobile-work"><label>Trabajo<select data-qw-work-selector>${rows.map((work,index)=>`<option value="${esc(work.id)}" ${work.id===activeWorkId?'selected':''}>${index+1}. ${esc(work.description||'Trabajo sin nombre')} · ${esc(workSummary(work))}</option>`).join('')}</select></label><button type="button" data-qw-add-work aria-label="Agregar trabajo">＋</button></div>`;}
  function unitOptions(current){return UNITS.map(unit=>`<option value="${esc(unit)}" ${unit===current?'selected':''}>${esc(unit)}</option>`).join('');}
  function tariffChoice(work,item){const tariff=item.tariff;return `<button type="button" data-qw-select-tariff="${esc(tariff.key)}" data-qw-tariff-work="${esc(work.id)}"><strong>${esc(tariff.tarea)}</strong><span>${money(tariff.precio)} / ${esc(tariff.unidad||'unidad')}</span></button>`;}
+ function tariffSuggestionMarkup(work){
+  const query=String(work.description||'').trim();
+  if(query.length<2)return `<div class="quote-price-state"><p>Escribí al menos 2 letras en “Trabajo” y AMC va filtrando el Tarifario mientras escribís.</p></div>`;
+  const result=findTariffMatches(tariffs,query,5),matches=result.matches||[];
+  if(result.status==='visit')return `<div class="quote-price-state warning"><strong>Esto parece un pedido para relevar.</strong><p>AMC no inventa un precio ni suma una visita automáticamente al presupuesto. Podés marcarlo como Relevamiento o elegir Manual/Jornal si ya tenés información suficiente.</p><button type="button" class="quote-inline-action" data-qw-pricing-mode="visit" data-qw-work-id="${esc(work.id)}">Marcar como relevamiento</button></div>`;
+  if(matches.length)return `<div class="quote-tariff-results"><p>Coincidencias del Tarifario · tocá una para usar su precio:</p>${matches.map(item=>tariffChoice(work,item)).join('')}</div>`;
+  return `<div class="quote-price-state"><p>No encontré coincidencias todavía. Seguí escribiendo o elegí Manual, Jornal o Relevamiento.</p></div>`;
+ }
  function tariffPricing(work){
   if(tariffState==='loading'||tariffState==='idle')return `<div class="quote-price-state"><p>Consultando Tarifario…</p></div>`;
   if(tariffState==='error')return `<div class="quote-price-state warning"><p>No pude consultar el Tarifario. ${esc(tariffError)}</p><p>Podés usar Manual o Jornal sin perder el trabajo.</p></div>`;
   const chosen=selectedTariff(work);
   if(chosen){
    const measured=requiresMeasuredQuantity(chosen.unidad),quantity=amount(work.quantity),label=measured?quantityLabel(chosen.unidad):'Cantidad',unit=chosen.unidad||'unidad';
-   return `<div class="quote-selected-tariff"><div><span>Referencia del Tarifario</span><strong>${esc(chosen.tarea)}</strong><small>${esc(chosen.rubro||'Tarifario AMC')} · ${money(chosen.precio)} / ${esc(unit)}</small></div><button type="button" data-qw-change-tariff="${esc(work.id)}">Cambiar</button></div><div class="quote-wizard-fields"><label>${esc(label)}<input type="number" min="${measured?'0.01':'0'}" step="0.01" value="${measured&&quantity<=0?'':quantity}" placeholder="${measured?'Ingresá la medida':''}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}" ${measured?'required':''}></label><label>Unidad<input value="${esc(unit)}" disabled></label></div>${measured&&quantity<=0?`<p class="quote-price-help">Ingresá los ${esc(label.toLowerCase())} para calcular este trabajo.</p>`:''}<div class="quote-work-total">${measured?`${money(chosen.precio)} × ${quantity||0} ${esc(unit)} =`:'Referencia del trabajo'} <strong data-qw-active-total>${money(commercialReferenceTotal(work))}</strong></div>`;
+   return `<div class="quote-selected-tariff"><div><span>Referencia del Tarifario</span><strong>${esc(chosen.tarea)}</strong><small>${esc(chosen.rubro||'Tarifario AMC')} · ${money(chosen.precio)} / ${esc(unit)}</small></div><button type="button" data-qw-change-tariff="${esc(work.id)}">Cambiar</button></div><div class="quote-wizard-fields"><label>${esc(label)}<input type="number" min="${measured?'0.01':'0'}" step="0.01" value="${measured&&quantity<=0?'':quantity}" placeholder="${measured?'Ingresá la medida':''}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}" ${measured?'required':''}></label><label>Unidad<input value="${esc(unit)}" disabled></label></div>${measured&&quantity<=0?`<p class="quote-price-help"><strong>Falta este dato:</strong> ingresá los ${esc(label.toLowerCase())} para calcular el trabajo.</p>`:''}<div class="quote-work-total">${measured?`${money(chosen.precio)} × ${quantity||0} ${esc(unit)} =`:'Referencia del trabajo'} <strong data-qw-active-total>${money(commercialReferenceTotal(work))}</strong></div>`;
   }
-  const query=String(work.referenceSearch||work.description||'').trim(),result=query?findTariffMatches(tariffs,query,3):{status:'none',matches:[]},matches=result.matches||[];
-  if(result.status==='visit')return `<div class="quote-price-state warning"><strong>Esto parece un pedido para relevar.</strong><p>AMC no inventa un precio ni suma una visita automáticamente al presupuesto. Podés marcarlo como Relevamiento o elegir Manual/Jornal si ya tenés información suficiente.</p><button type="button" class="quote-inline-action" data-qw-pricing-mode="visit" data-qw-work-id="${esc(work.id)}">Marcar como relevamiento</button></div>`;
-  return `<div class="quote-tariff-search"><label>Buscar referencia<input value="${esc(work.referenceSearch||work.description||'')}" data-qw-reference-search-input data-qw-work-id="${esc(work.id)}" placeholder="Ej. revoque fino"></label><button type="button" data-qw-run-tariff-search data-qw-reference-work="${esc(work.id)}">Buscar</button></div>${matches.length?`<div class="quote-tariff-results"><p>${result.status==='ambiguous'?'Elegí la referencia correcta:':'Referencia encontrada:'}</p>${matches.map(item=>tariffChoice(work,item)).join('')}</div>`:`<div class="quote-price-state"><p>Sin referencia automática. Probá otra búsqueda o elegí Manual, Jornal o Relevamiento.</p></div>`}`;
+  return `<div data-qw-live-tariffs="${esc(work.id)}">${tariffSuggestionMarkup(work)}</div>`;
  }
  function manualPricing(work){
   const measured=requiresMeasuredQuantity(work.unit),quantity=amount(work.quantity),label=measured?quantityLabel(work.unit):'Cantidad';
@@ -165,13 +171,15 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function visitPricing(work){return `<div class="quote-price-state warning"><strong>Relevamiento pendiente</strong><p>Este trabajo todavía no tiene información suficiente para cotizarlo. No se suma un precio de obra ni una visita automática al presupuesto.</p><p>Después del relevamiento podés reemplazarlo por los trabajos reales y sus valores.</p></div><div class="quote-work-total muted">Impacto actual en el presupuesto <strong data-qw-active-total>${money(0)}</strong></div>`;}
  function pricingPanel(work){
   const tariffActive=!['manual-reference','jornal','visit-pending'].includes(work.tariffKind),manual=work.tariffKind==='manual-reference',jornal=work.tariffKind==='jornal',visit=work.tariffKind==='visit-pending';
-  return `<section class="quote-pricing"><div class="quote-pricing-tabs" role="group" aria-label="Forma de calcular el trabajo"><button type="button" class="${tariffActive?'active':''}" data-qw-pricing-mode="tariff" data-qw-work-id="${esc(work.id)}">Tarifario</button><button type="button" class="${manual?'active':''}" data-qw-pricing-mode="manual" data-qw-work-id="${esc(work.id)}">Manual</button><button type="button" class="${jornal?'active':''}" data-qw-pricing-mode="jornal" data-qw-work-id="${esc(work.id)}">Jornal</button><button type="button" class="${visit?'active':''}" data-qw-pricing-mode="visit" data-qw-work-id="${esc(work.id)}">Relevamiento</button></div>${manual?manualPricing(work):jornal?jornalPricing(work):visit?visitPricing(work):tariffPricing(work)}</section>`;
+  const tabs=`<div class="quote-pricing-tabs" role="group" aria-label="Forma de calcular el trabajo"><button type="button" class="${tariffActive?'active':''}" data-qw-pricing-mode="tariff" data-qw-work-id="${esc(work.id)}">Tarifario</button><button type="button" class="${manual?'active':''}" data-qw-pricing-mode="manual" data-qw-work-id="${esc(work.id)}">Manual</button><button type="button" class="${jornal?'active':''}" data-qw-pricing-mode="jornal" data-qw-work-id="${esc(work.id)}">Jornal</button><button type="button" class="${visit?'active':''}" data-qw-pricing-mode="visit" data-qw-work-id="${esc(work.id)}">Relevamiento</button></div>`;
+  const content=manual?manualPricing(work):jornal?jornalPricing(work):visit?visitPricing(work):tariffPricing(work);
+  return `<section class="quote-pricing ${tariffActive?'tariff-first':''}">${tariffActive?`${content}${tabs}`:`${tabs}${content}`}</section>`;
  }
  function internalCosts(work){
   const open=openCostWorkIds.has(work.id),laborReference=workLaborCost(work,employeeDay);
   return `<details class="quote-internal-costs" data-qw-cost-details="${esc(work.id)}" ${open?'open':''}><summary><span>Costos internos <small>Opcional · no se muestran al cliente</small></span><strong data-qw-work-internal="${esc(work.id)}">${money(workLoadedInternalCost(work))}</strong></summary><div class="quote-wizard-fields quote-wizard-fields-3"><label>Materiales<input type="number" min="0" step="100" value="${work.materials}" data-qw-work-input data-qw-key="materials" data-qw-work-id="${esc(work.id)}"></label><label>Herramientas / consumibles<input type="number" min="0" step="100" value="${work.tools}" data-qw-work-input data-qw-key="tools" data-qw-work-id="${esc(work.id)}"></label><label>Otros / contingencia<input type="number" min="0" step="100" value="${work.other}" data-qw-work-input data-qw-key="other" data-qw-work-id="${esc(work.id)}"></label><label>Mano de obra interna<input type="number" min="0" step="100" value="${work.labor}" data-qw-work-input data-qw-key="labor" data-qw-work-id="${esc(work.id)}"></label></div>${work.tariffKind==='jornal'?`<div class="quote-inline-note"><span>Referencia interna según operarios y días: <strong>${money(laborReference)}</strong>. No se suma sola.</span><button type="button" data-qw-use-labor-reference="${esc(work.id)}">Usar como costo interno</button></div>`:''}</details>`;
  }
- function workDetail(work){if(!work)return '<div class="quote-wizard-empty">Agregá un trabajo para empezar.</div>';return `<div class="quote-builder-detail-inner"><div class="quote-builder-detail-head"><div><span class="eyebrow">TRABAJO SELECCIONADO</span><h2>${esc(work.description||'Nuevo trabajo')}</h2></div><button type="button" class="quote-remove-work" data-qw-remove-work="${esc(work.id)}">Eliminar</button></div><label class="quote-wizard-field">Trabajo<input value="${esc(work.description)}" data-qw-work-input data-qw-key="description" data-qw-work-id="${esc(work.id)}" placeholder="Ej. Revoque fino"></label>${pricingPanel(work)}${internalCosts(work)}</div>`;}
+ function workDetail(work){if(!work)return '<div class="quote-wizard-empty">Agregá un trabajo para empezar.</div>';return `<div class="quote-builder-detail-inner"><div class="quote-builder-detail-head"><div><span class="eyebrow">TRABAJO SELECCIONADO</span><h2 data-qw-active-work-title>${esc(work.description||'Nuevo trabajo')}</h2></div><button type="button" class="quote-remove-work" data-qw-remove-work="${esc(work.id)}">Eliminar</button></div><label class="quote-wizard-field">Trabajo<input value="${esc(work.description)}" data-qw-work-input data-qw-key="description" data-qw-work-id="${esc(work.id)}" placeholder="Ej. Revoque fino" autocomplete="off"></label>${pricingPanel(work)}${internalCosts(work)}</div>`;}
  function summaryPanel(rows){
   const commercial=automaticCommercial(rows),cost=profitabilityCostTotal(rows,travel),pending=rows.filter(work=>!referenceResolved(work)).length,relevamientos=rows.filter(work=>work.tariffKind==='visit-pending').length;
   return `<aside class="quote-builder-summary-panel"><div class="quote-summary-title"><span class="eyebrow">RESUMEN</span><strong>${rows.length} trabajo${rows.length===1?'':'s'}</strong></div><div class="quote-summary-main"><span>Referencia acumulada</span><strong data-qw-commercial-total>${money(commercial)}</strong></div>${pending?`<div class="quote-summary-alert">${pending} trabajo${pending===1?'':'s'} todavía sin precio definido.</div>`:''}${relevamientos?`<div class="quote-summary-alert neutral">${relevamientos} trabajo${relevamientos===1?'':'s'} pendiente${relevamientos===1?'':'s'} de relevamiento. No suma${relevamientos===1?'':'n'} al total.</div>`:''}<div class="quote-summary-rows">${rows.map(work=>`<button type="button" data-qw-select-work="${esc(work.id)}"><span>${esc(work.description||'Trabajo sin nombre')}</span><strong data-qw-work-total="${esc(work.id)}">${money(commercialReferenceTotal(work))}</strong></button>`).join('')}</div><details class="quote-summary-costs"><summary>Costos internos cargados</summary><label>Movilidad general<input type="number" min="0" step="100" value="${travel}" data-qw-travel></label><div><span>Total interno para rentabilidad</span><strong data-qw-profit-cost>${money(cost)}</strong></div><small>Sólo cuenta lo que cargaste. Los relevamientos pendientes quedan fuera.</small></details></aside>`;
@@ -202,16 +210,24 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  }
  function addWork(){const rows=initialiseWorks(),work=createWork({description:''});rows.push(work);activeWorkId=work.id;paint({focusSelector:`[data-qw-work-id="${CSS.escape(work.id)}"][data-qw-key="description"]`});}
  function close(){const target=(origin||'#presupuestos').replace(/^#/,'')||'presupuestos';navigate(target);}
- function chooseTariff(workId,key,kind='manual-tariff'){const work=initialiseWorks().find(item=>item.id===workId),tariff=tariffs.find(item=>item.key===key);if(!work||!tariff)return;applyTariff(work,tariff,kind);paint();}
+ function chooseTariff(workId,key,kind='manual-tariff'){
+  const work=initialiseWorks().find(item=>item.id===workId),tariff=tariffs.find(item=>item.key===key);if(!work||!tariff)return;applyTariff(work,tariff,kind);
+  const focus=requiresMeasuredQuantity(tariff.unidad)?`[data-qw-work-id="${CSS.escape(work.id)}"][data-qw-key="quantity"]`:'';
+  paint({focusSelector:focus,preserveScroll:!focus});
+ }
  function setPricingMode(workId,pricingMode){
   const work=initialiseWorks().find(item=>item.id===workId);if(!work)return;
   if(pricingMode==='manual'){clearTariffSelection(work);work.tariffKind='manual-reference';work.referenceSearch='';}
   else if(pricingMode==='jornal'){clearTariffSelection(work);work.tariffKind='jornal';work.referenceSearch='';work.days=Math.max(1,Math.ceil(amount(work.hours,8)/8));}
   else if(pricingMode==='visit'){clearTariffSelection(work);work.tariffKind='visit-pending';work.referenceSearch='';work.unitPrice=0;}
-  else {clearTariffSelection(work);work.tariffKind='search';work.referenceSearch=work.referenceSearch||work.description||'';work.unitPrice=0;const result=findTariffMatches(tariffs,work.description,3);if(result.status==='matched'&&result.matches[0]?.tariff)applyTariff(work,result.matches[0].tariff,'auto');}
-  paint({focusSelector:pricingMode==='tariff'&&!selectedTariff(work)?'[data-qw-reference-search-input]':''});
+  else {clearTariffSelection(work);work.tariffKind='search';work.referenceSearch='';work.unitPrice=0;}
+  paint({focusSelector:pricingMode==='tariff'?`[data-qw-work-id="${CSS.escape(work.id)}"][data-qw-key="description"]`:''});
  }
  function removeWork(workId){const rows=initialiseWorks(),index=rows.findIndex(work=>work.id===workId);if(index<0)return;rows.splice(index,1);if(!rows.length)rows.push(createWork({description:''}));activeWorkId=rows[Math.min(index,rows.length-1)]?.id||rows[0]?.id||'';paint();}
+ function refreshTariffSuggestions(work){
+  const host=document.querySelector('.quote-wizard-host'),node=host?.querySelector(`[data-qw-live-tariffs="${CSS.escape(work.id)}"]`);if(node)node.innerHTML=tariffSuggestionMarkup(work);
+ }
+ function updateActiveWorkTitle(work){const node=document.querySelector('.quote-wizard-host [data-qw-active-work-title]');if(node)node.textContent=work.description||'Nuevo trabajo';}
  function updateLivePreview(){
   const host=document.querySelector('.quote-wizard-host');if(!host)return;const rows=initialiseWorks(),commercial=automaticCommercial(rows),cost=profitabilityCostTotal(rows,travel);
   host.querySelectorAll('[data-qw-commercial-total]').forEach(node=>node.textContent=money(commercial));
@@ -252,14 +268,14 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   finally{newClientSaving=false;paint();}
  }
  function handleWorkInput(target){
-  const item=initialiseWorks().find(work=>work.id===target.dataset.qwWorkId);if(!item)return;const key=target.dataset.qwKey;
-  if(key==='description'){item.description=target.value;clearReference(item);}
+  const item=initialiseWorks().find(work=>work.id===target.dataset.qwWorkId);if(!item)return null;const key=target.dataset.qwKey;
+  if(key==='description')item.description=target.value;
   else if(key==='unit')item.unit=target.value;
   else if(key==='quantity'){item.quantity=amount(target.value);item.quantityExplicit=String(target.value).trim()!=='';}
   else if(key==='workers'){item.workers=Math.max(1,Math.ceil(amount(target.value,1)||1));}
   else if(key==='hours'){item.hours=Math.max(.25,amount(target.value,8)||8);if(item.tariffKind==='jornal')item.days=Math.max(1,Math.ceil(item.hours/8));}
   else item[key]=amount(target.value);
-  updateLivePreview();
+  updateLivePreview();return item;
  }
  document.addEventListener('click',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
@@ -276,7 +292,6 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const pricing=event.target.closest('[data-qw-pricing-mode]');if(pricing){setPricingMode(pricing.dataset.qwWorkId,pricing.dataset.qwPricingMode);return;}
   const changeTariff=event.target.closest('[data-qw-change-tariff]');if(changeTariff){setPricingMode(changeTariff.dataset.qwChangeTariff,'tariff');return;}
   const tariffChoice=event.target.closest('[data-qw-select-tariff]');if(tariffChoice){chooseTariff(tariffChoice.dataset.qwTariffWork,tariffChoice.dataset.qwSelectTariff);return;}
-  const searchButton=event.target.closest('[data-qw-run-tariff-search]');if(searchButton){paint();return;}
   const laborReference=event.target.closest('[data-qw-use-labor-reference]');if(laborReference){const item=initialiseWorks().find(work=>work.id===laborReference.dataset.qwUseLaborReference);if(item){item.labor=workLaborCost(item,employeeDay);paint();}return;}
   const useSuggested=event.target.closest('[data-qw-use-suggested-price]');if(useSuggested&&!useSuggested.disabled){const target=suggestedPriceForMargin(profitabilityCostTotal(initialiseWorks(),travel),desiredMargin);if(target>0){finalPrice=Math.round(target);finalPriceManual=true;paint();}return;}
   const resetFinal=event.target.closest('[data-qw-reset-final-price]');if(resetFinal){finalPrice=0;finalPriceManual=false;paint();return;}
@@ -288,13 +303,16 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(event.target.matches('[data-qw-client]')){clientRef=event.target.value||'';requestId='';resetWorks();paint();return;}
   if(event.target.matches('[data-qw-request]')){requestId=event.target.value||'';quoteId='';resetWorks();paint();return;}
   if(event.target.matches('[data-qw-work-selector]')){activeWorkId=event.target.value||activeWorkId;paint();return;}
-  if(event.target.matches('[data-qw-work-input]')){handleWorkInput(event.target);if(event.target.dataset.qwKey==='description'&&tariffState==='ready'){const item=activeWork();if(item&&!item.tariffKind)resolveTariff(item);paint();}return;}
+  if(event.target.matches('[data-qw-work-input]')){handleWorkInput(event.target);return;}
  });
  document.addEventListener('input',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
   if(event.target.closest('[data-qw-new-client-form]')){const name=event.target.name;if(name&&['name','phone','town'].includes(name))newClientDraft[name]=event.target.value;return;}
-  if(event.target.matches('[data-qw-reference-search-input]')){const item=initialiseWorks().find(work=>work.id===event.target.dataset.qwWorkId);if(item)item.referenceSearch=event.target.value;return;}
-  if(event.target.matches('[data-qw-work-input]')){handleWorkInput(event.target);return;}
+  if(event.target.matches('[data-qw-work-input]')){
+   const item=handleWorkInput(event.target);
+   if(item&&event.target.dataset.qwKey==='description'){updateActiveWorkTitle(item);refreshTariffSuggestions(item);}
+   return;
+  }
   if(event.target.matches('[data-qw-travel]')){travel=amount(event.target.value);updateLivePreview();return;}
   if(event.target.matches('[data-qw-desired-margin]')){desiredMargin=Math.min(95,amount(event.target.value));updateReviewPreview();return;}
   if(event.target.matches('[data-qw-final-price]')){const value=amount(event.target.value);if(value>0){finalPrice=value;finalPriceManual=true;}else{finalPrice=0;finalPriceManual=false;}updateReviewPreview();}
