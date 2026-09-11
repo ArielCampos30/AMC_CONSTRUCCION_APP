@@ -2,7 +2,17 @@ import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,workDirectCost,directCostTot
 
 const PHASES=['Cliente','Presupuesto','Revisión','Guardar / enviar'];
 const UNITS=['m²','ml','unidad','día','hora','servicio','obra','punto','salida'];
+const MEASURED_UNITS=new Set(['m²','m2','m^2','m³','m3','m^3','ml','m.l.','metro lineal','metros lineales']);
 const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number.isFinite(Number(value))?Number(value):0);
+const normalizedUnit=value=>String(value||'').trim().toLowerCase().replace(/\s+/g,' ');
+const requiresMeasuredQuantity=unit=>MEASURED_UNITS.has(normalizedUnit(unit));
+function quantityLabel(unit){
+ const value=normalizedUnit(unit);
+ if(['m²','m2','m^2'].includes(value))return 'Metros cuadrados (m²)';
+ if(['m³','m3','m^3'].includes(value))return 'Metros cúbicos (m³)';
+ if(['ml','m.l.','metro lineal','metros lineales'].includes(value))return 'Metros lineales (ml)';
+ return 'Cantidad';
+}
 
 export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  let stage=1,requestId='',quoteId='',mode='',clientRef='',pendingClientRef='',origin='#presupuestos',works=null,lastContext='',activeWorkId='';
@@ -36,6 +46,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function resetWorks(){works=null;lastContext='';activeWorkId='';travel=DEFAULT_QUOTE_SETTINGS.travelDefault;employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;finalPrice=0;finalPriceManual=false;desiredMargin=30;openCostWorkIds.clear();}
  function createWork(source={}){
   const work=normaliseWork(source);work.id=work.id||uid();work.referenceSearch=String(source.referenceSearch||source.details?.referenceSearch||'');
+  work.quantityExplicit=Object.prototype.hasOwnProperty.call(source,'quantity')||Object.prototype.hasOwnProperty.call(source.details||{},'quantity');
   if(!work.tariffKind&&work.unitPrice>0)work.tariffKind='manual-reference';
   return work;
  }
@@ -82,7 +93,10 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  }
  function selectedTariff(work){return tariffs.find(item=>item.key===work?.tariffKey)||null;}
  function applyTariff(work,tariff,kind='tariff'){
-  if(!work||!tariff)return;work.tariffKey=tariff.key;work.tariffTask=tariff.tarea;work.tariffRubric=tariff.rubro;work.tariffUnit=tariff.unidad;work.tariffPrice=amount(tariff.precio);work.tariffKind=kind;work.referenceSearch='';work.unit=tariff.unidad||work.unit;work.unitPrice=0;
+  if(!work||!tariff)return;
+  work.tariffKey=tariff.key;work.tariffTask=tariff.tarea;work.tariffRubric=tariff.rubro;work.tariffUnit=tariff.unidad;work.tariffPrice=amount(tariff.precio);work.tariffKind=kind;work.referenceSearch='';work.unit=tariff.unidad||work.unit;work.unitPrice=0;
+  if(requiresMeasuredQuantity(tariff.unidad)&&!work.quantityExplicit)work.quantity=0;
+  else if(!requiresMeasuredQuantity(tariff.unidad)&&!work.quantityExplicit&&amount(work.quantity)<=0)work.quantity=1;
  }
  function clearTariffSelection(work){if(!work)return;work.tariffKey='';work.tariffTask='';work.tariffRubric='';work.tariffUnit='';work.tariffPrice=0;}
  function clearReference(work){if(!work)return;clearTariffSelection(work);work.tariffKind='';work.referenceSearch='';work.unitPrice=0;}
@@ -97,8 +111,9 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function referenceResolved(work){
   if(!String(work?.description||'').trim())return false;
   if(work.tariffKind==='visit-pending'||work.tariffKind==='jornal')return true;
-  if(work.tariffKind==='manual-reference')return amount(work.unitPrice)>0;
-  if(selectedTariff(work)||amount(work.tariffPrice)>0)return true;
+  if(work.tariffKind==='manual-reference')return amount(work.unitPrice)>0&&(!requiresMeasuredQuantity(work.unit)||amount(work.quantity)>0);
+  const tariff=selectedTariff(work),unit=tariff?.unidad||work.tariffUnit;
+  if(tariff||amount(work.tariffPrice)>0)return !requiresMeasuredQuantity(unit)||amount(work.quantity)>0;
   if(tariffState!=='ready')return true;
   return Boolean(resolveTariff(work).chosen||selectedTariff(work));
  }
@@ -120,7 +135,12 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const tariff=selectedTariff(work);if(tariff||amount(work.tariffPrice)>0)return 'Tarifario';
   return 'Definir precio';
  }
- function workSummary(work){const total=commercialReferenceTotal(work);return work.tariffKind==='visit-pending'?'Pendiente de relevamiento':total>0?`${money(total)} · ${pricingLabel(work)}`:pricingLabel(work);}
+ function workSummary(work){
+  const total=commercialReferenceTotal(work),tariff=selectedTariff(work),unit=tariff?.unidad||work.tariffUnit||work.unit;
+  if(work.tariffKind==='visit-pending')return 'Pendiente de relevamiento';
+  if(requiresMeasuredQuantity(unit)&&amount(work.quantity)<=0&&(tariff||amount(work.tariffPrice)>0||work.tariffKind==='manual-reference'))return `Falta cargar ${quantityLabel(unit).toLowerCase()}`;
+  return total>0?`${money(total)} · ${pricingLabel(work)}`:pricingLabel(work);
+ }
  function workList(rows){return `<div class="quote-builder-work-list-scroll" data-qw-scroll-key="works"><div class="quote-builder-work-list">${rows.map((work,index)=>`<button type="button" class="quote-builder-work-item ${work.id===activeWorkId?'active':''}" data-qw-select-work="${esc(work.id)}"><span class="quote-builder-work-number">${index+1}</span><span class="quote-builder-work-copy"><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small data-qw-work-summary="${esc(work.id)}">${esc(workSummary(work))}</small></span></button>`).join('')}</div></div>`;}
  function mobileWorkSelector(rows){return `<div class="quote-builder-mobile-work"><label>Trabajo<select data-qw-work-selector>${rows.map((work,index)=>`<option value="${esc(work.id)}" ${work.id===activeWorkId?'selected':''}>${index+1}. ${esc(work.description||'Trabajo sin nombre')} · ${esc(workSummary(work))}</option>`).join('')}</select></label><button type="button" data-qw-add-work aria-label="Agregar trabajo">＋</button></div>`;}
  function unitOptions(current){return UNITS.map(unit=>`<option value="${esc(unit)}" ${unit===current?'selected':''}>${esc(unit)}</option>`).join('');}
@@ -128,12 +148,19 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function tariffPricing(work){
   if(tariffState==='loading'||tariffState==='idle')return `<div class="quote-price-state"><p>Consultando Tarifario…</p></div>`;
   if(tariffState==='error')return `<div class="quote-price-state warning"><p>No pude consultar el Tarifario. ${esc(tariffError)}</p><p>Podés usar Manual o Jornal sin perder el trabajo.</p></div>`;
-  const chosen=selectedTariff(work);if(chosen)return `<div class="quote-selected-tariff"><div><span>Referencia del Tarifario</span><strong>${esc(chosen.tarea)}</strong><small>${esc(chosen.rubro||'Tarifario AMC')} · ${money(chosen.precio)} / ${esc(chosen.unidad||'unidad')}</small></div><button type="button" data-qw-change-tariff="${esc(work.id)}">Cambiar</button></div><div class="quote-wizard-fields"><label>Cantidad<input type="number" min="0" step="0.01" value="${work.quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}"></label><label>Unidad<input value="${esc(chosen.unidad||'unidad')}" disabled></label></div><div class="quote-work-total">Referencia del trabajo <strong data-qw-active-total>${money(commercialReferenceTotal(work))}</strong></div>`;
+  const chosen=selectedTariff(work);
+  if(chosen){
+   const measured=requiresMeasuredQuantity(chosen.unidad),quantity=amount(work.quantity),label=measured?quantityLabel(chosen.unidad):'Cantidad',unit=chosen.unidad||'unidad';
+   return `<div class="quote-selected-tariff"><div><span>Referencia del Tarifario</span><strong>${esc(chosen.tarea)}</strong><small>${esc(chosen.rubro||'Tarifario AMC')} · ${money(chosen.precio)} / ${esc(unit)}</small></div><button type="button" data-qw-change-tariff="${esc(work.id)}">Cambiar</button></div><div class="quote-wizard-fields"><label>${esc(label)}<input type="number" min="${measured?'0.01':'0'}" step="0.01" value="${measured&&quantity<=0?'':quantity}" placeholder="${measured?'Ingresá la medida':''}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}" ${measured?'required':''}></label><label>Unidad<input value="${esc(unit)}" disabled></label></div>${measured&&quantity<=0?`<p class="quote-price-help">Ingresá los ${esc(label.toLowerCase())} para calcular este trabajo.</p>`:''}<div class="quote-work-total">${measured?`${money(chosen.precio)} × ${quantity||0} ${esc(unit)} =`:'Referencia del trabajo'} <strong data-qw-active-total>${money(commercialReferenceTotal(work))}</strong></div>`;
+  }
   const query=String(work.referenceSearch||work.description||'').trim(),result=query?findTariffMatches(tariffs,query,3):{status:'none',matches:[]},matches=result.matches||[];
   if(result.status==='visit')return `<div class="quote-price-state warning"><strong>Esto parece un pedido para relevar.</strong><p>AMC no inventa un precio ni suma una visita automáticamente al presupuesto. Podés marcarlo como Relevamiento o elegir Manual/Jornal si ya tenés información suficiente.</p><button type="button" class="quote-inline-action" data-qw-pricing-mode="visit" data-qw-work-id="${esc(work.id)}">Marcar como relevamiento</button></div>`;
   return `<div class="quote-tariff-search"><label>Buscar referencia<input value="${esc(work.referenceSearch||work.description||'')}" data-qw-reference-search-input data-qw-work-id="${esc(work.id)}" placeholder="Ej. revoque fino"></label><button type="button" data-qw-run-tariff-search data-qw-reference-work="${esc(work.id)}">Buscar</button></div>${matches.length?`<div class="quote-tariff-results"><p>${result.status==='ambiguous'?'Elegí la referencia correcta:':'Referencia encontrada:'}</p>${matches.map(item=>tariffChoice(work,item)).join('')}</div>`:`<div class="quote-price-state"><p>Sin referencia automática. Probá otra búsqueda o elegí Manual, Jornal o Relevamiento.</p></div>`}`;
  }
- function manualPricing(work){return `<div class="quote-wizard-fields quote-wizard-fields-3"><label>Cantidad<input type="number" min="0" step="0.01" value="${work.quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}"></label><label>Unidad<select data-qw-work-input data-qw-key="unit" data-qw-work-id="${esc(work.id)}">${unitOptions(work.unit)}</select></label><label>Precio por ${esc(work.unit||'unidad')}<input type="number" min="0" step="100" value="${amount(work.unitPrice)}" data-qw-work-input data-qw-key="unitPrice" data-qw-work-id="${esc(work.id)}"></label></div><p class="quote-price-help">Referencia manual · sólo este presupuesto. No modifica el Tarifario.</p><div class="quote-work-total">Referencia del trabajo <strong data-qw-active-total>${money(commercialReferenceTotal(work))}</strong></div>`;}
+ function manualPricing(work){
+  const measured=requiresMeasuredQuantity(work.unit),quantity=amount(work.quantity),label=measured?quantityLabel(work.unit):'Cantidad';
+  return `<div class="quote-wizard-fields quote-wizard-fields-3"><label>${esc(label)}<input type="number" min="${measured?'0.01':'0'}" step="0.01" value="${measured&&quantity<=0?'':quantity}" data-qw-work-input data-qw-key="quantity" data-qw-work-id="${esc(work.id)}" ${measured?'required':''}></label><label>Unidad<select data-qw-work-input data-qw-key="unit" data-qw-work-id="${esc(work.id)}">${unitOptions(work.unit)}</select></label><label>Precio por ${esc(work.unit||'unidad')}<input type="number" min="0" step="100" value="${amount(work.unitPrice)}" data-qw-work-input data-qw-key="unitPrice" data-qw-work-id="${esc(work.id)}"></label></div>${measured&&quantity<=0?`<p class="quote-price-help">Ingresá los ${esc(label.toLowerCase())} para calcular este trabajo.</p>`:'<p class="quote-price-help">Referencia manual · sólo este presupuesto. No modifica el Tarifario.</p>'}<div class="quote-work-total">${measured?`${money(work.unitPrice)} × ${quantity||0} ${esc(work.unit)} =`:'Referencia del trabajo'} <strong data-qw-active-total>${money(commercialReferenceTotal(work))}</strong></div>`;
+ }
  function jornalPricing(work){return `<div class="quote-wizard-fields quote-wizard-fields-3"><label>Operarios<input type="number" min="1" step="1" value="${work.workers}" data-qw-work-input data-qw-key="workers" data-qw-work-id="${esc(work.id)}"></label><label>Horas estimadas<input type="number" min="0.25" step="0.25" value="${work.hours}" data-qw-work-input data-qw-key="hours" data-qw-work-id="${esc(work.id)}"></label><label>Días internos estimados<input value="${Math.max(1,Math.ceil(amount(work.hours,8)/8))}" disabled></label></div><p class="quote-price-help">Al elegir Jornal, AMC suma esta referencia al total del presupuesto inmediatamente.</p><div class="quote-work-total">Referencia por jornal <strong data-qw-active-total>${money(jornalReference(work))}</strong></div>`;}
  function visitPricing(work){return `<div class="quote-price-state warning"><strong>Relevamiento pendiente</strong><p>Este trabajo todavía no tiene información suficiente para cotizarlo. No se suma un precio de obra ni una visita automática al presupuesto.</p><p>Después del relevamiento podés reemplazarlo por los trabajos reales y sus valores.</p></div><div class="quote-work-total muted">Impacto actual en el presupuesto <strong data-qw-active-total>${money(0)}</strong></div>`;}
  function pricingPanel(work){
@@ -228,6 +255,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const item=initialiseWorks().find(work=>work.id===target.dataset.qwWorkId);if(!item)return;const key=target.dataset.qwKey;
   if(key==='description'){item.description=target.value;clearReference(item);}
   else if(key==='unit')item.unit=target.value;
+  else if(key==='quantity'){item.quantity=amount(target.value);item.quantityExplicit=String(target.value).trim()!=='';}
   else if(key==='workers'){item.workers=Math.max(1,Math.ceil(amount(target.value,1)||1));}
   else if(key==='hours'){item.hours=Math.max(.25,amount(target.value,8)||8);if(item.tariffKind==='jornal')item.days=Math.max(1,Math.ceil(item.hours/8));}
   else item[key]=amount(target.value);
