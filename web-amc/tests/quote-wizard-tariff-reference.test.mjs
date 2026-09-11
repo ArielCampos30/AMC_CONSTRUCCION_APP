@@ -52,7 +52,7 @@ test('editor consulta referencias filtradas sin incrustar Tarifario completo ni 
  assert.doesNotMatch(wizard,/Precio base AMC \/ unidad/);
  assert.match(wizard,/\/api\/estimator-tariffs/);
  assert.match(wizard,/Referencia del Tarifario/);
- assert.match(wizard,/findTariffMatches\(tariffs,query,3\)/);
+ assert.match(wizard,/findTariffMatches\(tariffs,query,5\)/);
  assert.match(wizard,/no inventa un precio ni suma una visita automáticamente/i);
  assert.match(wizard,/data-qw-pricing-mode="visit"/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
