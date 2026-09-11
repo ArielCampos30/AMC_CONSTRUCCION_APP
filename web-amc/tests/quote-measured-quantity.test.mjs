@@ -23,6 +23,7 @@ test('el cotizador exige medida explícita para tarifas por superficie o longitu
 test('al elegir una tarifa medida muestra la medida antes de los modos y enfoca el campo',()=>{
  const pricing=wizard.slice(wizard.indexOf('function pricingPanel'),wizard.indexOf('function internalCosts'));
  assert.match(pricing,/tariffActive\?`\$\{content\}\$\{tabs\}`:`\$\{tabs\}\$\{content\}`/);
- assert.match(wizard,/focus=requiresMeasuredQuantity\(tariff\.unidad\)\?`\[data-qw-work-id=.*data-qw-key=\\"quantity\\"\]`/s);
- assert.match(wizard,/preserveScroll:!focus/);
+ assert.match(wizard,/const focus=requiresMeasuredQuantity\(tariff\.unidad\)\?/);
+ assert.match(wizard,/CSS\.escape\(work\.id\)/);
+ assert.match(wizard,/paint\(\{focusSelector:focus,preserveScroll:!focus\}\)/);
 });
