@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createAdminChatUI} from '../public/admin-chat-ui.js';
 
 test('chat de equipo del Admin carga mensajes y lectura sólo al pedirlos',async()=>{
- const state={user:{id:'admin-1',role:'admin'},employees:[{id:'employee-1',name:'Operario'}],staffMessages:[],staffReadByEmployee:{}};
+ const state={user:{id:'admin-1',role:'admin'},employees:[{id:'employee-1',name:'Operario',role:'employee',active:true}],staffMessages:[],staffReadByEmployee:{}};
  let selected='',calls=0;
  const ui=createAdminChatUI({
   getState:()=>state,getTab:()=>'Equipo',getEmployee:()=>selected,setEmployee:value=>selected=value,
