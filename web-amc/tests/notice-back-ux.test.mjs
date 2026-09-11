@@ -12,18 +12,24 @@ test('avisos internos no reciclan avisos viejos y duran tres segundos',async()=>
  assert.match(notices,/liveAlertTimer=setTimeout\(close,LIVE_NOTICE_MS\)/);
 });
 
-test('avisos transitorios generales duran tres segundos',async()=>{
+test('avisos transitorios normales duran tres segundos y borrar no muestra confirmación negra de éxito',async()=>{
  const runtime=await source('public/ux-runtime-fixes.js');
  assert.match(runtime,/const TRANSIENT_MS=3000/);
+ assert.match(runtime,/borrad\[oa\]s\?/);
  assert.match(runtime,/toast\.classList\.remove\('show'\)/);
+ assert.match(runtime,/\[data-maintenance-action="delete-notice"\]/);
+ assert.match(runtime,/deletedNoticeIds\.add\(id\)/);
+ assert.match(runtime,/await deleteNotice\(id\)/);
 });
 
-test('todas las pantallas secundarias reciben volver sin duplicarlo',async()=>{
+test('volver global no toca la portada pública ni intercepta el volver nativo',async()=>{
  const [runtime,index]=await Promise.all([source('public/ux-runtime-fixes.js'),source('public/index.html')]);
  assert.match(index,/ux-runtime-fixes\.js/);
- assert.match(runtime,/data-global-back/);
- assert.match(runtime,/data-action="back"/);
+ assert.match(runtime,/function authenticatedShell/);
+ assert.match(runtime,/if\(!authenticatedShell\(\)\)\{existing\?\.remove\(\);return;\}/);
+ assert.match(runtime,/new MutationObserver\(requestUiSync\)\.observe\(app,\{childList:true\}\)/);
+ assert.doesNotMatch(runtime,/observe\(app,\{childList:true,subtree:true\}\)/);
+ assert.match(runtime,/closest\?\.\('\[data-global-back\]'\)/);
+ assert.doesNotMatch(runtime,/\[data-global-back\],\[data-action="back"\]/);
  assert.match(runtime,/function fallbackBackRoute/);
- assert.match(runtime,/if\(route===home\)/);
- assert.match(runtime,/if\(hasOwnBack\(main\)\)return/);
 });
