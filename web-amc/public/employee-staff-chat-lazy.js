@@ -1,4 +1,4 @@
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const when=value=>{try{return new Date(value).toLocaleString('es-AR')}catch{return ''}};
 const media=urls=>(urls||[]).length?`<div class="mini-photos">${urls.map(url=>`<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="Foto del empleado"></a>`).join('')}</div>`:'';
 
