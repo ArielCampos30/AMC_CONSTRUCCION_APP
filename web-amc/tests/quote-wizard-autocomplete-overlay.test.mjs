@@ -33,6 +33,13 @@ test('el nombre escrito se sincroniza en la lista de trabajos y el resumen',()=>
  assert.match(js,/Trabajo sin nombre/);
 });
 
+test('la X de cierre queda sola y centrada, sin círculo decorativo',()=>{
+ const css=read('../public/quote-wizard-autocomplete.css');
+ assert.match(css,/quote-wizard-close\{display:grid;place-items:center/);
+ assert.match(css,/border:0;border-radius:0;background:transparent/);
+ assert.match(css,/focus-visible\{outline:2px/);
+});
+
 test('index carga el refuerzo visual después del cotizador base',()=>{
  const html=read('../public/index.html');
  assert.match(html,/quote-wizard-autocomplete\.css/);
