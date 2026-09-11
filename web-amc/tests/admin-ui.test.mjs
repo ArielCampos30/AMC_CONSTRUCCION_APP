@@ -65,7 +65,7 @@ test('admin v3 exposes the five primary destinations and responsive views',async
 test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
   const [app,features,bridge,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
@@ -99,7 +99,7 @@ test('admin edits clients and employees with AMC dialogs instead of browser conf
     readFile(new URL('../server.mjs',import.meta.url),'utf8'),
     readFile(new URL('../estimator-page-routes.mjs',import.meta.url),'utf8'),
     readFile(new URL('../client-requests.mjs',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/planning-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/accounts-closure-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-client-dialogs-ui.js',import.meta.url),'utf8')
@@ -165,7 +165,7 @@ test('client search filters live without reloading or rerendering the whole page
   const [app,directory,features]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8')
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8')
   ]);
   assert.match(directory,/id="client-search-input"/);
   assert.match(directory,/id="client-search-results"/);
@@ -185,7 +185,7 @@ test('client search filters live without reloading or rerendering the whole page
 test('floating admin chat starts by type and sends messages without reload, spinner or sent toast',async()=>{
   const [app,features,floating,team]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8'),
     readFile(new URL('../public/team-ui.js',import.meta.url),'utf8')
   ]);
@@ -210,7 +210,7 @@ test('floating admin chat starts by type and sends messages without reload, spin
 test('full admin chat never stacks the floating chat and blocks double send',async()=>{
   const [app,features,floating]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8')
   ]);
   assert.match(app,/page\.startsWith\('chat-admin\/'\)\)\{features\.selectChat/);
@@ -227,7 +227,7 @@ test('quick budget starts with direct client data and exposes the four estimator
   const [app,steps,features,bridge,clientDialogs]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/estimator-steps.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-client-dialogs-ui.js',import.meta.url),'utf8')
   ]);
@@ -320,7 +320,7 @@ test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
 test('pending PDF can be regenerated and returns to the exact quote',async()=>{
   const [app,features,bridge,generation,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
     readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
     readFile(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
