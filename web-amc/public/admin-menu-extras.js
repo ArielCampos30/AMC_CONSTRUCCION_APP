@@ -4,6 +4,6 @@ const dedupeAdminExtras=()=>{
  links.slice(1).forEach(link=>link.remove());
 };
 const app=document.getElementById('app');
-if(app)new MutationObserver(dedupeAdminExtras).observe(app,{childList:true,subtree:true});
+if(app)new MutationObserver(dedupeAdminExtras).observe(app,{childList:true});
 window.addEventListener('hashchange',()=>queueMicrotask(dedupeAdminExtras));
 queueMicrotask(dedupeAdminExtras);

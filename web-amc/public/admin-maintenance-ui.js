@@ -74,7 +74,7 @@ document.addEventListener('pointerdown',event=>{
 document.addEventListener('click',event=>{if(event.target.closest?.('.chat-contact[data-contact],.floating-chat-button'))setTimeout(hydrateFloatingStaffChat,0);});
 document.addEventListener('submit',event=>{if(event.target.matches?.('#amc-chat-dialog .floating-staff-message')){event.target.closest('.compact-thread')?.querySelector('.empty-conversation')?.remove();setTimeout(scrollFloatingStaffEnd,0);}},{capture:true});
 
-function refreshAppearanceLabels(){const list=document.querySelector('#appearance-form .appearance-photo-list');if(!list)return;[...list.querySelectorAll('.appearance-photo-card')].forEach((card,index)=>{const badge=card.querySelector('[data-photo-role]');if(badge)badge.textContent=index===0?'Foto principal':'Galería';});}
+function refreshAppearanceLabels(){const list=document.querySelector('#appearance-form .appearance-photo-list');if(!list)return;[...list.querySelectorAll('.appearance-photo-card')].forEach((card,index)=>{const badge=card.querySelector('[data-photo-role]'),next=index===0?'Foto principal':'Galería';if(badge&&badge.textContent!==next)badge.textContent=next;});}
 
 document.addEventListener('click',async event=>{
  const button=event.target.closest('[data-maintenance-action]');if(!button)return;
@@ -122,5 +122,9 @@ document.addEventListener('click',async event=>{
  }catch(error){restoreOptimistic();syncNoticeChrome();toast(error.message);}finally{button.disabled=false;}
 },true);
 
+let appearanceSyncPending=false;
+function scheduleAppearanceLabels(){if(appearanceSyncPending)return;appearanceSyncPending=true;queueMicrotask(()=>{appearanceSyncPending=false;refreshAppearanceLabels();});}
+const appRoot=document.getElementById('app');
+if(appRoot)new MutationObserver(scheduleAppearanceLabels).observe(appRoot,{childList:true});
+window.addEventListener('hashchange',()=>{if(location.hash==='#portada')scheduleAppearanceLabels();});
 refreshAppearanceLabels();
-new MutationObserver(()=>refreshAppearanceLabels()).observe(document.documentElement,{subtree:true,childList:true});
