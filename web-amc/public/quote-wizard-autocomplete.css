@@ -1,0 +1,38 @@
+.quote-tariff-overlay{position:fixed;z-index:140;display:grid;gap:6px;padding:8px;border:1px solid #b7d4ce;border-radius:13px;background:#fff;box-shadow:0 16px 42px rgba(11,61,55,.2);box-sizing:border-box}
+.quote-tariff-overlay[hidden]{display:none}
+.quote-tariff-overlay button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;width:100%;min-height:44px;padding:9px 11px;border:1px solid #d0e2de;border-radius:10px;background:#fff;color:#173f3a;text-align:left;cursor:pointer;font:inherit}
+.quote-tariff-overlay button:hover,.quote-tariff-overlay button:focus-visible{border-color:#0b675f;background:#edf7f4;outline:none}
+.quote-tariff-overlay button strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.quote-tariff-overlay button span{color:#55736d;font-size:12px;white-space:nowrap}
+.quote-tariff-overlay-empty{padding:9px 10px;color:#617a74;font-size:12px}
+.quote-tariff-overlay-ready .quote-builder-detail .quote-tariff-results{display:none}
+.quote-tariff-overlay-ready .quote-wizard-close{display:grid;place-items:center;width:38px;height:38px;padding:0 0 2px;border:0;border-radius:0;background:transparent;color:#0b675f;font-family:Arial,sans-serif;font-size:29px;font-weight:400;line-height:1;box-shadow:none}
+.quote-tariff-overlay-ready .quote-wizard-close:hover{background:transparent;color:#084f49}
+.quote-tariff-overlay-ready .quote-wizard-close:focus-visible{outline:2px solid #7cb8ae;outline-offset:2px}
+@media(min-width:801px){
+ .quote-tariff-overlay-ready .quote-wizard-dialog{height:min(940px,98dvh)}
+ .quote-tariff-overlay-ready .quote-wizard-header{padding-top:11px;padding-bottom:8px}
+ .quote-tariff-overlay-ready .quote-wizard-steps{padding-top:7px;padding-bottom:7px}
+ .quote-tariff-overlay-ready .quote-budget-context{padding-top:7px;padding-bottom:7px}
+ .quote-tariff-overlay-ready .quote-wizard-controls{padding-top:8px;padding-bottom:8px}
+ .quote-tariff-overlay-ready .quote-wizard-controls button{min-height:40px}
+ .quote-tariff-overlay-ready .quote-builder-detail{overflow:visible;position:relative;z-index:3;padding:9px 16px}
+ .quote-tariff-overlay-ready .quote-builder-detail-inner{position:relative;max-width:720px}
+ .quote-tariff-overlay-ready .quote-builder-detail-head{align-items:center;margin-bottom:5px;min-height:32px}
+ .quote-tariff-overlay-ready .quote-builder-detail-head h2{display:none}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-pricing{margin-top:7px;padding-top:7px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-pricing-tabs{margin-bottom:7px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-pricing-tabs button{min-height:36px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-selected-tariff{padding:7px 9px;margin-bottom:6px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-selected-tariff strong{font-size:14px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-selected-tariff small{font-size:11px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-selected-tariff + .quote-wizard-fields{grid-template-columns:minmax(0,1fr) 130px;align-items:end;gap:8px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-wizard-field,.quote-tariff-overlay-ready .quote-builder-detail .quote-wizard-fields label{gap:4px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-wizard-field input,.quote-tariff-overlay-ready .quote-builder-detail .quote-wizard-fields input,.quote-tariff-overlay-ready .quote-builder-detail .quote-wizard-fields select{min-height:39px;padding-top:6px;padding-bottom:6px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-work-total{margin-top:6px;padding:7px 10px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-work-total strong{font-size:17px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-price-help{margin:4px 0;font-size:11px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-internal-costs{margin-top:7px}
+ .quote-tariff-overlay-ready .quote-builder-detail .quote-internal-costs summary{padding:7px 10px}
+ .quote-tariff-overlay-ready .quote-builder-summary{overflow:auto}
+}
