@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('etapa 3B.1 carga el cotizador nativo sin importmap ni iframe visible',()=>{
+test('cotizador nativo usa cuatro etapas compactas sin importmap ni iframe visible',()=>{
  const index=read('../public/index.html');
  const app=read('../public/app.js');
  const wrapper=read('../public/features-ui.js');
@@ -11,47 +11,51 @@ test('etapa 3B.1 carga el cotizador nativo sin importmap ni iframe visible',()=>
  const wizard=read('../public/quote-wizard.js');
  assert.doesNotMatch(index,/type="importmap"/);
  assert.doesNotMatch(index,/\/estimator-shell\.js/);
+ assert.match(index,/quote-builder-review\.css/);
  assert.match(app,/import \{createFeatures\} from '\.\/features-ui\.js'/);
  assert.match(wrapper,/features-ui-legacy\.js/);
  assert.match(wrapper,/createQuoteWizard/);
  assert.match(wrapper,/name==='cotizador'\?wizard\.render\(\):legacy\.render\(name\)/);
  assert.match(legacy,/createFloatingChat/);
  assert.doesNotMatch(wizard,/<iframe/i);
- assert.match(wizard,/PASO 1 DE 7/);
- assert.match(wizard,/PASO 2 DE 7/);
- assert.match(wizard,/Continuar →/);
- assert.match(wizard,/← Volver/);
+ assert.match(wizard,/const PHASES=\['Cliente','Presupuesto','Revisión','Guardar \/ enviar'\]/);
+ assert.match(wizard,/ETAPA 1 DE 4/);
+ assert.match(wizard,/ETAPA 2 DE 4/);
 });
 
-test('etapa 3B conserva precarga cliente y trabajos al navegar entre pasos',()=>{
+test('cliente filtra sus solicitudes y admite presupuesto directo o cliente nuevo',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/requestId=nextRequest\|\|''/);
- assert.match(wizard,/clientRef=\(lead\?'lead:':'user:'\)\+id/);
- assert.match(wizard,/if\(works&&lastWorkRequest===r\.id\)return works/);
- assert.match(wizard,/if\(step<4\).*step\+\+.*initialiseWorks\(\).*paint\(\)/s);
- assert.match(wizard,/if\(back&&step>1\)\{step--;paint\(\);return;\}/);
+ assert.match(wizard,/requestClientRef\(request\)===clientRef/);
+ assert.match(wizard,/Sin solicitud · presupuesto directo/);
+ assert.match(wizard,/\/api\/admin\/clients/);
+ assert.match(wizard,/Guardar y usar cliente/);
+ assert.match(wizard,/Mostrando sólo solicitudes de/);
+ assert.match(wizard,/pendingClientRef/);
 });
 
-test('etapa 3B.1 usa responsive propio y evita important y recargas de pagina en codigo nuevo',()=>{
+test('editor conserva lugar de trabajo al repintar y evita important y recargas',()=>{
  const css=read('../public/quote-wizard.css');
+ const reviewCss=read('../public/quote-builder-review.css');
  const wizard=read('../public/quote-wizard.js');
  const wrapper=read('../public/features-ui.js');
+ assert.match(wizard,/captureScroll/);
+ assert.match(wizard,/restoreScroll/);
+ assert.match(wizard,/preventScroll:true/);
  assert.match(css,/@media\(max-width:700px\)/);
  assert.match(css,/@media\(max-width:480px\)/);
  assert.match(css,/@media\(max-width:360px\)/);
- assert.match(css,/width:min\(1120px,94vw\)/);
- assert.doesNotMatch(css,/!important/);
- assert.doesNotMatch(wizard,/!important/);
- assert.doesNotMatch(wrapper,/!important/);
- assert.doesNotMatch(wizard,/(?:window\.)?location\.reload\s*\(/);
- assert.doesNotMatch(wrapper,/(?:window\.)?location\.reload\s*\(/);
+ assert.match(css,/width:min\(1240px,96vw\)/);
+ for(const source of [css,reviewCss,wizard,wrapper]){
+  assert.doesNotMatch(source,/!important/);
+  assert.doesNotMatch(source,/(?:window\.)?location\.reload\s*\(/);
+ }
+ assert.doesNotMatch(wizard,/scrollTo\s*\(\s*0\s*,\s*0/);
 });
 
-test('el tarifario no se incrusta completo en el asistente; sólo se consultan referencias filtradas',()=>{
- const wrapper=read('../public/features-ui.js');
+test('tarifario sigue separado y sólo entrega referencias filtradas al cotizador',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wrapper,/features-ui-legacy\.js/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/estimator-shell\.js/);
  assert.match(wizard,/\/api\/estimator-tariffs/);
+ assert.match(wizard,/findTariffMatches\(tariffs,query,3\)/);
 });
