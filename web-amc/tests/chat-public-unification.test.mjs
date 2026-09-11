@@ -28,11 +28,14 @@ test('Más deja un único chat global y no duplica la bandeja completa',async()=
  assert.match(legacy,/const staff=state=>\(state\.employees\|\|\[\]\)\.filter\(item=>item\.role==='employee'&&item\.active!==false\)/);
 });
 
-test('chat flotante de empleado muestra carga real y no reabre teclado móvil al enviar',async()=>{
+test('chat flotante de empleado muestra el spinner dentro del mensaje y no reabre teclado móvil',async()=>{
  const floating=await source('public/floating-chat.js');
- assert.match(floating,/chat-send-spinner/);
- assert.match(floating,/send\.dataset\.sending='1'/);
- assert.match(floating,/aria-busy/);
+ assert.match(floating,/message-meta upload-state/);
+ assert.match(floating,/message-upload-spinner/);
+ assert.match(floating,/bubble\.querySelector\('\.upload-state'\)\?\.remove\(\)/);
+ assert.doesNotMatch(floating,/send\.dataset\.sending='1'/);
+ assert.doesNotMatch(floating,/send\.replaceChildren\(Object\.assign/);
+ assert.match(floating,/send\.setAttribute\('aria-busy','true'\)/);
  assert.match(floating,/if\(mobile&&document\.activeElement===textarea\)textarea\.blur\(\)/);
  assert.match(floating,/if\(mobile\)textarea\.blur\(\);else textarea\.focus/);
  assert.match(floating,/font-size:16px/);
