@@ -37,7 +37,7 @@ test('3B.2 habilita Costos y Mano de obra pero deja Rentabilidad para el siguien
  assert.match(wizard,/Continuar a Costos →/);
  assert.match(wizard,/Continuar a Mano de obra →/);
  assert.match(wizard,/Continuar a Rentabilidad →/);
- assert.match(wizard,/if\(step===3\)return validWorks\(\);return false/);
+ assert.match(wizard,/if\(step===3\)return validWorks\(\)&&referencesResolved\(\);return false/);
  assert.match(wizard,/Movilidad total del presupuesto/);
  assert.match(wizard,/Jornal interno por operario/);
 });
