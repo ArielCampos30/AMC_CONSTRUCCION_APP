@@ -1,25 +1,37 @@
 export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,sound}){
  const shownLiveNotices=new Set();
- let lastNoticeRouteKey='';
+ let lastNoticeRouteKey='',liveAlertTimer=0;
+ const LIVE_NOTICE_MS=3000;
  const notices=()=>getState().notices||[];
  const routeKey=value=>{try{return new URL(String(value||''),location.href).hash.replace(/^#/,'');}catch{return String(value||'').replace(/^\/?#/,'');}};
  const pageChatRoute=()=>{const hash=location.hash.replace(/^#/,'');return /^(chat-admin|chat|chat-equipo)\/[A-Za-z0-9_-]+$/.test(hash)?'/#'+hash:'';};
  const activeChatRoute=()=>pageChatRoute()||document.documentElement?.dataset.amcActiveChatRoute||'';
+ function clearLiveAlert(id=''){
+  const host=document.querySelector('#amc-live-alert');
+  if(!host||id&&host.dataset.noticeId!==String(id))return;
+  if(liveAlertTimer){clearTimeout(liveAlertTimer);liveAlertTimer=0;}
+  host.replaceChildren();delete host.dataset.noticeId;
+ }
  function suppressActiveChat(notice){
   const active=activeChatRoute();
   if(!notice||!active||routeKey(notice.url)!==routeKey(active))return false;
   shownLiveNotices.add(notice.id);
-  document.querySelector('#amc-live-alert')?.replaceChildren();
+  clearLiveAlert();
   queueMicrotask(async()=>{try{const result=await api('/api/notices/read',{route:active});applyRead(result.noticeIds||[notice.id]);}catch{}});
   return true;
  }
  function showInternal(notice){
-  if(!notice||notice.priority==='normal'||shownLiveNotices.has(notice.id)||suppressActiveChat(notice))return;
+  const alreadyKnown=!!notice&&notices().some(n=>n.id===notice.id);
+  if(!notice||notice.read||alreadyKnown||notice.priority==='normal'||shownLiveNotices.has(notice.id)||suppressActiveChat(notice))return;
   shownLiveNotices.add(notice.id);
   const host=document.querySelector('#amc-live-alert');
   if(!host)return;
+  clearLiveAlert();
+  host.dataset.noticeId=String(notice.id||'');
   host.innerHTML=`<article class="amc-alert-card" data-priority="${esc(notice.priority)}"><button type="button" class="amc-alert-close" aria-label="Cerrar aviso">×</button><h2>${esc(notice.title)}</h2><p>${esc(notice.body)}</p><a href="${esc(notice.url||'/#avisos')}">Ver detalle →</a></article>`;
-  host.querySelector('.amc-alert-close').onclick=()=>host.replaceChildren();
+  const close=()=>clearLiveAlert(notice.id);
+  host.querySelector('.amc-alert-close').onclick=close;
+  liveAlertTimer=setTimeout(close,LIVE_NOTICE_MS);
   if(notice.priority==='urgent')sound();
  }
  function paintCount(){
@@ -55,6 +67,6 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
    heading('SIEMPRE AL TANTO','Avisos',unread?unread+' pendiente'+(unread===1?'':'s')+' de revisar.':'No tenés avisos pendientes.')+
    `<div class="pill-nav">${btn('Habilitar avisos en este dispositivo','enable-push')}${btn('Escuchar sonido','test-sound','','outline')}${unread?btn('Marcar todos como leídos','read','','outline'):''}${read?'<button type="button" class="outline" data-maintenance-action="delete-read-notices">Borrar leídos</button>':''}${items.length?'<button type="button" class="outline danger" data-maintenance-action="delete-all-notices">Borrar todos</button>':''}</div><p class="muted">Cuando abrís el contenido relacionado —por ejemplo un chat, presupuesto, tarea o cierre— el aviso se marca leído automáticamente. También podés limpiar esta bandeja cuando ya no necesites conservar un aviso.</p>${items.map(n=>`<article class="notification ${n.read?'':'unread'}" data-notice-card="${esc(n.id)}" data-priority="${esc(n.priority||'normal')}"><div><div class="title-row"><strong>${esc(n.title)}</strong><small data-notice-state>${n.read?'Leído':'Pendiente'}</small></div><p>${esc(n.body)}</p><small>${date(n.date)}</small><div class="notice-card-actions"><a data-notice="${n.id}" href="${esc(n.url)}">${n.read?'Ver de nuevo':'Ver'} →</a><button type="button" class="outline" data-maintenance-action="delete-notice" data-id="${esc(n.id)}">Borrar</button></div></div></article>`).join('')||empty('No tenés avisos','Las novedades de tus pedidos aparecerán acá.')}`;
  }
- function resetRoute(){lastNoticeRouteKey='';}
+ function resetRoute(){lastNoticeRouteKey='';clearLiveAlert();}
  return {showInternal,paintCount,applyRead,syncVisible,view,resetRoute};
 }
