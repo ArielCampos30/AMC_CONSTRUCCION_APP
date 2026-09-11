@@ -5,7 +5,7 @@ const UNITS=['m²','ml','unidad','día','hora','servicio','obra','punto','salida
 const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(amount(value));
 
 export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
- let stage=1,requestId='',quoteId='',mode='',clientRef='',origin='#presupuestos',works=null,lastContext='',activeWorkId='';
+ let stage=1,requestId='',quoteId='',mode='',clientRef='',pendingClientRef='',origin='#presupuestos',works=null,lastContext='',activeWorkId='';
  let travel=DEFAULT_QUOTE_SETTINGS.travelDefault,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;
  let tariffs=[],tariffState='idle',tariffError='';
  let localClients=[],newClientOpen=false,newClientSaving=false,newClientError='';
@@ -23,7 +23,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   return [...map.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es'));
  }
  const currentClient=()=>clients().find(client=>clientKey(client)===clientRef)||null;
- const requestClientRef=request=>request?.leadId?'lead:'+request.leadId:request?.userId?'user:'+request.userId:'';
+ const requestClientRef=request=>{const userRef=request?.userId&&clients().some(client=>clientKey(client)==='user:'+request.userId)?'user:'+request.userId:'';return userRef||(request?.leadId?'lead:'+request.leadId:'');};
  const requestClient=request=>clients().find(client=>clientKey(client)===requestClientRef(request))||null;
  const requestName=request=>request?.name||requestClient(request)?.name||'Cliente';
  function availableRequests(){
@@ -61,10 +61,10 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function rememberOrigin(){const hash=location.hash||'#inicio';if(hash!=='#cotizador')origin=hash;}
  function open(nextRequest='',nextQuote='',nextMode=''){
   rememberOrigin();requestId=nextRequest||'';quoteId=nextQuote||'';mode=nextMode||'';stage=1;newClientOpen=false;newClientError='';resetWorks();
-  const request=requestId?requests().find(item=>item.id===requestId):null;if(request)clientRef=requestClientRef(request);
+  const request=requestId?requests().find(item=>item.id===requestId):null;clientRef=request?requestClientRef(request):(pendingClientRef||'');pendingClientRef='';
   ensureTariffs();
  }
- function prefillClient(id,lead=false){clientRef=(lead?'lead:':'user:')+id;if(requestId&&requestClientRef(requests().find(item=>item.id===requestId))!==clientRef)requestId='';resetWorks();}
+ function prefillClient(id,lead=false){pendingClientRef=(lead?'lead:':'user:')+id;clientRef=pendingClientRef;if(requestId&&requestClientRef(requests().find(item=>item.id===requestId))!==clientRef)requestId='';resetWorks();}
  function phaseNav(){return `<ol class="quote-wizard-steps" aria-label="Etapas del presupuesto">${PHASES.map((name,index)=>{const number=index+1,cls=number===stage?'current':number<stage?'done':'future';return `<li class="${cls}"><span>${number<stage?'✓':number}</span><b>${esc(name)}</b></li>`;}).join('')}</ol>`;}
  function clientOptions(){return `<option value="">Elegí un cliente</option>${clients().map(client=>`<option value="${esc(clientKey(client))}" ${clientKey(client)===clientRef?'selected':''}>${esc(client.name||'Cliente')} · ${esc(client.town||'Sin localidad')}</option>`).join('')}`;}
  function requestOptions(){return `<option value="">Sin solicitud · presupuesto directo</option>${availableRequests().map(request=>`<option value="${esc(request.id)}" ${request.id===requestId?'selected':''}>${esc((request.services||[request.service]).filter(Boolean).join(', ')||request.description||'Solicitud')} · ${esc(request.town||currentClient()?.town||'Sin localidad')}</option>`).join('')}`;}
@@ -134,13 +134,16 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const rows=initialiseWorks(),work=activeWork(),client=currentClient(),request=selectedRequest();
   return `<div class="quote-budget-stage"><div class="quote-budget-context"><div><span class="eyebrow">ETAPA 2 DE 4</span><strong>${esc(client?.name||'Cliente')}</strong><small>${request?esc((request.services||[request.service]).filter(Boolean).join(', ')||request.description||'Solicitud seleccionada'):'Presupuesto directo · sin solicitud'}</small></div><button type="button" data-qw-edit-client>Editar cliente</button></div>${mobileWorkSelector(rows)}<div class="quote-builder-workspace"><aside class="quote-builder-sidebar"><div class="quote-builder-sidebar-head"><div><span>Trabajos</span><strong>${rows.length}</strong></div><button type="button" data-qw-add-work>＋</button></div>${workList(rows)}</aside><main class="quote-builder-detail" data-qw-scroll-key="detail">${workDetail(work)}</main><div class="quote-builder-summary" data-qw-scroll-key="summary">${summaryPanel(rows)}</div></div><div class="quote-mobile-summary"><div><span>Referencia acumulada</span><strong data-qw-commercial-total>${money(rows.reduce((sum,item)=>sum+commercialReferenceTotal(item),0))}</strong></div><button type="button" data-qw-mobile-summary>Ver resumen</button></div></div>`;
  }
- function reviewPlaceholder(){return `<div class="quote-wizard-step"><div class="quote-wizard-step-copy"><span class="eyebrow">ETAPA 3 DE 4</span><h2>Revisión</h2><p>La estructura nueva ya deja el presupuesto listo para revisar sin volver a recorrer formularios largos. Rentabilidad, precio final y envío siguen fuera de este corte.</p></div></div>`;}
- function body(){if(stage===2)return budgetStage();if(stage===3)return reviewPlaceholder();return clientStage();}
+ function reviewStage(){
+  const rows=initialiseWorks(),client=currentClient(),request=selectedRequest(),commercial=rows.reduce((sum,work)=>sum+commercialReferenceTotal(work),0),direct=directCostTotal(rows,travel),relevamientos=rows.filter(work=>work.tariffKind==='visit-pending').length;
+  return `<div class="quote-wizard-step quote-review-stage"><div class="quote-wizard-step-copy"><span class="eyebrow">ETAPA 3 DE 4</span><h2>Revisá antes de cerrar el precio</h2><p>Acá ves lo que ya definiste sin volver a recorrer formularios. Rentabilidad, precio final y envío se incorporan en el siguiente corte.</p></div><div class="quote-review-context"><div><span>Cliente</span><strong>${esc(client?.name||'Cliente')}</strong></div><div><span>Origen</span><strong>${request?'Solicitud seleccionada':'Presupuesto directo'}</strong></div></div><div class="quote-review-list">${rows.map(work=>`<article><div><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small>${esc(pricingLabel(work))}${work.tariffKind==='visit-pending'?' · pendiente de relevamiento':''}</small></div><div><strong>${money(commercialReferenceTotal(work))}</strong><button type="button" data-qw-review-work="${esc(work.id)}">Editar</button></div></article>`).join('')}</div><div class="quote-review-totals"><div><span>Referencia comercial acumulada</span><strong>${money(commercial)}</strong></div><div><span>Costos directos cargados</span><strong>${money(direct)}</strong></div>${relevamientos?`<p>${relevamientos} trabajo${relevamientos===1?'':'s'} queda${relevamientos===1?'':'n'} fuera del total hasta hacer el relevamiento.</p>`:''}</div></div>`;
+ }
+ function body(){if(stage===2)return budgetStage();if(stage===3)return reviewStage();return clientStage();}
  function canEnterBudget(){return Boolean(currentClient());}
  function validWorks(){const rows=initialiseWorks();return rows.length>0&&rows.every(work=>String(work.description||'').trim());}
  function controls(){
   if(stage===1)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-close>Cancelar</button><span class="quote-wizard-mobile-progress">Cliente</span><button type="button" class="primary" data-qw-next ${canEnterBudget()?'':'disabled'}>Abrir presupuesto →</button></div>`;
-  if(stage===2)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Cliente</button><span class="quote-wizard-mobile-progress">Presupuesto</span><button type="button" class="primary" data-qw-next ${validWorks()&&referencesResolved()?'':'disabled'}>Revisión · próximo corte</button></div>`;
+  if(stage===2)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Cliente</button><span class="quote-wizard-mobile-progress">Presupuesto</span><button type="button" class="primary" data-qw-next ${validWorks()&&referencesResolved()?'':'disabled'}>Revisar presupuesto →</button></div>`;
   return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Presupuesto</button><span></span><button type="button" class="primary" disabled>Guardar / enviar · próximo corte</button></div>`;
  }
  function markup(){return `<div class="quote-wizard-layer"><section class="quote-wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="quote-wizard-title"><header class="quote-wizard-header"><div><span class="eyebrow">COTIZADOR AMC</span><h1 id="quote-wizard-title">${stage===1?'Nuevo presupuesto':stage===2?'Armar presupuesto':'Revisar presupuesto'}</h1></div><button type="button" class="quote-wizard-close" data-qw-close aria-label="Cerrar cotizador">×</button></header>${phaseNav()}<div class="quote-wizard-content" data-qw-scroll-key="content">${body()}</div>${controls()}</section></div>`;}
@@ -204,13 +207,14 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(!document.querySelector('.quote-wizard-host'))return;
   const closeButton=event.target.closest('[data-qw-close]');if(closeButton){event.preventDefault();close();return;}
   const editClient=event.target.closest('[data-qw-edit-client]');if(editClient){stage=1;paint({preserveScroll:false});return;}
-  const next=event.target.closest('[data-qw-next]');if(next&&!next.disabled){if(stage===1){stage=2;initialiseWorks();paint({preserveScroll:false});}return;}
+  const next=event.target.closest('[data-qw-next]');if(next&&!next.disabled){if(stage===1){stage=2;initialiseWorks();paint({preserveScroll:false});}else if(stage===2){stage=3;paint({preserveScroll:false});}return;}
   const back=event.target.closest('[data-qw-back]');if(back){stage=Math.max(1,stage-1);paint({preserveScroll:false});return;}
   const newClient=event.target.closest('[data-qw-new-client]');if(newClient){newClientOpen=true;newClientError='';paint({focusSelector:'[data-qw-new-client-form] input[name="name"]'});return;}
   const cancelNew=event.target.closest('[data-qw-cancel-new-client]');if(cancelNew){newClientOpen=false;newClientError='';paint();return;}
   const add=event.target.closest('[data-qw-add-work]');if(add){addWork();return;}
   const selectWork=event.target.closest('[data-qw-select-work]');if(selectWork){activeWorkId=selectWork.dataset.qwSelectWork;paint();return;}
   const remove=event.target.closest('[data-qw-remove-work]');if(remove){removeWork(remove.dataset.qwRemoveWork);return;}
+  const reviewWork=event.target.closest('[data-qw-review-work]');if(reviewWork){activeWorkId=reviewWork.dataset.qwReviewWork;stage=2;paint({preserveScroll:false});return;}
   const pricing=event.target.closest('[data-qw-pricing-mode]');if(pricing){setPricingMode(pricing.dataset.qwWorkId,pricing.dataset.qwPricingMode);return;}
   const changeTariff=event.target.closest('[data-qw-change-tariff]');if(changeTariff){setPricingMode(changeTariff.dataset.qwChangeTariff,'tariff');return;}
   const tariffChoice=event.target.closest('[data-qw-select-tariff]');if(tariffChoice){chooseTariff(tariffChoice.dataset.qwTariffWork,tariffChoice.dataset.qwSelectTariff);return;}
@@ -227,7 +231,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  });
  document.addEventListener('input',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
-  if(event.target.closest('[data-qw-new-client-form]')){const name=event.target.name;if(name&&Object.hasOwn(newClientDraft,name))newClientDraft[name]=event.target.value;return;}
+  if(event.target.closest('[data-qw-new-client-form]')){const name=event.target.name;if(name&&['name','phone','town'].includes(name))newClientDraft[name]=event.target.value;return;}
   if(event.target.matches('[data-qw-reference-search-input]')){const item=initialiseWorks().find(work=>work.id===event.target.dataset.qwWorkId);if(item)item.referenceSearch=event.target.value;return;}
   if(event.target.matches('[data-qw-work-input]')){handleWorkInput(event.target);return;}
   if(event.target.matches('[data-qw-travel]')){travel=amount(event.target.value);updateLivePreview();}
