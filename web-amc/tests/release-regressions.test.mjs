@@ -25,7 +25,7 @@ test('ARS acepta formato argentino sin convertir 517.000 en 517',()=>{
 test('agregar trabajo sincroniza el borrador y evita doble alta inmediata',()=>{
   const html=read('../private/presupuestos-original.html');
   const steps=read('../public/estimator-steps.js');
-  const features=read('../public/features-ui.js');
+  const features=read('../public/features-ui-legacy.js');
   assert.match(html,/let addItemBusy=false/);
   assert.match(html,/if \(addItemBusy\) return/);
   assert.match(html,/notifyDraftUpdated\(clientDesc\)/);
@@ -136,7 +136,7 @@ test('guardar o enviar usa el precio comercial automático o editado',()=>{
 
 test('editar presupuesto restaura el borrador persistido por externalId',()=>{
   const bridge=read('../public/presupuestos-bridge.js');
-  const features=read('../public/features-ui.js');
+  const features=read('../public/features-ui-legacy.js');
   assert.match(features,/&quote='\+encodeURIComponent\(quoteEdit\)/);
   assert.match(bridge,/storedQuote\.externalId/);
   assert.match(bridge,/draft=structuredClone\(saved\)/);
@@ -149,6 +149,7 @@ test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
     '../public/presupuestos-bridge.js',
     '../public/estimator-steps.js',
     '../public/features-ui.js',
+    '../public/features-ui-legacy.js',
     '../public/client-directory.js',
     '../public/floating-chat.js',
     '../public/team-ui.js',
