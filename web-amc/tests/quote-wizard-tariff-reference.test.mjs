@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {findTariffMatches,isGenericWorkDescription,tariffReferenceTotal,normaliseWork,commercialReferenceTotal} from '../public/quote-wizard-model.js';
-import {baseTariffCount,estimatorTariffs} from '../legacy-tariff-catalog.mjs';
+import {baseTariffCount,estimatorTariffs} from '../tariff-catalog.mjs';
 import {adminUtilityRoutes} from '../admin-utility-routes.mjs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
@@ -25,7 +25,7 @@ test('reconoce referencias claras y no toma arreglos varios como tarifa literal'
  assert.equal(commercialReferenceTotal(work),216000);
 });
 
-test('usa como fuente el tarifario legado con overrides y trabajos propios hasta migrar Tarifario',()=>{
+test('usa el catálogo AMC preservando overrides históricos y trabajos propios',()=>{
  assert.ok(baseTariffCount()>20);
  const base=estimatorTariffs({overrides:{'Revoque fino':19999},customTariffs:[{id:'propio-1',rubro:'Propios',tarea:'Prueba propia',unidad:'unidad',precio:77777,custom:true}]});
  assert.equal(base.find(item=>item.tarea==='Revoque fino')?.precio,19999);
