@@ -27,26 +27,25 @@ test('presupuesto muestra un solo trabajo editable y mantiene lista y resumen se
  assert.match(wizard,/Referencia acumulada/);
 });
 
-test('costos internos son opcionales y no dominan el presupuesto rápido',()=>{
+test('costos internos tienen una etapa administrativa y confirmación explícita',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/<details class="quote-internal-costs"/);
- assert.match(wizard,/Opcional · no se muestran al cliente/);
+ assert.match(wizard,/class="quote-cost-stage"/);
+ assert.match(wizard,/Estos datos son administrativos/);
+ assert.match(wizard,/data-qw-cost-confirm/);
  assert.match(wizard,/Movilidad general/);
 });
 
 test('revisión permite volver al trabajo exacto sin recrear el presupuesto',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/ETAPA 3 DE 4/);
+ assert.match(wizard,/ETAPA 4 DE 4/);
  assert.match(wizard,/data-qw-review-work/);
  assert.match(wizard,/activeWorkId=reviewWork\.dataset\.qwReviewWork;stage=2/);
  assert.match(wizard,/Revisar presupuesto →/);
 });
 
-test('repintados del editor preservan los scrolls internos y el foco no fuerza desplazamiento',()=>{
+test('repintados no crean propietarios de scroll interno y el foco no fuerza desplazamiento',()=>{
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/data-qw-scroll-key/);
- assert.match(wizard,/captureScroll/);
- assert.match(wizard,/restoreScroll/);
+ assert.doesNotMatch(wizard,/data-qw-scroll-key/);
  assert.match(wizard,/focus\?\.\(\{preventScroll:true\}\)/);
  assert.doesNotMatch(wizard,/scrollTop\s*=\s*0/);
  assert.doesNotMatch(wizard,/scrollTo\s*\(\s*0/);

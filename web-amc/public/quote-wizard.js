@@ -1,6 +1,6 @@
-import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,applyTariffSelection,workDirectCost,directCostTotal,workLoadedInternalCost,workLaborCost,laborCostTotal,internalCostTotal,jornalReference,commercialReferenceTotal,profitabilityCostTotal,profitabilitySnapshot,suggestedPriceForMargin,findTariffMatches} from './quote-wizard-model.js';
+import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,applyTariffSelection,workDirectCost,directCostTotal,workEffectiveLaborCost,workLaborCost,jornalReference,commercialReferenceTotal,economicSnapshot,findTariffMatches} from './quote-wizard-model.js';
 
-const PHASES=['Cliente','Presupuesto','Revisión','Guardar / enviar'];
+const PHASES=['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'];
 const UNITS=['m²','ml','unidad','día','hora','servicio','obra','punto','salida'];
 const MEASURED_UNITS=new Set(['m²','m2','m^2','m³','m3','m^3','ml','m.l.','metro lineal','metros lineales']);
 const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number.isFinite(Number(value))?Number(value):0);
@@ -21,7 +21,6 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  let tariffs=[],tariffState='idle',tariffError='';
  let localClients=[],newClientOpen=false,newClientSaving=false,newClientError='';
  let newClientDraft={name:'',phone:'',town:''};
- const openCostWorkIds=new Set();
  const s=()=>getState();
  const requests=()=>s().requests||[];
  const baseClients=()=>s().agendaClients||s().clients||[];
@@ -43,7 +42,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  }
  function selectedRequest(){return availableRequests().find(request=>request.id===requestId)||null;}
  function contextKey(){return [clientRef||'sin-cliente',requestId||'directo',quoteId||'nuevo'].join('|');}
- function resetWorks(){works=null;lastContext='';activeWorkId='';travel=DEFAULT_QUOTE_SETTINGS.travelDefault;employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;finalPrice=0;finalPriceManual=false;desiredMargin=30;openCostWorkIds.clear();}
+ function resetWorks(){works=null;lastContext='';activeWorkId='';travel=DEFAULT_QUOTE_SETTINGS.travelDefault;employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;finalPrice=0;finalPriceManual=false;desiredMargin=30;}
  function createWork(source={}){
   const work=normaliseWork(source);work.id=work.id||uid();work.referenceSearch=String(source.referenceSearch||source.details?.referenceSearch||'');
   work.quantityExplicit=Object.prototype.hasOwnProperty.call(source,'quantity')||Object.prototype.hasOwnProperty.call(source.details||{},'quantity');
@@ -120,13 +119,22 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function referencesResolved(){return initialiseWorks().every(referenceResolved);}
  function automaticCommercial(rows=initialiseWorks()){return rows.reduce((sum,work)=>sum+commercialReferenceTotal(work),0);}
  function currentFinalPrice(rows=initialiseWorks()){const automatic=automaticCommercial(rows);return finalPriceManual&&amount(finalPrice)>0?amount(finalPrice):automatic;}
- function currentProfitability(rows=initialiseWorks()){const cost=profitabilityCostTotal(rows,travel);return profitabilitySnapshot(currentFinalPrice(rows),cost);}
- function profitabilityStatus(rows=initialiseWorks()){
-  const snapshot=currentProfitability(rows),suggested=suggestedPriceForMargin(snapshot.cost,desiredMargin);
-  if(!snapshot.cost)return {kind:'',text:'Cargá costos internos para que el margen sea representativo.',suggested,reached:false};
-  if(snapshot.gain<0)return {kind:'loss',text:`Este precio deja una pérdida estimada de ${money(Math.abs(snapshot.gain))}.`,suggested,reached:false};
-  if(suggested>0&&snapshot.price>=suggested)return {kind:'',text:`✓ El precio actual alcanza el margen objetivo del ${desiredMargin} %.`,suggested,reached:true};
-  return {kind:'warning',text:`El precio actual está por debajo del margen objetivo del ${desiredMargin} %.`,suggested,reached:false};
+ function currentEconomic(rows=initialiseWorks()){
+  const commercial=automaticCommercial(rows);
+  return economicSnapshot({works:rows,travel,employeeDay,salePrice:currentFinalPrice(rows),goalMargin:desiredMargin,tariffReference:commercial});
+ }
+ function profitabilityStatus(snapshot=currentEconomic()){
+  if(!snapshot.goalValid)return {kind:'warning',text:'El margen objetivo debe estar entre 0 % y menos de 100 %.',reached:false};
+  if(!snapshot.profitabilityComplete){
+   const reasons=[];
+   if(!snapshot.costsComplete)reasons.push('faltan costos por confirmar');
+   if(snapshot.unpricedWorks)reasons.push('hay trabajos sin precio o en relevamiento');
+   if(!snapshot.salePrice)reasons.push('falta el precio final');
+   return {kind:'warning',text:`Rentabilidad estimada: ${reasons.join('; ')}.`,reached:false};
+  }
+  if(snapshot.gain<0)return {kind:'loss',text:`Este precio deja una pérdida estimada de ${money(Math.abs(snapshot.gain))}.`,reached:false};
+  if(snapshot.salePrice>=snapshot.minimumPrice)return {kind:'',text:`✓ El precio actual alcanza el margen objetivo del ${desiredMargin} %.`,reached:true};
+  return {kind:'warning',text:`El precio actual está por debajo del piso para el margen objetivo del ${desiredMargin} %.`,reached:false};
  }
  function pricingLabel(work){
   if(work.tariffKind==='visit-pending')return 'Relevamiento';
@@ -141,7 +149,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(requiresMeasuredQuantity(unit)&&amount(work.quantity)<=0&&(tariff||amount(work.tariffPrice)>0||work.tariffKind==='manual-reference'))return `Falta cargar ${quantityLabel(unit).toLowerCase()}`;
   return total>0?`${money(total)} · ${pricingLabel(work)}`:pricingLabel(work);
  }
- function workList(rows){return `<div class="quote-builder-work-list-scroll" data-qw-scroll-key="works"><div class="quote-builder-work-list">${rows.map((work,index)=>`<button type="button" class="quote-builder-work-item ${work.id===activeWorkId?'active':''}" data-qw-select-work="${esc(work.id)}"><span class="quote-builder-work-number">${index+1}</span><span class="quote-builder-work-copy"><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small data-qw-work-summary="${esc(work.id)}">${esc(workSummary(work))}</small></span></button>`).join('')}</div></div>`;}
+ function workList(rows){return `<div class="quote-builder-work-list-scroll"><div class="quote-builder-work-list">${rows.map((work,index)=>`<button type="button" class="quote-builder-work-item ${work.id===activeWorkId?'active':''}" data-qw-select-work="${esc(work.id)}"><span class="quote-builder-work-number">${index+1}</span><span class="quote-builder-work-copy"><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small data-qw-work-summary="${esc(work.id)}">${esc(workSummary(work))}</small></span></button>`).join('')}</div></div>`;}
  function mobileWorkSelector(rows){return `<div class="quote-builder-mobile-work"><label>Trabajo<select data-qw-work-selector>${rows.map((work,index)=>`<option value="${esc(work.id)}" ${work.id===activeWorkId?'selected':''}>${index+1}. ${esc(work.description||'Trabajo sin nombre')} · ${esc(workSummary(work))}</option>`).join('')}</select></label><button type="button" data-qw-add-work aria-label="Agregar trabajo">＋</button></div>`;}
  function unitOptions(current){return UNITS.map(unit=>`<option value="${esc(unit)}" ${unit===current?'selected':''}>${esc(unit)}</option>`).join('');}
  function tariffChoice(work,item){const tariff=item.tariff;return `<button type="button" data-qw-select-tariff="${esc(tariff.key)}" data-qw-tariff-work="${esc(work.id)}"><strong>${esc(tariff.tarea)}</strong><span>${money(tariff.precio)} / ${esc(tariff.unidad||'unidad')}</span></button>`;}
@@ -175,37 +183,44 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const content=manual?manualPricing(work):jornal?jornalPricing(work):visit?visitPricing(work):tariffPricing(work);
   return `<section class="quote-pricing ${tariffActive?'tariff-first':''}">${tariffActive?`${content}${tabs}`:`${tabs}${content}`}</section>`;
  }
- function internalCosts(work){
-  const open=openCostWorkIds.has(work.id),laborReference=workLaborCost(work,employeeDay);
-  return `<details class="quote-internal-costs" data-qw-cost-details="${esc(work.id)}" ${open?'open':''}><summary><span>Costos internos <small>Opcional · no se muestran al cliente</small></span><strong data-qw-work-internal="${esc(work.id)}">${money(workLoadedInternalCost(work))}</strong></summary><div class="quote-wizard-fields quote-wizard-fields-3"><label>Materiales<input type="number" min="0" step="100" value="${work.materials}" data-qw-work-input data-qw-key="materials" data-qw-work-id="${esc(work.id)}"></label><label>Herramientas / consumibles<input type="number" min="0" step="100" value="${work.tools}" data-qw-work-input data-qw-key="tools" data-qw-work-id="${esc(work.id)}"></label><label>Otros / contingencia<input type="number" min="0" step="100" value="${work.other}" data-qw-work-input data-qw-key="other" data-qw-work-id="${esc(work.id)}"></label><label>Mano de obra interna<input type="number" min="0" step="100" value="${work.labor}" data-qw-work-input data-qw-key="labor" data-qw-work-id="${esc(work.id)}"></label></div>${work.tariffKind==='jornal'?`<div class="quote-inline-note"><span>Referencia interna según operarios y días: <strong>${money(laborReference)}</strong>. No se suma sola.</span><button type="button" data-qw-use-labor-reference="${esc(work.id)}">Usar como costo interno</button></div>`:''}</details>`;
- }
- function workDetail(work){if(!work)return '<div class="quote-wizard-empty">Agregá un trabajo para empezar.</div>';return `<div class="quote-builder-detail-inner"><div class="quote-builder-detail-head"><div><span class="eyebrow">TRABAJO SELECCIONADO</span><h2 data-qw-active-work-title>${esc(work.description||'Nuevo trabajo')}</h2></div><button type="button" class="quote-remove-work" data-qw-remove-work="${esc(work.id)}">Eliminar</button></div><label class="quote-wizard-field">Trabajo<input value="${esc(work.description)}" data-qw-work-input data-qw-key="description" data-qw-work-id="${esc(work.id)}" placeholder="Ej. Revoque fino" autocomplete="off"></label>${pricingPanel(work)}${internalCosts(work)}</div>`;}
+ function workDetail(work){if(!work)return '<div class="quote-wizard-empty">Agregá un trabajo para empezar.</div>';return `<div class="quote-builder-detail-inner"><div class="quote-builder-detail-head"><div><span class="eyebrow">TRABAJO SELECCIONADO</span><h2 data-qw-active-work-title>${esc(work.description||'Nuevo trabajo')}</h2></div><button type="button" class="quote-remove-work" data-qw-remove-work="${esc(work.id)}">Eliminar</button></div><label class="quote-wizard-field">Trabajo<input value="${esc(work.description)}" data-qw-work-input data-qw-key="description" data-qw-work-id="${esc(work.id)}" placeholder="Ej. Revoque fino" autocomplete="off"></label>${pricingPanel(work)}</div>`;}
  function summaryPanel(rows){
-  const commercial=automaticCommercial(rows),cost=profitabilityCostTotal(rows,travel),pending=rows.filter(work=>!referenceResolved(work)).length,relevamientos=rows.filter(work=>work.tariffKind==='visit-pending').length;
-  return `<aside class="quote-builder-summary-panel"><div class="quote-summary-title"><span class="eyebrow">RESUMEN</span><strong>${rows.length} trabajo${rows.length===1?'':'s'}</strong></div><div class="quote-summary-main"><span>Referencia acumulada</span><strong data-qw-commercial-total>${money(commercial)}</strong></div>${pending?`<div class="quote-summary-alert">${pending} trabajo${pending===1?'':'s'} todavía sin precio definido.</div>`:''}${relevamientos?`<div class="quote-summary-alert neutral">${relevamientos} trabajo${relevamientos===1?'':'s'} pendiente${relevamientos===1?'':'s'} de relevamiento. No suma${relevamientos===1?'':'n'} al total.</div>`:''}<div class="quote-summary-rows">${rows.map(work=>`<button type="button" data-qw-select-work="${esc(work.id)}"><span>${esc(work.description||'Trabajo sin nombre')}</span><strong data-qw-work-total="${esc(work.id)}">${money(commercialReferenceTotal(work))}</strong></button>`).join('')}</div><details class="quote-summary-costs"><summary>Costos internos cargados</summary><label>Movilidad general<input type="number" min="0" step="100" value="${travel}" data-qw-travel></label><div><span>Total interno para rentabilidad</span><strong data-qw-profit-cost>${money(cost)}</strong></div><small>Sólo cuenta lo que cargaste. Los relevamientos pendientes quedan fuera.</small></details></aside>`;
+  const commercial=automaticCommercial(rows),pending=rows.filter(work=>!referenceResolved(work)).length,relevamientos=rows.filter(work=>work.tariffKind==='visit-pending').length;
+  return `<aside class="quote-builder-summary-panel"><div class="quote-summary-title"><span class="eyebrow">RESUMEN</span><strong>${rows.length} trabajo${rows.length===1?'':'s'}</strong></div><div class="quote-summary-main"><span>Referencia Tarifario / trabajos</span><strong data-qw-commercial-total>${money(commercial)}</strong></div>${pending?`<div class="quote-summary-alert">${pending} trabajo${pending===1?'':'s'} todavía sin precio definido.</div>`:''}${relevamientos?`<div class="quote-summary-alert neutral">${relevamientos} trabajo${relevamientos===1?'':'s'} pendiente${relevamientos===1?'':'s'} de relevamiento. No suma${relevamientos===1?'':'n'} al precio.</div>`:''}<div class="quote-summary-rows">${rows.map(work=>`<button type="button" data-qw-select-work="${esc(work.id)}"><span>${esc(work.description||'Trabajo sin nombre')}</span><strong data-qw-work-total="${esc(work.id)}">${money(commercialReferenceTotal(work))}</strong></button>`).join('')}</div></aside>`;
  }
  function budgetStage(){
   const rows=initialiseWorks(),work=activeWork(),client=currentClient(),request=selectedRequest();
-  return `<div class="quote-budget-stage"><div class="quote-budget-context"><div><span class="eyebrow">ETAPA 2 DE 4</span><strong>${esc(client?.name||'Cliente')}</strong><small>${request?esc((request.services||[request.service]).filter(Boolean).join(', ')||request.description||'Solicitud seleccionada'):'Presupuesto directo · sin solicitud'}</small></div><button type="button" data-qw-edit-client>Editar cliente</button></div>${mobileWorkSelector(rows)}<div class="quote-builder-workspace"><aside class="quote-builder-sidebar"><div class="quote-builder-sidebar-head"><div><span>Trabajos</span><strong>${rows.length}</strong></div><button type="button" data-qw-add-work>＋</button></div>${workList(rows)}</aside><main class="quote-builder-detail" data-qw-scroll-key="detail">${workDetail(work)}</main><div class="quote-builder-summary" data-qw-scroll-key="summary">${summaryPanel(rows)}</div></div><div class="quote-mobile-summary"><div><span>Referencia acumulada</span><strong data-qw-commercial-total>${money(automaticCommercial(rows))}</strong></div><button type="button" data-qw-mobile-summary>Ver resumen</button></div></div>`;
+  return `<div class="quote-budget-stage"><div class="quote-budget-context"><div><span class="eyebrow">ETAPA 2 DE 4</span><strong>${esc(client?.name||'Cliente')}</strong><small>${request?esc((request.services||[request.service]).filter(Boolean).join(', ')||request.description||'Solicitud seleccionada'):'Presupuesto directo · sin solicitud'}</small></div><button type="button" data-qw-edit-client>Editar cliente</button></div>${mobileWorkSelector(rows)}<div class="quote-builder-workspace"><aside class="quote-builder-sidebar"><div class="quote-builder-sidebar-head"><div><span>Trabajos</span><strong>${rows.length}</strong></div><button type="button" data-qw-add-work>＋</button></div>${workList(rows)}</aside><main class="quote-builder-detail">${workDetail(work)}</main><div class="quote-builder-summary">${summaryPanel(rows)}</div></div><div class="quote-mobile-summary"><div><span>Referencia acumulada</span><strong data-qw-commercial-total>${money(automaticCommercial(rows))}</strong></div><button type="button" data-qw-mobile-summary>Ver resumen</button></div></div>`;
+ }
+ function costWorkCard(work,index){
+  const estimated=workLaborCost(work,employeeDay),effective=workEffectiveLaborCost(work,employeeDay),explicit=amount(work.labor);
+  return `<article class="quote-cost-work-card"><header><div><span class="eyebrow">TRABAJO ${index+1}</span><h3>${esc(work.description||'Trabajo sin nombre')}</h3></div><strong data-qw-work-internal="${esc(work.id)}">${money(workDirectCost(work)+effective)}</strong></header><div class="quote-wizard-fields quote-wizard-fields-3"><label>Materiales<input type="number" min="0" step="100" value="${work.materials}" data-qw-work-input data-qw-key="materials" data-qw-work-id="${esc(work.id)}"></label><label>Herramientas / consumibles<input type="number" min="0" step="100" value="${work.tools}" data-qw-work-input data-qw-key="tools" data-qw-work-id="${esc(work.id)}"></label><label>Otros / contingencia<input type="number" min="0" step="100" value="${work.other}" data-qw-work-input data-qw-key="other" data-qw-work-id="${esc(work.id)}"></label><label>Operarios<input type="number" min="1" step="1" value="${work.workers}" data-qw-work-input data-qw-key="workers" data-qw-work-id="${esc(work.id)}"></label><label>Días<input type="number" min="1" step="1" value="${work.days}" data-qw-work-input data-qw-key="days" data-qw-work-id="${esc(work.id)}"></label><label>Mano de obra explícita <small>Opcional: si es mayor a $ 0 reemplaza la estimada.</small><input type="number" min="0" step="100" value="${work.labor}" data-qw-work-input data-qw-key="labor" data-qw-work-id="${esc(work.id)}"></label></div><div class="quote-labor-breakdown"><span>Estimada: <strong data-qw-estimated-labor="${esc(work.id)}">${money(estimated)}</strong></span><span>Explícita: <strong data-qw-explicit-labor="${esc(work.id)}">${explicit>0?money(explicit):'No cargada'}</strong></span><span>Efectiva: <strong data-qw-effective-labor="${esc(work.id)}">${money(effective)}</strong></span></div><label class="quote-cost-confirm"><input type="checkbox" data-qw-cost-confirm="${esc(work.id)}" ${work.costsConfirmed?'checked':''}> Confirmé los costos de este trabajo, incluso si algún valor es $ 0.</label></article>`;
+ }
+ function profitabilityCards(snapshot,{editable=true}={}){
+  const status=profitabilityStatus(snapshot),margin=snapshot.profitabilityComplete&&snapshot.margin!==null?snapshot.margin.toFixed(1)+' %':'—';
+  return `<section class="quote-profitability-card"><header><span class="eyebrow">RENTABILIDAD INTERNA</span><h3>¿Qué margen deja este precio?</h3><p>Incluye materiales, herramientas, otros costos, movilidad y mano de obra efectiva. La carga explícita reemplaza la estimación; nunca se suman ambas.</p></header><div class="quote-profitability-stats"><div><span>Referencia Tarifario</span><strong data-qw-commercial-total>${money(snapshot.tariffReference)}</strong></div><div><span>Precio final actual</span><strong data-qw-final-current>${money(snapshot.salePrice)}</strong></div><div><span>Costo interno total</span><strong data-qw-profit-cost>${money(snapshot.internalCost)}</strong></div><div><span>Ganancia estimada</span><strong data-qw-profit-gain>${snapshot.profitabilityComplete?money(snapshot.gain):'—'}</strong></div><div><span>Margen estimado</span><strong data-qw-profit-margin>${margin}</strong></div><div><span>Margen objetivo</span><strong data-qw-goal-display>${snapshot.goalValid?desiredMargin+' %':'Inválido'}</strong></div></div><p class="quote-profitability-status ${status.kind}" data-qw-profit-status>${esc(status.text)}</p>${editable?`<div class="quote-profitability-controls"><label>Margen objetivo (%)<input type="number" min="0" max="95" step="1" value="${desiredMargin}" data-qw-desired-margin></label></div>`:''}<div class="quote-profitability-suggested"><span data-qw-floor-label>Piso para margen ${snapshot.goalValid?desiredMargin+' %':'válido'}<strong data-qw-suggested-price>${snapshot.goalValid?money(snapshot.minimumPrice):'—'}</strong></span>${editable?`<button type="button" data-qw-use-suggested-price ${!snapshot.goalValid||snapshot.internalCost<=0||status.reached?'disabled':''}>Usar sugerido</button>`:''}</div></section>${editable?`<section class="quote-profitability-card quote-final-price"><header><span class="eyebrow">PRECIO FINAL</span><h3>Importe para el cliente</h3><p>Podés redondear, descontar o agregar un adicional sin perder la referencia comercial ni el piso económico.</p></header><div class="quote-final-price-row"><label>Precio final editable<input type="number" min="0" step="100" value="${snapshot.salePrice||''}" data-qw-final-price></label><button type="button" data-qw-reset-final-price ${finalPriceManual?'':'disabled'}>Usar referencia</button></div><p class="quote-final-price-note" data-qw-final-mode>${finalPriceManual?'Precio final editado manualmente. La referencia del Tarifario se conserva para comparar.':'Precio final automático: coincide con la referencia acumulada de los trabajos.'}</p></section>`:''}`;
+ }
+ function costStage(){
+  const rows=initialiseWorks(),snapshot=currentEconomic(rows);
+  return `<div class="quote-cost-stage"><div class="quote-stage-heading"><span class="eyebrow">ETAPA 3 DE 4</span><h2>Costos y rentabilidad</h2><p>Estos datos son administrativos. Confirmá cada trabajo para distinguir un costo real de $ 0 de un dato pendiente.</p></div><div class="quote-cost-layout"><main class="quote-cost-list"><section class="quote-budget-costs"><div class="quote-wizard-fields quote-wizard-fields-2"><label>Costo diario por empleado<input type="number" min="0" step="100" value="${employeeDay}" data-qw-employee-day></label><label>Movilidad general del presupuesto<input type="number" min="0" step="100" value="${travel}" data-qw-travel></label></div><p>La movilidad se suma una sola vez al presupuesto.</p></section>${rows.map(costWorkCard).join('')}</main><aside class="quote-profitability-column">${profitabilityCards(snapshot)}</aside></div></div>`;
  }
  function reviewStage(){
-  const rows=initialiseWorks(),client=currentClient(),request=selectedRequest(),commercial=automaticCommercial(rows),sale=currentFinalPrice(rows),snapshot=currentProfitability(rows),status=profitabilityStatus(rows),relevamientos=rows.filter(work=>work.tariffKind==='visit-pending').length;
-  return `<div class="quote-review-stage"><div class="quote-review-shell"><div class="quote-review-context"><div><span class="eyebrow">ETAPA 3 DE 4</span><strong>${esc(client?.name||'Cliente')}</strong><small>${request?'Solicitud seleccionada':'Presupuesto directo'}</small></div><div class="quote-review-reference"><span>Referencia por trabajos</span><strong>${money(commercial)}</strong></div></div>${relevamientos?`<p class="quote-review-notice">${relevamientos} trabajo${relevamientos===1?'':'s'} queda${relevamientos===1?'':'n'} fuera del precio y de la rentabilidad hasta hacer el relevamiento.</p>`:''}<div class="quote-review-layout"><section class="quote-review-work-card"><div class="quote-review-section-head"><div><span class="eyebrow">TRABAJOS</span><strong>Detalle del presupuesto</strong></div><strong>${rows.length}</strong></div><div class="quote-review-list">${rows.map(work=>`<article><div><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small>${esc(pricingLabel(work))}${work.tariffKind==='visit-pending'?' · pendiente de relevamiento':''}</small></div><div><strong>${money(commercialReferenceTotal(work))}</strong><button type="button" data-qw-review-work="${esc(work.id)}">Editar</button></div></article>`).join('')}</div></section><div class="quote-review-side"><section class="quote-profitability-card"><header><span class="eyebrow">RENTABILIDAD INTERNA</span><h3>¿Qué margen deja este precio?</h3><p>AMC sólo usa los costos que cargaste expresamente. No agrega jornales ocultos ni duplica mano de obra.</p></header><div class="quote-profitability-stats"><div><span>Precio final actual</span><strong data-qw-final-current>${money(sale)}</strong></div><div><span>Costo interno</span><strong data-qw-profit-cost>${money(snapshot.cost)}</strong></div><div><span>Ganancia estimada</span><strong data-qw-profit-gain>${money(snapshot.gain)}</strong></div><div><span>Margen estimado</span><strong data-qw-profit-margin>${snapshot.cost?snapshot.margin.toFixed(1)+' %':'—'}</strong></div></div><p class="quote-profitability-status ${status.kind}" data-qw-profit-status>${esc(status.text)}</p><div class="quote-profitability-controls"><label>Margen objetivo (%)<input type="number" min="0" max="95" step="1" value="${desiredMargin}" data-qw-desired-margin></label></div><div class="quote-profitability-suggested"><span>Precio mínimo sugerido para ${desiredMargin} %<strong data-qw-suggested-price>${snapshot.cost?money(status.suggested):'—'}</strong></span><button type="button" data-qw-use-suggested-price ${!snapshot.cost||status.reached?'disabled':''}>Usar sugerido</button></div></section><section class="quote-profitability-card quote-final-price"><header><span class="eyebrow">PRECIO FINAL</span><h3>Importe para el cliente</h3><p>Podés redondear, descontar o agregar un adicional sin perder la referencia original.</p></header><div class="quote-final-price-row"><label>Precio final editable<input type="number" min="0" step="100" value="${sale||''}" data-qw-final-price></label><button type="button" data-qw-reset-final-price ${finalPriceManual?'':'disabled'}>Usar referencia</button></div><p class="quote-final-price-note" data-qw-final-mode>${finalPriceManual?'Precio final editado manualmente. La referencia por trabajos se conserva para comparar.':'Precio final automático: coincide con la suma de los trabajos.'}</p></section></div></div></div></div>`;
+  const rows=initialiseWorks(),client=currentClient(),request=selectedRequest(),snapshot=currentEconomic(rows);
+  return `<div class="quote-review-stage"><div class="quote-review-shell"><div class="quote-review-context"><div><span class="eyebrow">ETAPA 4 DE 4</span><strong>${esc(client?.name||'Cliente')}</strong><small>${request?'Solicitud seleccionada':'Presupuesto directo'}</small></div><div class="quote-review-reference"><span>Precio final para el cliente</span><strong>${money(snapshot.salePrice)}</strong></div></div><div class="quote-review-layout"><section class="quote-review-work-card"><div class="quote-review-section-head"><div><span class="eyebrow">TRABAJOS</span><strong>Detalle del presupuesto</strong></div><strong>${rows.length}</strong></div><div class="quote-review-list">${rows.map(work=>`<article><div><strong>${esc(work.description||'Trabajo sin nombre')}</strong><small>${esc(pricingLabel(work))}${work.tariffKind==='visit-pending'?' · pendiente de relevamiento':''}</small></div><div><strong>${money(commercialReferenceTotal(work))}</strong><button type="button" data-qw-review-work="${esc(work.id)}">Editar</button></div></article>`).join('')}</div></section><div class="quote-review-side">${profitabilityCards(snapshot,{editable:false})}</div></div></div></div>`;
  }
- function body(){if(stage===2)return budgetStage();if(stage===3)return reviewStage();return clientStage();}
+ function body(){if(stage===2)return budgetStage();if(stage===3)return costStage();if(stage===4)return reviewStage();return clientStage();}
  function canEnterBudget(){return Boolean(currentClient());}
  function validWorks(){const rows=initialiseWorks();return rows.length>0&&rows.every(work=>String(work.description||'').trim());}
  function controls(){
   if(stage===1)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-close>Cancelar</button><span class="quote-wizard-mobile-progress">Cliente</span><button type="button" class="primary" data-qw-next ${canEnterBudget()?'':'disabled'}>Abrir presupuesto →</button></div>`;
-  if(stage===2)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Cliente</button><span class="quote-wizard-mobile-progress">Presupuesto</span><button type="button" class="primary" data-qw-next ${validWorks()&&referencesResolved()?'':'disabled'}>Revisar presupuesto →</button></div>`;
-  return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Presupuesto</button><span class="quote-wizard-mobile-progress">Rentabilidad + precio final</span><button type="button" class="primary" disabled>Guardar / enviar · siguiente bloque</button></div>`;
+  if(stage===2)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Cliente</button><span class="quote-wizard-mobile-progress">Trabajos y precios</span><button type="button" class="primary" data-qw-next ${validWorks()&&referencesResolved()?'':'disabled'}>Costos y rentabilidad →</button></div>`;
+  if(stage===3)return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Trabajos</button><span class="quote-wizard-mobile-progress">Costos y rentabilidad</span><button type="button" class="primary" data-qw-next>Revisar presupuesto →</button></div>`;
+  return `<div class="quote-wizard-controls"><button type="button" class="secondary" data-qw-back>← Costos</button><span class="quote-wizard-mobile-progress">Revisión</span><button type="button" class="primary" disabled>Guardar / enviar · siguiente bloque</button></div>`;
  }
- function markup(){return `<div class="quote-wizard-layer"><section class="quote-wizard-dialog quote-wizard-stage-${stage}" role="dialog" aria-modal="true" aria-labelledby="quote-wizard-title" tabindex="-1"><header class="quote-wizard-header"><div><span class="eyebrow">COTIZADOR AMC</span><h1 id="quote-wizard-title">${stage===1?'Nuevo presupuesto':stage===2?'Armar presupuesto':'Revisar presupuesto'}</h1></div><button type="button" class="quote-wizard-close" data-qw-close aria-label="Cerrar cotizador">×</button></header>${phaseNav()}<div class="quote-wizard-content" data-qw-scroll-key="content">${body()}</div>${controls()}</section></div>`;}
+ function markup(){const titles=['','Nuevo presupuesto','Trabajos y precios','Costos y rentabilidad','Revisar presupuesto'];return `<section class="quote-wizard-page quote-wizard-stage-${stage}" aria-labelledby="quote-wizard-title" tabindex="-1"><header class="quote-wizard-header"><div><span class="eyebrow">COTIZADOR AMC</span><h1 id="quote-wizard-title">${titles[stage]}</h1></div><button type="button" class="quote-wizard-close" data-qw-close aria-label="Salir del cotizador">×</button></header>${phaseNav()}<div class="quote-wizard-content">${body()}</div>${controls()}</section>`;}
  function render(){if(!isAdmin())return '<section class="panel"><h2>Acceso exclusivo de AMC</h2><p>Esta herramienta está disponible sólo para Administración.</p></section>';ensureTariffs();return `<div class="quote-wizard-host">${markup()}</div>`;}
- function captureScroll(host){const values=new Map();host?.querySelectorAll('[data-qw-scroll-key]').forEach(node=>values.set(node.dataset.qwScrollKey,node.scrollTop));return values;}
- function restoreScroll(host,values){values.forEach((value,key)=>{const node=host.querySelector(`[data-qw-scroll-key="${CSS.escape(key)}"]`);if(node)node.scrollTop=value;});}
  function paint({focusSelector='',preserveScroll=true}={}){
-  const host=document.querySelector('.quote-wizard-host');if(!host)return;const scroll=preserveScroll?captureScroll(host):new Map();host.innerHTML=markup();if(preserveScroll)restoreScroll(host,scroll);
+  const host=document.querySelector('.quote-wizard-host');if(!host)return;const pageY=preserveScroll?scrollY:0;host.innerHTML=markup();if(preserveScroll&&Math.abs(scrollY-pageY)>1)scrollTo({top:pageY});
   if(focusSelector)requestAnimationFrame(()=>host.querySelector(focusSelector)?.focus?.({preventScroll:true}));
  }
  function addWork(){const rows=initialiseWorks(),work=createWork({description:''});rows.push(work);activeWorkId=work.id;paint({focusSelector:`[data-qw-work-id="${CSS.escape(work.id)}"][data-qw-key="description"]`});}
@@ -229,30 +244,35 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  }
  function updateActiveWorkTitle(work){const node=document.querySelector('.quote-wizard-host [data-qw-active-work-title]');if(node)node.textContent=work.description||'Nuevo trabajo';}
  function updateLivePreview(){
-  const host=document.querySelector('.quote-wizard-host');if(!host)return;const rows=initialiseWorks(),commercial=automaticCommercial(rows),cost=profitabilityCostTotal(rows,travel);
+  const host=document.querySelector('.quote-wizard-host');if(!host)return;const rows=initialiseWorks(),commercial=automaticCommercial(rows),snapshot=currentEconomic(rows);
   host.querySelectorAll('[data-qw-commercial-total]').forEach(node=>node.textContent=money(commercial));
-  host.querySelectorAll('[data-qw-profit-cost]').forEach(node=>node.textContent=money(cost));
+  host.querySelectorAll('[data-qw-profit-cost]').forEach(node=>node.textContent=money(snapshot.internalCost));
   rows.forEach(work=>{
    const label=work.description||'Trabajo sin nombre';
    host.querySelectorAll(`button[data-qw-select-work="${CSS.escape(work.id)}"] .quote-builder-work-copy strong`).forEach(node=>node.textContent=label);
    host.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(work.id)}"] span`).forEach(node=>node.textContent=label);
    host.querySelectorAll(`[data-qw-work-total="${CSS.escape(work.id)}"]`).forEach(node=>node.textContent=money(commercialReferenceTotal(work)));
    const row=host.querySelector(`[data-qw-work-summary="${CSS.escape(work.id)}"]`);if(row)row.textContent=workSummary(work);
-   const internalNode=host.querySelector(`[data-qw-work-internal="${CSS.escape(work.id)}"]`);if(internalNode)internalNode.textContent=money(workLoadedInternalCost(work));
+   const internalNode=host.querySelector(`[data-qw-work-internal="${CSS.escape(work.id)}"]`);if(internalNode)internalNode.textContent=money(workDirectCost(work)+workEffectiveLaborCost(work,employeeDay));
+   const effectiveNode=host.querySelector(`[data-qw-effective-labor="${CSS.escape(work.id)}"]`);if(effectiveNode)effectiveNode.textContent=money(workEffectiveLaborCost(work,employeeDay));
+   const estimatedNode=host.querySelector(`[data-qw-estimated-labor="${CSS.escape(work.id)}"]`);if(estimatedNode)estimatedNode.textContent=money(workLaborCost(work,employeeDay));
+   const explicitNode=host.querySelector(`[data-qw-explicit-labor="${CSS.escape(work.id)}"]`);if(explicitNode)explicitNode.textContent=amount(work.labor)>0?money(work.labor):'No cargada';
   });
   const active=activeWork();const activeTotal=host.querySelector('[data-qw-active-total]');if(active&&activeTotal)activeTotal.textContent=money(commercialReferenceTotal(active));
   const next=host.querySelector('[data-qw-next]');if(next&&stage===2)next.disabled=!(validWorks()&&referencesResolved());
  }
- function updateReviewPreview(){
-  const host=document.querySelector('.quote-wizard-host');if(!host||stage!==3)return;const rows=initialiseWorks(),sale=currentFinalPrice(rows),snapshot=currentProfitability(rows),status=profitabilityStatus(rows);
-  host.querySelectorAll('[data-qw-profit-cost]').forEach(node=>node.textContent=money(snapshot.cost));
-  const current=host.querySelector('[data-qw-final-current]');if(current)current.textContent=money(sale);
-  const gain=host.querySelector('[data-qw-profit-gain]');if(gain)gain.textContent=money(snapshot.gain);
-  const margin=host.querySelector('[data-qw-profit-margin]');if(margin)margin.textContent=snapshot.cost?snapshot.margin.toFixed(1)+' %':'—';
-  const suggested=host.querySelector('[data-qw-suggested-price]');if(suggested)suggested.textContent=snapshot.cost?money(status.suggested):'—';
+ function updateEconomicPreview(){
+  const host=document.querySelector('.quote-wizard-host');if(!host||stage!==3)return;const rows=initialiseWorks(),snapshot=currentEconomic(rows),status=profitabilityStatus(snapshot);
+  updateLivePreview();
+  const current=host.querySelector('[data-qw-final-current]');if(current)current.textContent=money(snapshot.salePrice);
+  const gain=host.querySelector('[data-qw-profit-gain]');if(gain)gain.textContent=snapshot.profitabilityComplete?money(snapshot.gain):'—';
+  const margin=host.querySelector('[data-qw-profit-margin]');if(margin)margin.textContent=snapshot.profitabilityComplete&&snapshot.margin!==null?snapshot.margin.toFixed(1)+' %':'—';
+  const suggested=host.querySelector('[data-qw-suggested-price]');if(suggested)suggested.textContent=snapshot.goalValid?money(snapshot.minimumPrice):'—';
+  const goal=host.querySelector('[data-qw-goal-display]');if(goal)goal.textContent=snapshot.goalValid?desiredMargin+' %':'Inválido';
+  const floor=host.querySelector('[data-qw-floor-label]');if(floor&&floor.firstChild)floor.firstChild.nodeValue=`Piso para margen ${snapshot.goalValid?desiredMargin+' %':'válido'}`;
   const statusNode=host.querySelector('[data-qw-profit-status]');if(statusNode){statusNode.className=`quote-profitability-status ${status.kind}`.trim();statusNode.textContent=status.text;}
-  const button=host.querySelector('[data-qw-use-suggested-price]');if(button)button.disabled=!snapshot.cost||status.reached;
-  const modeNode=host.querySelector('[data-qw-final-mode]');if(modeNode)modeNode.textContent=finalPriceManual?'Precio final editado manualmente. La referencia por trabajos se conserva para comparar.':'Precio final automático: coincide con la suma de los trabajos.';
+  const button=host.querySelector('[data-qw-use-suggested-price]');if(button)button.disabled=!snapshot.goalValid||snapshot.internalCost<=0||status.reached;
+  const modeNode=host.querySelector('[data-qw-final-mode]');if(modeNode)modeNode.textContent=finalPriceManual?'Precio final editado manualmente. La referencia del Tarifario se conserva para comparar.':'Precio final automático: coincide con la referencia acumulada de los trabajos.';
  }
  async function ensureTariffs(){
   if(tariffState==='ready'||tariffState==='loading')return;tariffState='loading';tariffError='';
@@ -276,15 +296,17 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   else if(key==='unit')item.unit=target.value;
   else if(key==='quantity'){item.quantity=amount(target.value);item.quantityExplicit=String(target.value).trim()!=='';}
   else if(key==='workers'){item.workers=Math.max(1,Math.ceil(amount(target.value,1)||1));}
+  else if(key==='days'){item.days=Math.max(1,Math.ceil(amount(target.value,1)||1));}
   else if(key==='hours'){item.hours=Math.max(.25,amount(target.value,8)||8);if(item.tariffKind==='jornal')item.days=Math.max(1,Math.ceil(item.hours/8));}
   else item[key]=amount(target.value);
+  if(['materials','tools','other','labor','workers','days'].includes(key))item.costsConfirmed=false;
   updateLivePreview();return item;
  }
  document.addEventListener('click',event=>{
   if(!document.querySelector('.quote-wizard-host'))return;
   const closeButton=event.target.closest('[data-qw-close]');if(closeButton){event.preventDefault();close();return;}
   const editClient=event.target.closest('[data-qw-edit-client]');if(editClient){stage=1;paint({preserveScroll:false});return;}
-  const next=event.target.closest('[data-qw-next]');if(next&&!next.disabled){if(stage===1){stage=2;initialiseWorks();paint({preserveScroll:false});}else if(stage===2){stage=3;paint({preserveScroll:false});}return;}
+  const next=event.target.closest('[data-qw-next]');if(next&&!next.disabled){if(stage===1){stage=2;initialiseWorks();}else if(stage===2)stage=3;else if(stage===3)stage=4;paint({preserveScroll:false});return;}
   const back=event.target.closest('[data-qw-back]');if(back){stage=Math.max(1,stage-1);paint({preserveScroll:false});return;}
   const newClient=event.target.closest('[data-qw-new-client]');if(newClient){newClientOpen=true;newClientError='';paint({focusSelector:'[data-qw-new-client-form] input[name="name"]'});return;}
   const cancelNew=event.target.closest('[data-qw-cancel-new-client]');if(cancelNew){newClientOpen=false;newClientError='';paint();return;}
@@ -296,7 +318,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   const changeTariff=event.target.closest('[data-qw-change-tariff]');if(changeTariff){setPricingMode(changeTariff.dataset.qwChangeTariff,'tariff');return;}
   const tariffChoice=event.target.closest('[data-qw-select-tariff]');if(tariffChoice){chooseTariff(tariffChoice.dataset.qwTariffWork,tariffChoice.dataset.qwSelectTariff);return;}
   const laborReference=event.target.closest('[data-qw-use-labor-reference]');if(laborReference){const item=initialiseWorks().find(work=>work.id===laborReference.dataset.qwUseLaborReference);if(item){item.labor=workLaborCost(item,employeeDay);paint();}return;}
-  const useSuggested=event.target.closest('[data-qw-use-suggested-price]');if(useSuggested&&!useSuggested.disabled){const target=suggestedPriceForMargin(profitabilityCostTotal(initialiseWorks(),travel),desiredMargin);if(target>0){finalPrice=Math.round(target);finalPriceManual=true;paint();}return;}
+  const useSuggested=event.target.closest('[data-qw-use-suggested-price]');if(useSuggested&&!useSuggested.disabled){const target=currentEconomic().minimumPrice;if(target>0){finalPrice=Math.round(target);finalPriceManual=true;paint();}return;}
   const resetFinal=event.target.closest('[data-qw-reset-final-price]');if(resetFinal){finalPrice=0;finalPriceManual=false;paint();return;}
   const mobileSummary=event.target.closest('[data-qw-mobile-summary]');if(mobileSummary){const summary=document.querySelector('.quote-builder-summary');summary?.scrollIntoView?.({behavior:'smooth',block:'start'});return;}
  });
@@ -306,6 +328,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(event.target.matches('[data-qw-client]')){clientRef=event.target.value||'';requestId='';resetWorks();paint();return;}
   if(event.target.matches('[data-qw-request]')){requestId=event.target.value||'';quoteId='';resetWorks();paint();return;}
   if(event.target.matches('[data-qw-work-selector]')){activeWorkId=event.target.value||activeWorkId;paint();return;}
+  if(event.target.matches('[data-qw-cost-confirm]')){const item=initialiseWorks().find(work=>work.id===event.target.dataset.qwCostConfirm);if(item)item.costsConfirmed=event.target.checked;paint();return;}
   if(event.target.matches('[data-qw-work-input]')){handleWorkInput(event.target);return;}
  });
  document.addEventListener('input',event=>{
@@ -314,13 +337,14 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(event.target.matches('[data-qw-work-input]')){
    const item=handleWorkInput(event.target);
    if(item&&event.target.dataset.qwKey==='description'){updateActiveWorkTitle(item);refreshTariffSuggestions(item);}
+   if(item&&stage===3)updateEconomicPreview();
    return;
   }
-  if(event.target.matches('[data-qw-travel]')){travel=amount(event.target.value);updateLivePreview();return;}
-  if(event.target.matches('[data-qw-desired-margin]')){desiredMargin=Math.min(95,amount(event.target.value));updateReviewPreview();return;}
-  if(event.target.matches('[data-qw-final-price]')){const value=amount(event.target.value);if(value>0){finalPrice=value;finalPriceManual=true;}else{finalPrice=0;finalPriceManual=false;}updateReviewPreview();}
+  if(event.target.matches('[data-qw-travel]')){travel=amount(event.target.value);updateEconomicPreview();return;}
+  if(event.target.matches('[data-qw-employee-day]')){employeeDay=amount(event.target.value);initialiseWorks().forEach(work=>work.costsConfirmed=false);updateEconomicPreview();return;}
+  if(event.target.matches('[data-qw-desired-margin]')){desiredMargin=Number(event.target.value);updateEconomicPreview();return;}
+  if(event.target.matches('[data-qw-final-price]')){const value=amount(event.target.value);if(value>0){finalPrice=value;finalPriceManual=true;}else{finalPrice=0;finalPriceManual=false;}updateEconomicPreview();}
  });
- document.addEventListener('toggle',event=>{if(!document.querySelector('.quote-wizard-host')||!event.target.matches('[data-qw-cost-details]'))return;const id=event.target.dataset.qwCostDetails;if(event.target.open)openCostWorkIds.add(id);else openCostWorkIds.delete(id);},true);
- function afterRender(page){if(page!=='cotizador')return;ensureTariffs();requestAnimationFrame(()=>document.querySelector('.quote-wizard-dialog')?.focus?.({preventScroll:true}));}
- return {render,open,prefillClient,afterRender,getDraft:()=>{const rows=[...initialiseWorks()],automatic=automaticCommercial(rows),sale=currentFinalPrice(rows),profit=profitabilitySnapshot(sale,profitabilityCostTotal(rows,travel));return {stage,requestId,quoteId,mode,clientRef,travel,employeeDay,works:rows,commercialReference:automatic,automaticPrice:automatic,finalPrice:sale,finalPriceManual,desiredMargin,directCost:directCostTotal(rows,travel),laborCost:laborCostTotal(rows,employeeDay),internalCost:internalCostTotal(rows,travel,employeeDay),loadedInternalCost:profit.cost,estimatedGain:profit.gain,estimatedMargin:profit.margin};}};
+ function afterRender(page){if(page!=='cotizador')return;ensureTariffs();requestAnimationFrame(()=>document.querySelector('.quote-wizard-page')?.focus?.({preventScroll:true}));}
+ return {render,open,prefillClient,afterRender,getDraft:()=>{const rows=[...initialiseWorks()],automatic=automaticCommercial(rows),snapshot=currentEconomic(rows);return {stage,requestId,quoteId,mode,clientRef,travel,employeeDay,works:rows,commercialReference:automatic,automaticPrice:automatic,finalPrice:snapshot.salePrice,finalPriceManual,desiredMargin,directCost:directCostTotal(rows,travel),laborCost:snapshot.laborEffective,laborExplicitCost:snapshot.laborExplicit,laborEstimatedCost:snapshot.laborEstimated,internalCost:snapshot.internalCost,loadedInternalCost:snapshot.internalCost,estimatedGain:snapshot.gain,estimatedMargin:snapshot.margin,minimumPrice:snapshot.minimumPrice,costsComplete:snapshot.costsComplete,profitabilityComplete:snapshot.profitabilityComplete};}};
 }

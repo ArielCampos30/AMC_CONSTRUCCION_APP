@@ -62,11 +62,11 @@ try:
     wait("return document.body.innerText.includes('Seguridad en dos pasos')")
     assert "seguridad en dos pasos" in js("return document.body.innerText").lower()
 
-    # Cotizador en una ventana baja de escritorio: las opciones del Tarifario deben
-    # abrir como desplegable flotante, sin crear scroll en el detalle central.
-    call("POST",prefix+"/window/rect",{"width":1280,"height":600})
+    # Cotizador de página completa: selección canónica, economía A/B y responsive.
+    call("POST",prefix+"/window/rect",{"width":1366,"height":768})
     go(BASE+"/#cotizador")
-    wait("return !!document.querySelector('.quote-wizard-dialog') && !!document.querySelector('[data-qw-client]')")
+    wait("return !!document.querySelector('.quote-wizard-page') && !!document.querySelector('[data-qw-client]')")
+    assert not js("return !!document.querySelector('.quote-wizard-page[role=dialog],.quote-wizard-page[aria-modal=true]')")
     wait("return document.querySelectorAll('[data-qw-client] option').length > 1")
     js("""const s=document.querySelector('[data-qw-client]');const option=[...s.options].find(o=>o.value);if(!option)return false;s.value=option.value;s.dispatchEvent(new Event('change',{bubbles:true}));return true;""")
     wait("return !!document.querySelector('[data-qw-next]:not([disabled])')")
@@ -74,46 +74,72 @@ try:
     wait("return !!document.querySelector('[data-qw-work-input][data-qw-key=\"description\"]')")
     js("""const input=document.querySelector('[data-qw-work-input][data-qw-key="description"]');input.value='revo';input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();return true;""")
     wait("return !!document.querySelector('#quote-tariff-overlay:not([hidden]) button[data-qw-select-tariff]')")
-    layout=js("""const detail=document.querySelector('.quote-builder-detail'),summary=document.querySelector('.quote-builder-summary'),overlay=document.querySelector('#quote-tariff-overlay'),close=document.querySelector('.quote-wizard-close'),r=overlay.getBoundingClientRect(),cs=getComputedStyle(close),input=document.querySelector('[data-qw-work-input][data-qw-key="description"]'),id=input.dataset.qwWorkId;return {detailOverflow:getComputedStyle(detail).overflowY,detailFits:detail.scrollHeight<=detail.clientHeight+4,summaryOverflow:getComputedStyle(summary).overflowY,overlayTop:r.top,overlayBottom:r.bottom,height:innerHeight,closeBorder:cs.borderTopWidth,closeBackground:cs.backgroundColor,closeDisplay:cs.display,sidebar:[...document.querySelectorAll(`button[data-qw-select-work="${CSS.escape(id)}"] .quote-builder-work-copy strong`)].map(n=>n.textContent),summaryNames:[...document.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(id)}"] span`)].map(n=>n.textContent)};""")
-    assert layout["detailOverflow"] in ("visible","hidden","clip"),layout
-    assert layout["detailFits"],layout
-    assert layout["summaryOverflow"]=="auto",layout
+    layout=js("""const detail=document.querySelector('.quote-builder-detail'),summary=document.querySelector('.quote-builder-summary'),overlay=document.querySelector('#quote-tariff-overlay'),close=document.querySelector('.quote-wizard-close'),r=overlay.getBoundingClientRect(),cs=getComputedStyle(close),input=document.querySelector('[data-qw-work-input][data-qw-key="description"]'),id=input.dataset.qwWorkId;return {detailOverflow:getComputedStyle(detail).overflowY,summaryOverflow:getComputedStyle(summary).overflowY,overlayTop:r.top,overlayBottom:r.bottom,height:innerHeight,closeBorder:cs.borderTopWidth,closeDisplay:cs.display,sidebar:[...document.querySelectorAll(`button[data-qw-select-work="${CSS.escape(id)}"] .quote-builder-work-copy strong`)].map(n=>n.textContent),summaryNames:[...document.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(id)}"] span`)].map(n=>n.textContent)};""")
+    assert layout["detailOverflow"] not in ("auto","scroll"),layout
+    assert layout["summaryOverflow"] not in ("auto","scroll"),layout
     assert layout["overlayTop"]>=0 and layout["overlayBottom"]<=layout["height"]+1,layout
     assert layout["closeBorder"]=="0px" and layout["closeDisplay"]=="grid",layout
     assert all(name=="revo" for name in layout["sidebar"]+layout["summaryNames"]),layout
     canonical_name=js("return document.querySelector('#quote-tariff-overlay button[data-qw-select-tariff] strong').textContent.trim()")
     js("document.querySelector('#quote-tariff-overlay button[data-qw-select-tariff]').click();return true;")
     wait("return !!document.querySelector('.quote-selected-tariff') && document.querySelector('[data-qw-work-input][data-qw-key=\"description\"]').value!==\"revo\"")
-    selected_layout=js("""const detail=document.querySelector('.quote-builder-detail'),summary=document.querySelector('.quote-builder-summary'),input=document.querySelector('[data-qw-work-input][data-qw-key="description"]'),id=input.dataset.qwWorkId;return {detailOverflow:getComputedStyle(detail).overflowY,detailFits:detail.scrollHeight<=detail.clientHeight+4,summaryOverflow:getComputedStyle(summary).overflowY,quantity:!!document.querySelector('[data-qw-work-input][data-qw-key="quantity"]'),input:input.value,selected:document.querySelector('.quote-selected-tariff strong').textContent.trim(),sidebar:[...document.querySelectorAll(`button[data-qw-select-work="${CSS.escape(id)}"] .quote-builder-work-copy strong`)].map(n=>n.textContent),summaryNames:[...document.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(id)}"] span`)].map(n=>n.textContent)};""")
-    assert selected_layout["detailOverflow"] in ("visible","hidden","clip"),selected_layout
-    assert selected_layout["detailFits"],selected_layout
-    assert selected_layout["summaryOverflow"]=="auto" and selected_layout["quantity"],selected_layout
+    selected_layout=js("""const detail=document.querySelector('.quote-builder-detail'),summary=document.querySelector('.quote-builder-summary'),input=document.querySelector('[data-qw-work-input][data-qw-key="description"]'),id=input.dataset.qwWorkId;return {detailOverflow:getComputedStyle(detail).overflowY,summaryOverflow:getComputedStyle(summary).overflowY,quantity:!!document.querySelector('[data-qw-work-input][data-qw-key="quantity"]'),input:input.value,selected:document.querySelector('.quote-selected-tariff strong').textContent.trim(),sidebar:[...document.querySelectorAll(`button[data-qw-select-work="${CSS.escape(id)}"] .quote-builder-work-copy strong`)].map(n=>n.textContent),summaryNames:[...document.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(id)}"] span`)].map(n=>n.textContent)};""")
+    assert selected_layout["detailOverflow"] not in ("auto","scroll"),selected_layout
+    assert selected_layout["summaryOverflow"] not in ("auto","scroll") and selected_layout["quantity"],selected_layout
     assert selected_layout["input"]==canonical_name,selected_layout
     assert selected_layout["selected"]==canonical_name,selected_layout
     assert all(name==canonical_name for name in selected_layout["sidebar"]+selected_layout["summaryNames"]),selected_layout
 
-    # Completar la medida y entrar a Revisión. Esta etapa debe usar el mismo asistente:
-    # una sola cabecera y un solo scroll, propiedad del contenido del wizard.
+    # Completar la medida y entrar a Costos y rentabilidad.
     js("""const q=document.querySelector('[data-qw-work-input][data-qw-key="quantity"]');q.value='10';q.dispatchEvent(new Event('input',{bubbles:true}));q.dispatchEvent(new Event('change',{bubbles:true}));return true;""")
     wait("return !!document.querySelector('[data-qw-next]:not([disabled])')")
     js("document.querySelector('[data-qw-next]').click();return true;")
-    wait("return !!document.querySelector('.quote-wizard-stage-3 .quote-review-stage')")
-    review_layout=js("""const content=document.querySelector('.quote-wizard-content'),review=document.querySelector('.quote-review-stage'),title=document.querySelector('#quote-wizard-title');const csContent=getComputedStyle(content),csReview=getComputedStyle(review),cr=content.getBoundingClientRect(),rr=review.getBoundingClientRect();content.scrollTop=120;return {title:(title?.textContent||'').trim(),nestedHeading:[...review.querySelectorAll('h2')].some(h=>(h.textContent||'').includes('Rentabilidad y precio final')),contentOverflow:csContent.overflowY,reviewOverflow:csReview.overflowY,reviewIsGeneric:review.classList.contains('quote-wizard-step'),rightEdgeDelta:Math.abs(cr.right-rr.right),contentScroll:content.scrollTop,reviewScroll:review.scrollTop,works:!!review.querySelector('.quote-review-work-card'),profit:!!review.querySelector('.quote-profitability-card'),finalPrice:!!review.querySelector('.quote-final-price')};""")
-    assert review_layout["title"]=="Revisar presupuesto",review_layout
-    assert not review_layout["nestedHeading"],review_layout
-    assert review_layout["contentOverflow"]=="auto",review_layout
-    assert review_layout["reviewOverflow"] in ("visible","clip"),review_layout
-    assert not review_layout["reviewIsGeneric"],review_layout
-    assert review_layout["rightEdgeDelta"]<=20,review_layout
-    assert review_layout["contentScroll"]>0 and review_layout["reviewScroll"]==0,review_layout
-    assert review_layout["works"] and review_layout["profit"] and review_layout["finalPrice"],review_layout
+    wait("return !!document.querySelector('.quote-wizard-stage-3 .quote-cost-stage')")
+
+    def set_input(selector,value):
+        js("""const input=document.querySelector(arguments[0]);input.value=arguments[1];input.dispatchEvent(new Event('input',{bubbles:true}));return true;""".replace("arguments[0]",json.dumps(selector)).replace("arguments[1]",json.dumps(str(value))))
+
+    set_input('[data-qw-employee-day]',25000)
+    set_input('[data-qw-travel]',30000)
+    for key,value in [('materials',100000),('tools',20000),('other',10000),('labor',0),('workers',2),('days',3)]:
+        set_input('[data-qw-work-input][data-qw-key="'+key+'"]',value)
+    set_input('[data-qw-final-price]',955000)
+    js("const c=document.querySelector('[data-qw-cost-confirm]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));return true;")
+    wait("return document.querySelector('[data-qw-profit-margin]').textContent.includes('67.5')")
+    case_a=js(r"""const n=s=>Number((document.querySelector(s)?.textContent||'').replace(/\D/g,''));return {cost:n('[data-qw-profit-cost]'),gain:n('[data-qw-profit-gain]'),margin:document.querySelector('[data-qw-profit-margin]').textContent.trim(),floor:n('[data-qw-suggested-price]'),warning:document.querySelector('[data-qw-profit-status]').textContent.trim()};""")
+    assert case_a["cost"]==310000 and case_a["gain"]==645000,case_a
+    assert case_a["margin"]=="67.5 %" and case_a["floor"]==442857,case_a
+    assert case_a["warning"].startswith("✓"),case_a
+
+    set_input('[data-qw-work-input][data-qw-key="labor"]',180000)
+    js("const c=document.querySelector('[data-qw-cost-confirm]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));return true;")
+    wait("return document.querySelector('[data-qw-profit-margin]').textContent.includes('64.4')")
+    case_b=js(r"""const n=s=>Number((document.querySelector(s)?.textContent||'').replace(/\D/g,''));return {cost:n('[data-qw-profit-cost]'),gain:n('[data-qw-profit-gain]'),margin:document.querySelector('[data-qw-profit-margin]').textContent.trim(),floor:n('[data-qw-suggested-price]')};""")
+    assert case_b=={"cost":340000,"gain":615000,"margin":"64.4 %","floor":485714},case_b
+
+    def responsive_audit(width,height):
+        call("POST",prefix+"/window/rect",{"width":width,"height":height})
+        time.sleep(.15)
+        return js("""const host=document.querySelector('.quote-wizard-host'),nodes=[...host.querySelectorAll('.quote-wizard-content,.quote-builder-detail,.quote-builder-summary,.quote-cost-list,.quote-review-stage')];const internal=nodes.filter(n=>{const s=getComputedStyle(n);return ['auto','scroll'].includes(s.overflowY)&&n.scrollHeight>n.clientHeight+2}).map(n=>n.className);const outside=[...host.querySelectorAll('input,select,button,.quote-profitability-card,.quote-cost-work-card')].filter(n=>{const r=n.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2}).length;const cards=[...host.querySelectorAll('.quote-profitability-card')];const overlaps=cards.some(card=>{const parts=[...card.children].filter(n=>n.offsetParent!==null),rects=parts.map(n=>n.getBoundingClientRect());return rects.some((r,i)=>i&&r.top<rects[i-1].bottom-1)});return {width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth+2,internal,outside,overlaps};""")
+
+    for viewport in [(1440,900),(1366,768),(1024,768),(768,1024),(390,844)]:
+        responsive=responsive_audit(*viewport)
+        assert not responsive["overflow"] and not responsive["internal"] and responsive["outside"]==0 and not responsive["overlaps"],responsive
+
+    js("document.querySelector('[data-qw-next]').click();return true;")
+    wait("return !!document.querySelector('.quote-wizard-stage-4 .quote-review-stage')")
     assert canonical_name in js("return document.querySelector('.quote-review-list').innerText"),canonical_name
+    assert "64.4 %" in js("return document.querySelector('.quote-review-side').innerText")
+    for viewport in [(1440,900),(1366,768),(1024,768),(768,1024),(390,844)]:
+        responsive=responsive_audit(*viewport)
+        assert not responsive["overflow"] and not responsive["internal"] and responsive["outside"]==0 and not responsive["overlaps"],responsive
 
     call("POST",prefix+"/window/rect",{"width":1280,"height":900})
     call("DELETE",prefix+"/cookie")
     login("cliente@amc.test","Cliente-Prueba-2026!","client-v5")
     text=js("return document.body.innerText")
     assert "Mis trabajos" in text and "Perfil" in text
+    assert "Costo interno total" not in text and "Margen objetivo" not in text and "Costo diario por empleado" not in text
     assert not js("return !!document.querySelector('[data-nav=\"chat-cliente\"],.bottom-nav a[href=\"#chat-cliente\"]')")
 finally:
     try: call("DELETE",prefix)

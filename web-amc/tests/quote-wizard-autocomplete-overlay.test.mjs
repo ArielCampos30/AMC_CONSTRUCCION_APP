@@ -11,7 +11,8 @@ test('el Tarifario usa un desplegable flotante y el layout queda en el CSS princ
  const rootRule=overlayCss.match(/\.quote-tariff-overlay\{([^}]*)\}/)?.[1]||'';
  assert.match(overlayCss,/\.quote-tariff-overlay\{position:fixed/);
  assert.match(overlayCss,/quote-tariff-overlay-ready \.quote-builder-detail \.quote-tariff-results\{display:none\}/);
- assert.match(coreCss,/\.quote-builder-detail\{overflow:visible/);
+ assert.match(coreCss,/\.quote-builder-detail\{padding:/);
+ assert.doesNotMatch(coreCss,/overflow:auto/);
  assert.match(coreCss,/\.quote-wizard-close\{display:grid;place-items:center/);
  assert.match(js,/buttons\.slice\(0,fitCount\(input,buttons\.length\)\)/);
  assert.match(js,/dataset\.qwSelectTariff/);
@@ -42,9 +43,10 @@ test('el Cotizador principal es el único dueño de sincronizar los nombres',()=
 
 test('la X de cierre queda sola y centrada en el CSS principal',()=>{
  const css=read('../public/quote-wizard.css');
+ const wizard=read('../public/quote-wizard.js');
  assert.match(css,/quote-wizard-close\{display:grid;place-items:center/);
- assert.match(css,/border:0;border-radius:0;background:transparent/);
- assert.match(css,/focus-visible\{outline:2px/);
+ assert.match(css,/border:0;border-radius:50%/);
+ assert.match(wizard,/aria-labelledby="quote-wizard-title"/);
 });
 
 test('index carga el refuerzo visual después del cotizador base',()=>{

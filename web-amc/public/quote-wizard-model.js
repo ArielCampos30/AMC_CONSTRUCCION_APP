@@ -24,6 +24,7 @@ export function normaliseWork(raw={},fallbackDescription=''){
   tools:amount(raw.tools??details.tools,0),
   other:amount(raw.other??details.other,0),
   labor:amount(raw.labor??details.labor,0),
+  costsConfirmed:Boolean(raw.costsConfirmed??details.costsConfirmed),
   workers:Math.max(1,Math.ceil(amount(raw.workers??details.workers,1)||1)),
   days:Math.max(1,Math.ceil(amount(raw.days??raw.m2Days??details.m2Days,1)||1)),
   hours:Math.max(.25,amount(raw.hours??details.hours,8)||8),
@@ -62,9 +63,18 @@ export const workLoadedInternalCost=work=>workDirectCost(work)+amount(work?.labo
 export const measuredReference=work=>amount(work?.quantity,1)*amount(work?.unitPrice);
 export const tariffReferenceTotal=work=>amount(work?.quantity,1)*amount(work?.tariffPrice);
 export const workLaborCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>Math.max(1,Math.ceil(amount(work?.workers,1)||1))*Math.max(1,Math.ceil(amount(work?.days,1)||1))*amount(employeeDay);
-export const laborCostTotal=(works=[],employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>works.reduce((sum,work)=>sum+workLaborCost(work,employeeDay),0);
-// Estimación operativa: movilidad + costos directos + jornal implícito por equipo/días.
-export const internalCostTotal=(works=[],travel=0,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>directCostTotal(works,travel)+laborCostTotal(works,employeeDay);
+export const laborExplicitCost=work=>amount(work?.labor);
+export const laborEstimatedCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>workLaborCost(work,employeeDay);
+// Una carga manual positiva reemplaza la estimación. Nunca se suman ambas.
+export const workEffectiveLaborCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>{
+ const explicit=laborExplicitCost(work);
+ return explicit>0?explicit:laborEstimatedCost(work,employeeDay);
+};
+export const workInternalCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>workDirectCost(work)+workEffectiveLaborCost(work,employeeDay);
+export const laborCostTotal=(works=[],employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>works.reduce((sum,work)=>sum+workEffectiveLaborCost(work,employeeDay),0);
+// Fuente canónica de costo interno: movilidad presupuestaria una sola vez, costos
+// directos y mano de obra efectiva de todos los trabajos, aun si falta cotizarlos.
+export const internalCostTotal=(works=[],travel=0,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>amount(travel)+(Array.isArray(works)?works:[]).reduce((sum,work)=>sum+workInternalCost(work,employeeDay),0);
 
 export function jornalTier(hours,settings=DEFAULT_QUOTE_SETTINGS){
  const value=Math.max(.25,amount(hours,8)||8);
@@ -88,12 +98,8 @@ export function commercialReferenceTotal(work,settings=DEFAULT_QUOTE_SETTINGS){
  return 0;
 }
 
-export function profitabilityCostTotal(works=[],travel=0){
- // Rentabilidad visible: sólo costos cargados expresamente en trabajos cotizados.
- // No incluye jornales implícitos y excluye relevamientos o trabajos sin precio.
- const priced=(Array.isArray(works)?works:[]).filter(work=>work?.tariffKind!=='visit-pending'&&commercialReferenceTotal(work)>0);
- if(!priced.length)return 0;
- return amount(travel)+priced.reduce((sum,work)=>sum+workLoadedInternalCost(work),0);
+export function profitabilityCostTotal(works=[],travel=0,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay){
+ return internalCostTotal(works,travel,employeeDay);
 }
 
 export function profitabilitySnapshot(price,cost){
@@ -102,9 +108,33 @@ export function profitabilitySnapshot(price,cost){
 }
 
 export function suggestedPriceForMargin(cost,margin){
- const internal=amount(cost),goal=Math.min(95,amount(margin));
+ const internal=amount(cost),goal=Number(margin);
+ if(!Number.isFinite(goal)||goal<0||goal>=100)return 0;
  const ratio=goal/100;
- return ratio>=0&&ratio<1?internal/(1-ratio):0;
+ return internal/(1-ratio);
+}
+
+export function economicSnapshot({works=[],travel=0,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay,salePrice=0,goalMargin=30,tariffReference=0}={}){
+ const rows=Array.isArray(works)?works:[];
+ const materials=rows.reduce((sum,work)=>sum+amount(work?.materials),0);
+ const tools=rows.reduce((sum,work)=>sum+amount(work?.tools),0);
+ const other=rows.reduce((sum,work)=>sum+amount(work?.other),0);
+ const laborExplicit=rows.reduce((sum,work)=>sum+laborExplicitCost(work),0);
+ const laborEstimated=rows.reduce((sum,work)=>sum+laborEstimatedCost(work,employeeDay),0);
+ const laborEffective=rows.reduce((sum,work)=>sum+workEffectiveLaborCost(work,employeeDay),0);
+ const internalCost=internalCostTotal(rows,travel,employeeDay);
+ const sale=amount(salePrice),gain=sale-internalCost;
+ const margin=sale>0?gain/sale*100:null;
+ const goal=Number(goalMargin),goalValid=Number.isFinite(goal)&&goal>=0&&goal<100;
+ const minimumPrice=goalValid?suggestedPriceForMargin(internalCost,goal):0;
+ const unpricedWorks=rows.filter(work=>work?.tariffKind==='visit-pending'||commercialReferenceTotal(work)<=0).length;
+ const costsComplete=rows.length>0&&rows.every(work=>work?.costsConfirmed===true);
+ return {
+  salePrice:sale,tariffReference:amount(tariffReference),materials,tools,other,
+  laborExplicit,laborEstimated,laborEffective,employeeDay:amount(employeeDay),travel:amount(travel),
+  internalCost,gain,margin,goalMargin:goal,goalValid,minimumPrice,
+  costsComplete,unpricedWorks,profitabilityComplete:costsComplete&&unpricedWorks===0&&sale>0
+ };
 }
 
 const STOP_WORDS=new Set(['de','del','la','las','el','los','un','una','unos','unas','y','o','en','para','por','con','sin','al','a','que','se','hacer','trabajo','trabajos','servicio','servicios']);
