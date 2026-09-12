@@ -1,7 +1,16 @@
-export function createQuoteClientCreateController({getState,api,refresh,navigate,toast,wizard}){
+export function createQuoteClientCreateController({getState,api,navigate,toast,wizard}){
  let saving=false;
  const clientRows=()=>getState().agendaClients||getState().clients||[];
  const cleanPhone=value=>String(value||'').replace(/\D/g,'').slice(0,15);
+ const upsertClient=client=>{
+  const current=getState(),normalized={...client,hasAccount:Number(client?.hasAccount)||0};
+  for(const name of ['agendaClients','clients']){
+   if(!Array.isArray(current[name]))continue;
+   const index=current[name].findIndex(item=>String(item?.id||'')===String(normalized.id));
+   if(index>=0)current[name][index]={...current[name][index],...normalized};else current[name].unshift(normalized);
+  }
+  return normalized;
+ };
  const setBusy=(form,busy)=>{
   const button=form?.querySelector('button[type="submit"]');
   if(button){button.disabled=busy;button.textContent=busy?'Guardando…':'Guardar y usar cliente';}
@@ -21,10 +30,7 @@ export function createQuoteClientCreateController({getState,api,refresh,navigate
  async function submit(event){
   const form=event.target?.closest?.('[data-qw-new-client-form]');
   if(!form||!document.querySelector('.quote-wizard-host'))return;
-  // Este listener vive en window/captura para que el flujo canónico sea el único que procesa
-  // el alta. Así no llega al submit histórico que todavía pueda existir en una sesión cacheada.
-  event.preventDefault();
-  event.stopImmediatePropagation();
+  event.preventDefault();event.stopImmediatePropagation();
   if(saving)return;
   const data=new FormData(form),draft={name:String(data.get('name')||'').trim(),phone:cleanPhone(data.get('phone')),town:String(data.get('town')||'').trim()};
   if(!draft.name||!draft.town){showError(form,'Completá nombre y localidad.');return;}
@@ -33,8 +39,7 @@ export function createQuoteClientCreateController({getState,api,refresh,navigate
   try{
    const payload=await api('/api/admin/clients',draft),client=payload?.duplicate||payload;
    if(!client?.id)throw Error('AMC no devolvió la ficha del cliente.');
-   await refresh?.();
-   const persisted=clientRows().find(item=>String(item?.id||'')===String(client.id))||client;
+   const persisted=upsertClient(payload?.duplicate?client:{...client,hasAccount:0});
    const lead=!Number(persisted?.hasAccount);
    wizard.prefillClient(String(client.id),lead);
    wizard.open();
