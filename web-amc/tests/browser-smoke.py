@@ -88,6 +88,22 @@ try:
     assert selected_layout["detailFits"],selected_layout
     assert selected_layout["summaryOverflow"]=="auto" and selected_layout["quantity"],selected_layout
 
+    # Completar la medida y entrar a Revisión. Esta etapa debe usar el mismo asistente:
+    # una sola cabecera y un solo scroll, propiedad del contenido del wizard.
+    js("""const q=document.querySelector('[data-qw-work-input][data-qw-key="quantity"]');q.value='10';q.dispatchEvent(new Event('input',{bubbles:true}));q.dispatchEvent(new Event('change',{bubbles:true}));return true;""")
+    wait("return !!document.querySelector('[data-qw-next]:not([disabled])')")
+    js("document.querySelector('[data-qw-next]').click();return true;")
+    wait("return !!document.querySelector('.quote-wizard-stage-3 .quote-review-stage')")
+    review_layout=js("""const content=document.querySelector('.quote-wizard-content'),review=document.querySelector('.quote-review-stage'),title=document.querySelector('#quote-wizard-title');const csContent=getComputedStyle(content),csReview=getComputedStyle(review),cr=content.getBoundingClientRect(),rr=review.getBoundingClientRect();content.scrollTop=120;return {title:(title?.textContent||'').trim(),nestedHeading:[...review.querySelectorAll('h2')].some(h=>(h.textContent||'').includes('Rentabilidad y precio final')),contentOverflow:csContent.overflowY,reviewOverflow:csReview.overflowY,reviewIsGeneric:review.classList.contains('quote-wizard-step'),rightEdgeDelta:Math.abs(cr.right-rr.right),contentScroll:content.scrollTop,reviewScroll:review.scrollTop,works:!!review.querySelector('.quote-review-work-card'),profit:!!review.querySelector('.quote-profitability-card'),finalPrice:!!review.querySelector('.quote-final-price')};""")
+    assert review_layout["title"]=="Revisar presupuesto",review_layout
+    assert not review_layout["nestedHeading"],review_layout
+    assert review_layout["contentOverflow"]=="auto",review_layout
+    assert review_layout["reviewOverflow"] in ("visible","clip"),review_layout
+    assert not review_layout["reviewIsGeneric"],review_layout
+    assert review_layout["rightEdgeDelta"]<=20,review_layout
+    assert review_layout["contentScroll"]>0 and review_layout["reviewScroll"]==0,review_layout
+    assert review_layout["works"] and review_layout["profit"] and review_layout["finalPrice"],review_layout
+
     call("POST",prefix+"/window/rect",{"width":1280,"height":900})
     call("DELETE",prefix+"/cookie")
     login("cliente@amc.test","Cliente-Prueba-2026!","client-v5")
