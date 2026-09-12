@@ -98,7 +98,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(requiresMeasuredQuantity(tariff.unidad)&&!work.quantityExplicit)work.quantity=0;
   else if(!requiresMeasuredQuantity(tariff.unidad)&&!work.quantityExplicit&&amount(work.quantity)<=0)work.quantity=1;
  }
- function clearTariffSelection(work){if(!work)return;clearTariffSelection(work);}
+ function clearTariffSelection(work){if(!work)return;work.tariffKey='';work.tariffTask='';work.tariffRubric='';work.tariffUnit='';work.tariffPrice=0;}
  function clearReference(work){if(!work)return;clearTariffSelection(work);work.tariffKind='';work.referenceSearch='';work.unitPrice=0;}
  function resolveTariff(work){
   if(!work||tariffState!=='ready'||!String(work.description||'').trim())return {status:'none',matches:[]};
