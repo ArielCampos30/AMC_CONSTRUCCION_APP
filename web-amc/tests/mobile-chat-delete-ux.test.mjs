@@ -20,7 +20,7 @@ test('enviar desde chat flotante móvil cierra el teclado y no lo reabre al term
 });
 
 test('estado de envío muestra icono sin porcentaje',async()=>{
- const [mobile,features]=await Promise.all([source('public/mobile-runtime-fixes.js'),source('public/features-ui-legacy.js')]);
+ const [mobile,features]=await Promise.all([source('public/mobile-runtime-fixes.js'),source('public/chat-features.js')]);
  assert.match(features,/message-upload-spinner/);
  assert.match(mobile,/upload-state>span:not\(\.message-upload-spinner\)\{display:none!important\}/);
 });
