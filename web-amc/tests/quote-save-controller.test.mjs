@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {quotePersistentDocument,quoteContentVersion} from '../public/quote-persistence.js';
-import {createQuoteSaveController} from '../public/quote-save-controller.js';
+import {createQuoteSaveController,parseQuoteClientRef} from '../public/quote-save-controller.js';
 
 test('controlador Guardar/Enviar usa API canónica sin depender del bridge legacy',()=>{
  const controller=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
@@ -20,6 +20,12 @@ test('controlador Guardar/Enviar usa API canónica sin depender del bridge legac
  assert.match(controller,/button\.disabled!==disabled/);
  assert.doesNotMatch(controller,/presupuestos-bridge/);
  assert.doesNotMatch(controller,/createAndAttach|generatePendingPdf|pdfId/);
+});
+
+test('referencia de cliente conserva el id completo aunque contenga separadores históricos',()=>{
+ assert.deepEqual(parseQuoteClientRef('lead:legacy:cliente-1'),{kind:'lead',id:'legacy:cliente-1'});
+ assert.deepEqual(parseQuoteClientRef('user:usuario-1'),{kind:'user',id:'usuario-1'});
+ assert.deepEqual(parseQuoteClientRef('invalida'),{kind:'',id:''});
 });
 
 test('revisión reactiva Enviar presupuesto después de cada repintado del wizard',()=>{

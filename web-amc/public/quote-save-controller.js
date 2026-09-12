@@ -3,6 +3,10 @@ import {quotePersistentDocument,quoteContentVersion} from './quote-persistence.j
 const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number(value)||0);
 const safeKey=value=>String(value||'').replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,80);
 const quoteNumber=(externalId,date=new Date())=>`AMC-${date.toISOString().slice(0,10).replaceAll('-','')}-${safeKey(externalId).slice(-6).toUpperCase()}`;
+export const parseQuoteClientRef=value=>{
+ const ref=String(value||'');const separator=ref.indexOf(':');
+ return separator>0?{kind:ref.slice(0,separator),id:ref.slice(separator+1)}:{kind:'',id:''};
+};
 
 export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard}){
  let saving=false;
@@ -15,7 +19,7 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  const registered=draft=>currentRequest(draft)?!currentRequest(draft).leadId:String(draft.clientRef||'').startsWith('user:');
  const clientName=draft=>{
   const request=currentRequest(draft);if(request?.name)return request.name;
-  const [kind,id]=String(draft.clientRef||'').split(':');
+  const {kind,id}=parseQuoteClientRef(draft.clientRef);
   const clients=state().agendaClients||state().clients||[];
   return clients.find(client=>String(client.id)===id&&(kind==='user'?Number(client.hasAccount):!Number(client.hasAccount)))?.name||'cliente';
  };
@@ -28,7 +32,7 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  }
  async function ensureRequest(draft,id){
   const existing=currentRequest(draft);if(existing)return existing;
-  const [kind,clientId]=String(draft.clientRef||'').split(':');
+  const {kind,id:clientId}=parseQuoteClientRef(draft.clientRef);
   if(!clientId||!['user','lead'].includes(kind))throw Error('Elegí un cliente antes de guardar el presupuesto.');
   const first=draft.works?.find(work=>String(work.description||'').trim());
   const service=String(first?.tariffRubric||first?.description||'Presupuesto').trim().slice(0,500)||'Presupuesto';
