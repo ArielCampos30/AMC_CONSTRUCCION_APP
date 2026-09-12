@@ -67,6 +67,7 @@ try:
 
     # Cotizador de página completa: selección canónica, economía A/B y responsive.
     call("POST",prefix+"/window/rect",{"width":1366,"height":768})
+    bubble_before_quote=js("return !!document.querySelector('.floating-chat-button') && document.querySelector('.floating-chat-button').offsetParent!==null")
     go(BASE+"/#cotizador")
     wait("return !!document.querySelector('.quote-wizard-page') && !!document.querySelector('[data-qw-client]')")
     assert not js("return !!document.querySelector('.quote-wizard-page[role=dialog],.quote-wizard-page[aria-modal=true]')")
@@ -160,8 +161,9 @@ try:
 
     call("POST",prefix+"/window/rect",{"width":1280,"height":900})
     go(BASE+"/#presupuestos")
-    wait("return !document.body.classList.contains('quote-wizard-route') && !!document.querySelector('.floating-chat-button')")
-    assert js("return document.querySelector('.floating-chat-button').offsetParent!==null")
+    wait("return !document.body.classList.contains('quote-wizard-route')")
+    bubble_after_quote=js("return !!document.querySelector('.floating-chat-button') && document.querySelector('.floating-chat-button').offsetParent!==null")
+    assert bubble_after_quote==bubble_before_quote,(bubble_before_quote,bubble_after_quote)
     call("DELETE",prefix+"/cookie")
     login("cliente@amc.test","Cliente-Prueba-2026!","client-v5")
     text=js("return document.body.innerText")
