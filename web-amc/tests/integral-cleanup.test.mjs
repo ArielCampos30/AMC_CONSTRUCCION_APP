@@ -6,12 +6,13 @@ const root=new URL('../../',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
 
 test('integral cleanup keeps one AMC identity, theme and admin route',()=>{
-  const files=['web-amc/public/index.html','web-amc/public/app.js','web-amc/public/project-hub.js','web-amc/public/presupuestos-bridge.js','app/src/main/AndroidManifest.xml','app/src/main/res/values/strings.xml'];
+  const files=['web-amc/public/index.html','web-amc/public/app.js','web-amc/public/project-hub.js','web-amc/public/features-ui.js','app/src/main/AndroidManifest.xml','app/src/main/res/values/strings.xml'];
   const source=files.map(read).join('\n');
   assert.doesNotMatch(source,/AMC Presupuestos|href=["']#admin|navigate\(["']admin|Panel AMC/);
   assert.match(read('web-amc/public/index.html'),/amc-theme\.css[^]*<\/head>/);
   assert.match(read('web-amc/public/amc-theme.css'),/--green:#0b675f/);
   assert.match(read('web-amc/public/app.js'),/LEGACY_ADMIN_ROUTES[^]*admin/);
+  assert.doesNotMatch(read('web-amc/public/features-ui.js'),/features-ui-legacy|presupuestos-bridge|iframe/);
   assert.equal(existsSync(new URL('app/src/main/assets/index.html',root)),false);
 });
 
