@@ -20,13 +20,6 @@ function liveSource(input){
  return document.querySelector(`[data-qw-live-tariffs="${CSS.escape(workId)}"] .quote-tariff-results`);
 }
 
-function updateWorkLabels(input){
- const workId=input?.dataset?.qwWorkId;if(!workId)return;
- const label=String(input.value||'').trim()||'Trabajo sin nombre';
- document.querySelectorAll(`button[data-qw-select-work="${CSS.escape(workId)}"] .quote-builder-work-copy strong`).forEach(node=>node.textContent=label);
- document.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(workId)}"] span`).forEach(node=>node.textContent=label);
-}
-
 function buildOption(sourceButton){
  const button=document.createElement('button');
  button.type='button';
@@ -79,9 +72,7 @@ document.documentElement.classList.add('quote-tariff-overlay-ready');
 
 document.addEventListener('input',event=>{
  const input=event.target.closest?.('[data-qw-work-input][data-qw-key="description"]');
- if(!input)return;
- updateWorkLabels(input);
- scheduleSync(input);
+ if(input)scheduleSync(input);
 });
 
 document.addEventListener('focusin',event=>{
