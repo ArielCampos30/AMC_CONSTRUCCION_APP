@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {quotePersistentDocument,quoteContentVersion} from '../public/quote-persistence.js';
-import {createQuoteSaveController,parseQuoteClientRef,resolveQuoteClientRef,buildDirectRequestPayload} from '../public/quote-save-controller.js';
+import {createQuoteSaveController,parseQuoteClientRef,resolveQuoteClientRef,buildDirectRequestPayload,validateQuoteDraft} from '../public/quote-save-controller.js';
 
 test('controlador Guardar/Enviar usa API canónica sin depender del bridge legacy',()=>{
  const controller=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
@@ -28,16 +28,32 @@ test('referencia de cliente conserva el id completo aunque contenga separadores 
  assert.deepEqual(parseQuoteClientRef('invalida'),{kind:'',id:''});
 });
 
-test('resuelve la ficha real aunque la referencia venga envuelta con prefijos históricos',()=>{
+test('resuelve la ficha real y normaliza prefijos históricos incluso sin agenda cargada',()=>{
  const clients=[{id:'cliente-1',name:'Externo',hasAccount:0},{id:'usuario-1',name:'Registrado',hasAccount:1}];
  assert.deepEqual(resolveQuoteClientRef('lead:lead:cliente-1',clients),{kind:'lead',id:'cliente-1',client:clients[0]});
  assert.deepEqual(resolveQuoteClientRef('legacy:lead:cliente-1',clients),{kind:'lead',id:'cliente-1',client:clients[0]});
  assert.deepEqual(resolveQuoteClientRef('user:usuario-1',clients),{kind:'user',id:'usuario-1',client:clients[1]});
- const payload=buildDirectRequestPayload({draft:{clientRef:'legacy:lead:cliente-1',works:[{description:'Revoque fino',tariffRubric:'Albañilería'}]},clients,externalId:'qw-12345678'});
+ assert.deepEqual(resolveQuoteClientRef('lead:lead:cliente-2',[]),{kind:'lead',id:'cliente-2',client:null});
+});
+
+test('payload directo prueba ambas fuentes de cliente sin perder validaciones del trabajo',()=>{
+ const clients=[{id:'cliente-1',name:'Externo',hasAccount:0}];
+ const payload=buildDirectRequestPayload({draft:{stage:4,clientRef:'legacy:lead:cliente-1',works:[{description:'Revoque fino',tariffRubric:'Albañilería'}],finalPrice:120000},clients,externalId:'qw-12345678'});
+ assert.equal(payload.userId,'cliente-1');
  assert.equal(payload.leadId,'cliente-1');
- assert.equal(payload.userId,undefined);
  assert.equal(payload.service,'Albañilería');
  assert.equal(payload.description,'Presupuesto iniciado por Administración.');
+ assert.match(payload.idempotencyKey,/^quote-direct-/);
+});
+
+test('validaciones previas distinguen cada dato obligatorio del presupuesto',()=>{
+ const valid={stage:4,clientRef:'lead:cliente-1',works:[{description:'Pintura'}],finalPrice:100000};
+ assert.equal(validateQuoteDraft(valid),true);
+ assert.throws(()=>validateQuoteDraft({...valid,stage:3}),/Revisá el presupuesto/);
+ assert.throws(()=>validateQuoteDraft({...valid,clientRef:''}),/Elegí un cliente/);
+ assert.throws(()=>validateQuoteDraft({...valid,works:[]}),/al menos un trabajo/);
+ assert.throws(()=>validateQuoteDraft({...valid,works:[{description:' '}]}),/Todos los trabajos/);
+ assert.throws(()=>validateQuoteDraft({...valid,finalPrice:0}),/precio final mayor a cero/);
 });
 
 test('revisión reactiva Enviar presupuesto después de cada repintado del wizard',()=>{
