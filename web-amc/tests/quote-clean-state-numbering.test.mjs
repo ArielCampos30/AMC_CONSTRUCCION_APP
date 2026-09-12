@@ -10,16 +10,19 @@ const actor=base=>({cookie:'',csrf:'',async call(path,body,status=200){
  if(response.headers.get('set-cookie'))this.cookie=response.headers.get('set-cookie').split(';')[0];if(value.csrf)this.csrf=value.csrf;return value;
 }});
 
-test('Cotizador usa API autenticada para cliente nuevo y limpia el asistente tras guardar',()=>{
+test('Cotizador usa API autenticada para cliente nuevo y actualiza estado local sin refresh',()=>{
  const wrapper=readFileSync(new URL('../public/features-ui.js',import.meta.url),'utf8');
  const clientController=readFileSync(new URL('../public/quote-client-create-controller.js',import.meta.url),'utf8');
  const saver=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
  assert.match(wrapper,/createQuoteClientCreateController/);
  assert.match(clientController,/api\('\/api\/admin\/clients',draft\)/);
  assert.match(clientController,/stopImmediatePropagation\(\)/);
- assert.match(clientController,/await refresh\?\.\(\)/);
+ assert.match(clientController,/upsertClient\(client\)/);
+ assert.doesNotMatch(clientController,/refresh\?\.\(|await refresh|\{getState,api,refresh/);
  assert.match(clientController,/wizard\.prefillClient/);
  assert.match(saver,/identities\.delete\(oldKey\)/);
+ assert.match(saver,/syncSavedQuote\(saved,request,willSend\)/);
+ assert.doesNotMatch(saver,/await refresh|refresh\?\./);
  assert.match(saver,/wizard\.open\(\);\s*navigate\(`presupuesto-admin\/\$\{saved\.id\}`\)/);
  assert.doesNotMatch(saver,/quoteNumber\s*=/);
  assert.match(saver,/number:''/);
