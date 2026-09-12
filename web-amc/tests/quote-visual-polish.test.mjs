@@ -3,14 +3,21 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const css=readFileSync(new URL('../public/quote-wizard.css',import.meta.url),'utf8');
+const reviewCss=readFileSync(new URL('../public/quote-builder-review.css',import.meta.url),'utf8');
+const wizard=readFileSync(new URL('../public/quote-wizard.js',import.meta.url),'utf8');
+const legacy=readFileSync(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8');
+const chat=readFileSync(new URL('../public/floating-chat.js',import.meta.url),'utf8');
+const shell=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
 
-test('el cierre circular centra la X sin depender del baseline tipográfico del botón',()=>{
- assert.match(css,/\.quote-wizard-close\{[^}]*display:grid;place-items:center[^}]*font-size:0[^}]*line-height:1/);
- assert.match(css,/\.quote-wizard-close::before\{content:"×";display:block;font:400 28px\/1 Arial,sans-serif\}/);
+test('el cierre circular usa una X vectorial sin depender del baseline tipográfico',()=>{
+ assert.match(wizard,/class="quote-wizard-close"[^>]*><svg viewBox="0 0 24 24"/);
+ assert.match(css,/\.quote-wizard-close\{[^}]*display:grid;place-items:center[^}]*width:44px;height:44px;min-height:44px/);
+ assert.match(css,/\.quote-wizard-close svg\{[^}]*width:20px;height:20px[^}]*stroke-linecap:round/);
+ assert.doesNotMatch(css,/quote-wizard-close::before/);
 });
 
 test('los modos de precio no desbordan cuando la columna central se estrecha',()=>{
- assert.match(css,/\.quote-pricing-tabs button\{[^}]*min-width:0[^}]*font-size:13px[^}]*overflow-wrap:anywhere/);
+ assert.match(css,/\.quote-pricing-tabs button\{[^}]*min-width:0[^}]*min-height:44px[^}]*white-space:normal;overflow-wrap:break-word/);
  assert.match(css,/@media\(max-width:1100px\)\{[^}]*\.quote-builder-workspace[^}]*\}[^@]*\.quote-pricing-tabs\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/s);
 });
 
@@ -22,4 +29,26 @@ test('cliente nuevo y ficha del cliente se apilan correctamente en móvil',()=>{
 
 test('la fórmula visible puede envolver sin salirse del panel',()=>{
  assert.match(css,/\.quote-work-total\{[^}]*flex-wrap:wrap[^}]*min-width:0[^}]*line-height:1\.35/);
+});
+
+test('el shell entrega toda su zona útil y oculta el chat únicamente durante el Cotizador',()=>{
+ assert.match(legacy,/classList\.toggle\('quote-wizard-route',quotePage\)/);
+ assert.match(legacy,/fullPageChat\|\|quotePage\)floating\.close/);
+ assert.match(chat,/body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
+ assert.match(shell,/body\.quote-wizard-route \.workspace>main\{width:100%;max-width:none;margin:0;padding:0\}/);
+});
+
+test('los headers internos vuelven al flujo natural y sticky no supone un header de 84px',()=>{
+ assert.match(css,/\.quote-wizard-header\{height:auto;min-height:0/);
+ assert.match(css,/\.quote-wizard-page header:not\(\.quote-wizard-header\)\{height:auto;min-height:0/);
+ assert.doesNotMatch(css,/top:84px/);
+ assert.match(css,/@media\(max-width:800px\)[^\n]*\.quote-wizard-controls\{position:static/);
+});
+
+test('rentabilidad tiene un único propietario CSS y conserva textos completos',()=>{
+ assert.match(css,/\.quote-profitability-card\{/);
+ assert.doesNotMatch(reviewCss,/\.quote-profitability-card\{/);
+ assert.doesNotMatch(reviewCss,/\.quote-final-price-row\{/);
+ assert.doesNotMatch(css,/\.quote-summary-rows span\{[^}]*text-overflow:ellipsis/);
+ assert.doesNotMatch(reviewCss,/\.quote-review-context>div:first-child small\{[^}]*text-overflow:ellipsis/);
 });
