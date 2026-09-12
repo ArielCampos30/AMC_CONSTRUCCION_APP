@@ -56,6 +56,27 @@ test('presupuesto canónico es idempotente, editable, reemplazable y privado par
  }finally{await new Promise(resolve=>app.server.close(resolve));}
 });
 
+test('cliente registrado puede pedir cambios y rechazar versiones canónicas',async()=>{
+ const app=createApp({dbPath:':memory:',origin});
+ app.addUser('admin@canonical-replies.test','Strong-Admin-2026!','AMC','admin');
+ await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
+ const base='http://127.0.0.1:'+app.server.address().port,admin=actor(base),client=actor(base);
+ try{
+  await admin.call('/api/login',{email:'admin@canonical-replies.test',password:'Strong-Admin-2026!'});
+  await client.call('/api/register',{email:'reply@canonical.test',password:'Strong-Client-2026!',name:'Cliente Respuestas'});
+  const userId=(await client.call('/api/state')).user.id;
+  const request=await admin.call('/api/admin/requests',{userId,service:'Pintura',description:'Presupuesto',idempotencyKey:'canonical-replies-request'},201);
+  const first=await admin.call('/api/quotes',payload({requestId:request.id,externalId:'canonical-replies',number:'AMC-REPLY',version:'d'.repeat(64),price:210000,description:'Pintura interior'}),201);
+  await client.call('/api/quotes/'+first.id+'/reply',{status:'Cambios solicitados',message:'Cambiar terminación'});
+  assert.equal((await admin.call('/api/state')).quotes.find(q=>q.id===first.id).status,'Cambios solicitados');
+  const second=await admin.call('/api/quotes',payload({requestId:request.id,externalId:'canonical-replies',number:'AMC-REPLY',version:'e'.repeat(64),price:220000,description:'Pintura interior'}),201);
+  assert.equal(second.status,'Enviado');
+  assert.equal((await admin.call('/api/state')).quotes.find(q=>q.id===first.id).status,'Reemplazado');
+  await client.call('/api/quotes/'+second.id+'/reply',{status:'Rechazado',message:'No continúa'});
+  assert.equal((await admin.call('/api/state')).quotes.find(q=>q.id===second.id).status,'Rechazado');
+ }finally{await new Promise(resolve=>app.server.close(resolve));}
+});
+
 test('lead sin cuenta guarda, entrega y acepta manualmente sin PDF',async()=>{
  const app=createApp({dbPath:':memory:',origin});
  app.addUser('admin@lead-canonical.test','Strong-Admin-2026!','AMC','admin');
