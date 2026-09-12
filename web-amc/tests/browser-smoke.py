@@ -81,12 +81,16 @@ try:
     assert layout["overlayTop"]>=0 and layout["overlayBottom"]<=layout["height"]+1,layout
     assert layout["closeBorder"]=="0px" and layout["closeDisplay"]=="grid",layout
     assert all(name=="revo" for name in layout["sidebar"]+layout["summaryNames"]),layout
+    canonical_name=js("return document.querySelector('#quote-tariff-overlay button[data-qw-select-tariff] strong').textContent.trim()")
     js("document.querySelector('#quote-tariff-overlay button[data-qw-select-tariff]').click();return true;")
-    wait("return !!document.querySelector('.quote-selected-tariff')")
-    selected_layout=js("""const detail=document.querySelector('.quote-builder-detail'),summary=document.querySelector('.quote-builder-summary');return {detailOverflow:getComputedStyle(detail).overflowY,detailFits:detail.scrollHeight<=detail.clientHeight+4,summaryOverflow:getComputedStyle(summary).overflowY,quantity:!!document.querySelector('[data-qw-work-input][data-qw-key="quantity"]')};""")
+    wait("return !!document.querySelector('.quote-selected-tariff') && document.querySelector('[data-qw-work-input][data-qw-key=\"description\"]').value!==\"revo\"")
+    selected_layout=js("""const detail=document.querySelector('.quote-builder-detail'),summary=document.querySelector('.quote-builder-summary'),input=document.querySelector('[data-qw-work-input][data-qw-key="description"]'),id=input.dataset.qwWorkId;return {detailOverflow:getComputedStyle(detail).overflowY,detailFits:detail.scrollHeight<=detail.clientHeight+4,summaryOverflow:getComputedStyle(summary).overflowY,quantity:!!document.querySelector('[data-qw-work-input][data-qw-key="quantity"]'),input:input.value,selected:document.querySelector('.quote-selected-tariff strong').textContent.trim(),sidebar:[...document.querySelectorAll(`button[data-qw-select-work="${CSS.escape(id)}"] .quote-builder-work-copy strong`)].map(n=>n.textContent),summaryNames:[...document.querySelectorAll(`.quote-summary-rows button[data-qw-select-work="${CSS.escape(id)}"] span`)].map(n=>n.textContent)};""")
     assert selected_layout["detailOverflow"] in ("visible","hidden","clip"),selected_layout
     assert selected_layout["detailFits"],selected_layout
     assert selected_layout["summaryOverflow"]=="auto" and selected_layout["quantity"],selected_layout
+    assert selected_layout["input"]==canonical_name,selected_layout
+    assert selected_layout["selected"]==canonical_name,selected_layout
+    assert all(name==canonical_name for name in selected_layout["sidebar"]+selected_layout["summaryNames"]),selected_layout
 
     # Completar la medida y entrar a Revisión. Esta etapa debe usar el mismo asistente:
     # una sola cabecera y un solo scroll, propiedad del contenido del wizard.
@@ -103,6 +107,7 @@ try:
     assert review_layout["rightEdgeDelta"]<=20,review_layout
     assert review_layout["contentScroll"]>0 and review_layout["reviewScroll"]==0,review_layout
     assert review_layout["works"] and review_layout["profit"] and review_layout["finalPrice"],review_layout
+    assert canonical_name in js("return document.querySelector('.quote-review-list').innerText"),canonical_name
 
     call("POST",prefix+"/window/rect",{"width":1280,"height":900})
     call("DELETE",prefix+"/cookie")

@@ -237,12 +237,14 @@ try:
     go(BASE+"/#mis-trabajos")
     wait("return !!document.querySelector('[data-action=\"employee-filter\"][data-value=\"Pendientes\"]')")
     js("document.querySelector('[data-action=\"employee-filter\"][data-value=\"Pendientes\"]').click();return true;")
-    wait("return document.body.innerText.includes('Ruta 38 123') && document.body.innerText.includes('Empleado')===false")
+    wait("return document.body.innerText.includes('Ruta 38 123')")
     employee_state=api("/api/state",None,"GET")
     task=next((x for x in employee_state.get("assignments",[]) if x.get("id")==assignment_id),None)
     assert task,employee_state
+    assert {x.get("id") for x in employee_state.get("assignments",[])}=={assignment_id},employee_state
     assert employee_state.get("quotes",[])==[]
     assert employee_state.get("clients",[])==[]
+    assert QUOTE_NUMBER not in visible_text()
 
     api("/api/assignments/"+assignment_id+"/report",{
         "status":"En el lugar",
@@ -259,7 +261,7 @@ try:
         "idempotencyKey":"e2e-work-finish"
     })
     employee_state=api("/api/state",None,"GET")
-    assert any(w.get("id")==work_id and w.get("status")=="Finalizado" for w in employee_state.get("works",[])),employee_state
+    assert any(x.get("id")==assignment_id and x.get("status")=="Finalizada" for x in employee_state.get("assignments",[])),employee_state
 
     # 6. Administración registra cierre con la misma foto de avance.
     clear_session()
@@ -281,8 +283,8 @@ try:
     # 7. Cliente ve pago, foto, cierre y confirma desde UI.
     clear_session()
     login(CLIENT_EMAIL,CLIENT_PASSWORD,"client-v5")
-    go(BASE+"/#obra")
-    wait("return document.body.innerText.includes('Anticipo E2E') && document.body.innerText.includes('Primer avance E2E')")
+    go(BASE+"/#mi-trabajo/"+request_id)
+    wait("return document.body.innerText.includes('Primer avance E2E') && document.body.innerText.includes('Pagos registrados') && document.body.innerText.includes('Saldo')")
     go(BASE+"/#cierre")
     wait("return !!document.querySelector('.closure-reply')")
     assert "Pendiente de conformidad" in visible_text()
