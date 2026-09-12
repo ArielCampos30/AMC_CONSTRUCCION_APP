@@ -8,10 +8,10 @@ import {createQuotePdfBackground} from './quote-pdf-background.js';
 export function createFeatures(deps){
  const legacy=createLegacyFeatures(deps);
  const pdf=createQuotePdfBackground({getState:deps.getState,toast:deps.toast});
- const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast,api:deps.api,refresh:deps.refresh});
+ const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast,api:deps.api});
  const saver=createQuoteSaveController({getState:deps.getState,api:deps.api,navigate:deps.navigate,toast:deps.toast,wizard,generatePdf:pdf.generatePdf});
  const pricingSync=createQuotePricingSyncController({wizard});
- createQuoteClientCreateController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard});
+ createQuoteClientCreateController({getState:deps.getState,api:deps.api,navigate:deps.navigate,toast:deps.toast,wizard});
  return {
   ...legacy,
   generatePdf:pdf.generatePdf,
