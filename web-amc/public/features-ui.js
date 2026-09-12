@@ -7,7 +7,7 @@ import {createQuotePricingSyncController} from './quote-pricing-sync-controller.
 export function createFeatures(deps){
  const legacy=createLegacyFeatures(deps);
  const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast,api:deps.api,refresh:deps.refresh});
- const saver=createQuoteSaveController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard});
+ const saver=createQuoteSaveController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard,generatePdf:legacy.generatePdf});
  const pricingSync=createQuotePricingSyncController({wizard});
  createQuoteClientCreateController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard});
  return {
