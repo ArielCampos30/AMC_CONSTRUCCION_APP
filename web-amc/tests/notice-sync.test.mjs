@@ -27,6 +27,9 @@ test('client, admin and employee notices become read when their related content 
   adminState=await admin.call('/api/state');assert.equal(adminState.chatUnread[request.id]||0,0);assert.equal(adminState.notices.find(n=>n.id===adminChatNotice.id).read,true);
 
   const quote=await admin.call('/api/quotes',{requestId:request.id,externalId:'notice-quote',version:'a'.repeat(64),number:'AMC-AVISO-1',items:[{description:'Reparación de pared'}],total:150000},201);
+  assert.equal((await client.call('/api/state')).notices.some(n=>n.url==='/#presupuesto/'+quote.id&&!n.read),false);
+  const pdf=await admin.call('/api/upload',{mime:'application/pdf',base64:Buffer.from('%PDF-1.4 notice').toString('base64')},201);
+  await admin.call('/api/quotes/'+quote.id+'/pdf',{pdfId:pdf.id});
   clientState=await client.call('/api/state');const quoteNotice=clientState.notices.find(n=>n.url==='/#presupuesto/'+quote.id&&!n.read);assert.ok(quoteNotice);
   const quoteView=await client.call('/api/quotes/'+quote.id+'/view',{});assert.ok(quoteView.noticeIds.includes(quoteNotice.id));
   clientState=await client.call('/api/state');assert.equal(clientState.notices.find(n=>n.id===quoteNotice.id).read,true);

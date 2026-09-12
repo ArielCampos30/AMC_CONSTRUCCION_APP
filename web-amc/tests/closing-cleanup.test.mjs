@@ -65,6 +65,9 @@ test('external quote delivery can be rejected and quote notices use exact deep l
     await client.call('/api/register',{email:'client@closing.test',password:'Client-Test-2026!',name:'Cliente AMC'});
     const request=await client.call('/api/requests',{name:'Cliente AMC',phone:'3548000002',town:'Valle Hermoso',service:'Albañilería',description:'Revoque',type:'presupuesto'},201);
     const quote=await admin.call('/api/quotes',{requestId:request.id,externalId:'closing-account',version:'b'.repeat(64),number:'AMC-LINK',items:[{description:'Revoque'}],total:200000},201);
+    assert.equal((await client.call('/api/state')).notices.some(n=>n.url==='/#presupuesto/'+quote.id),false);
+    const quotePdf=await admin.call('/api/upload',{mime:'application/pdf',base64:Buffer.from('%PDF-1.4 closing').toString('base64')},201);
+    await admin.call('/api/quotes/'+quote.id+'/pdf',{pdfId:quotePdf.id});
     assert.ok((await client.call('/api/state')).notices.some(n=>n.url==='/#presupuesto/'+quote.id));
     await client.call('/api/quotes/'+quote.id+'/view',{});
     assert.ok((await admin.call('/api/state')).notices.some(n=>n.url==='/#presupuesto-admin/'+quote.id));
@@ -73,7 +76,8 @@ test('external quote delivery can be rejected and quote notices use exact deep l
     assert.equal(responseNotice.url,'/#presupuesto-admin/'+quote.id);
     assert.equal(responseNotice.priority,'important');
     const acceptedRequest=await client.call('/api/requests',{name:'Cliente AMC',phone:'3548000002',town:'Valle Hermoso',service:'Pintura',description:'Otro trabajo',type:'presupuesto'},201);
-    const acceptedQuote=await admin.call('/api/quotes',{requestId:acceptedRequest.id,externalId:'closing-accepted',version:'c'.repeat(64),number:'AMC-ACCEPT',items:[{description:'Pintura'}],total:300000},201);
+    const acceptedPdf=await admin.call('/api/upload',{mime:'application/pdf',base64:Buffer.from('%PDF-1.4 accepted').toString('base64')},201);
+    const acceptedQuote=await admin.call('/api/quotes',{requestId:acceptedRequest.id,externalId:'closing-accepted',version:'c'.repeat(64),number:'AMC-ACCEPT',items:[{description:'Pintura'}],total:300000,pdfId:acceptedPdf.id},201);
     await client.call('/api/quotes/'+acceptedQuote.id+'/reply',{status:'Aceptado'});
     const acceptedNotice=(await admin.call('/api/state')).notices.find(n=>n.title==='Presupuesto aceptado'&&n.url.includes(acceptedQuote.id));
     assert.equal(acceptedNotice.url,'/#obra-admin/work-'+acceptedQuote.id);

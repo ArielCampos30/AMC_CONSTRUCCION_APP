@@ -38,7 +38,7 @@ test('admin v3 exposes the five primary destinations and responsive views',async
   assert.match(app,/from '.\/admin-works-ui\.js'/);
   assert.match(app,/const adminWorks=\(\)=>adminWorksUI\.list\(\)/);
   assert.match(app,/const adminWorkDetail=\(\)=>adminWorksUI\.detail\(\)/);
-  assert.doesNotMatch(app,/function adminWorks\(\)/);
+  assert.doesNotMatch(app,/function adminWorks\(/);
   assert.doesNotMatch(app,/function adminWorkDetail\(\)/);
   assert.match(chatUI,/data-admin-chat="Clientes".*data-admin-chat="Equipo"/s);
   assert.match(chatUI,/data-admin-employee/);
@@ -63,21 +63,20 @@ test('admin v3 exposes the five primary destinations and responsive views',async
 });
 
 test('Editar abre el presupuesto exacto y no reinicia sus importes',async()=>{
-  const [app,features,bridge,quotesUI]=await Promise.all([
+  const [app,features,wizard,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-wizard.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(quotesUI,/data-action="editor".*data-quote=/s);
   assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
-  assert.match(features,/let threadId='',quoteRequest='',quoteEdit='',quoteMode='',selectedClient=''/);
-  assert.match(features,/quoteEdit\?'&quote='/);
-  assert.match(features,/function openEditor\(requestId='',quoteId='',mode=''\)/);
-  assert.match(bridge,/function loadQuoteForEdit\(quoteId\)/);
-  assert.match(bridge,/db\.quotes\|\|\[\]\)\.find\(q=>q\.id===storedQuote\.externalId\)/);
-  assert.match(bridge,/const editLoaded=editQuoteId\?loadQuoteForEdit\(editQuoteId\):false/);
-  assert.match(bridge,/if\(!editQuoteId&&editParams\.get\('solicitud'\)\)importRequest\(false\)/);
+  assert.match(features,/openEditor\(requestId='',quoteId='',mode=''\)\{wizard\.open\(requestId,quoteId,mode\);deps\.navigate\('cotizador'\);\}/);
+  assert.match(wizard,/function open\(nextRequest='',nextQuote='',nextMode=''\)/);
+  assert.match(wizard,/const quote=quoteId\?quotes\(\)\.find\(item=>item\.id===quoteId\):null,editable=quote\?\.adminModel\?\.schemaVersion===1\?quote\.adminModel:null/);
+  assert.match(wizard,/const quoteItems=editable\?\.works\|\|quote\?\.items\|\|\[\]/);
+  assert.match(wizard,/const stored=amount\(editable\?\.finalPrice\?\?quote\.amcClientPrice\?\?quote\.total,0\)/);
+  assert.match(wizard,/if\(stored>0\)\{finalPrice=stored;finalPriceManual=/);
 });
 
 test('request detail changes quote actions after a quote exists',async()=>{
@@ -162,24 +161,28 @@ test('admin can classify a request as not taken without deleting it',async()=>{
 
 
 test('client search filters live without reloading or rerendering the whole page',async()=>{
-  const [app,directory,features]=await Promise.all([
+  const [app,directory,wizard,clientCreate]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/client-directory.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8')
+    readFile(new URL('../public/quote-wizard.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-client-create-controller.js',import.meta.url),'utf8')
   ]);
   assert.match(directory,/id="client-search-input"/);
   assert.match(directory,/id="client-search-results"/);
   assert.match(directory,/id="client-directory"/);
   assert.doesNotMatch(directory,/id="client-search"/);
   assert.match(app,/e\.target\.id==='client-search-input'.*directory\.search\(e\.target\.value\).*refreshClientDirectory\(true\)/s);
-  assert.match(app,/e\.target\.id==='budget-client-search'.*features\.change\(e\.target\)/s);
   assert.match(app,/case'clients-filter':directory\.setFilter\(b\.dataset\.value\);refreshClientDirectory\(\)/);
   assert.doesNotMatch(app,/f\.id==='client-search'/);
   assert.doesNotMatch(app,/location\.reload\(/);
   assert.doesNotMatch(app,/location\.assign\(/);
   assert.match(app,/data-action="retry-app"/);
   assert.match(app,/location\.hash=target\.hash\|\|'#avisos'/);
-  assert.match(features,/if\(target\.id==='budget-client-search'\)/);
+  assert.match(wizard,/select data-qw-client/);
+  assert.match(wizard,/data-qw-new-client/);
+  assert.match(clientCreate,/const upsertClient=client=>/);
+  assert.match(clientCreate,/wizard\.prefillClient\(String\(client\.id\),lead\)/);
+  assert.doesNotMatch(clientCreate,/refresh\(/);
 });
 
 test('floating admin chat starts by type and sends messages without reload, spinner or sent toast',async()=>{
@@ -223,25 +226,26 @@ test('full admin chat never stacks the floating chat and blocks double send',asy
  assert.match(floating,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
 });
 
-test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{
-  const [app,steps,features,bridge,clientDialogs]=await Promise.all([
+test('quick budget starts with direct client data and exposes the four native quote steps',async()=>{
+  const [app,features,wizard,clientDialogs]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/estimator-steps.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-wizard.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-client-dialogs-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(app,/case'manual-admin':openClientDialog\('budget'\)/);
   assert.match(clientDialogs,/Si el teléfono ya existe, AMC usará automáticamente la ficha guardada/);
   assert.match(clientDialogs,/data-use-existing/);
   assert.match(app,/Cliente existente encontrado/);
-  assert.match(steps,/\['Cliente','Trabajo','Costos','Final'\]/);
-  assert.match(bridge,/4\. Mano de obra estimada/);
+  assert.match(wizard,/const PHASES=\['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'\]/);
+  assert.match(wizard,/ETAPA 1 DE 4/);
+  assert.match(wizard,/ETAPA 2 DE 4/);
+  assert.match(wizard,/ETAPA 3 DE 4/);
+  assert.match(wizard,/ETAPA 4 DE 4/);
   assert.match(app,/description:'Presupuesto iniciado por Administración'/);
   assert.match(app,/features\.openEditor\(request\.id\)/);
-  assert.match(features,/const chooser=quoteRequest\?'':/);
-  assert.match(bridge,/if\(!editQuoteId&&editParams\.get\('solicitud'\)\)importRequest\(false\)/);
-  assert.match(bridge,/nav\('add'\)/);
+  assert.match(features,/openEditor\(requestId='',quoteId='',mode=''\)\{wizard\.open\(requestId,quoteId,mode\);deps\.navigate\('cotizador'\);\}/);
+  assert.doesNotMatch(features,/<iframe|presupuestos\?embed/);
 });
 
 test('suggested price and visibility refresh preserve the active estimator',async()=>{
@@ -317,36 +321,31 @@ test('PDF sharing sends a real PDF file instead of a raw media URL',async()=>{
   assert.doesNotMatch(app,/function pdfFileName\(q\)/);
 });
 
-test('pending PDF can be regenerated and returns to the exact quote',async()=>{
-  const [app,features,bridge,generation,quotesUI]=await Promise.all([
+test('pending PDF can be regenerated directly and returns to the exact quote',async()=>{
+  const [app,features,controller,generation,quotesUI]=await Promise.all([
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
-    readFile(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/features-ui.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/quote-pdf-controller.js',import.meta.url),'utf8'),
     readFile(new URL('../public/quote-pdf-generation.js',import.meta.url),'utf8'),
     readFile(new URL('../public/admin-quotes-ui.js',import.meta.url),'utf8')
   ]);
   assert.match(quotesUI,/data-action="generate-pdf-admin"/);
   assert.match(app,/features\.generatePdf\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
-  assert.match(features,/pdfJob=null/);
-  assert.match(features,/function generatePdf\(requestId='',quoteId=''\)/);
-  assert.match(features,/id='amc-pdf-generator'/);
-  assert.match(features,/frame\.hidden=true/);
-  assert.match(features,/generatePdf=1/);
-  assert.match(features,/amc:pdf-ready/);
-  assert.match(features,/amc:pdf-error/);
-  assert.match(features,/onPdfReady\?\.\(data\)/);
-  assert.match(bridge,/async function generatePendingPdf\(quoteId\)/);
-  assert.match(bridge,/await import\('\/quote-pdf-generation\.js'\)/);
-  assert.match(bridge,/createAndAttach/);
+  assert.match(features,/const pdf=createQuotePdfController/);
+  assert.match(features,/generatePdf:pdf\.generatePdf/);
+  assert.match(controller,/const jobs=new Map\(\)/);
+  assert.match(controller,/function paintPending\(quoteId\)/);
+  assert.match(controller,/button\.textContent='Preparando PDF…'/);
+  assert.match(controller,/function paintRetry\(quoteId\)/);
+  assert.match(controller,/button\.textContent='Generar PDF'/);
+  assert.match(controller,/createAndAttach\(\{quoteId,document,makePdf:makeQuotePdf,blobToBase64,request:backgroundRequest\}\)/);
   assert.match(generation,/export async function createAndAttach/);
   assert.match(generation,/makePdf\(document\)/);
   assert.match(generation,/\/api\/upload/);
   assert.match(generation,/\/api\/quotes\/'\+quoteId\+'\/pdf/);
-  assert.match(bridge,/type:'amc:pdf-ready'/);
-  assert.match(bridge,/No pudimos generar el PDF/);
-  assert.match(bridge,/type:'amc:pdf-error'/);
+  assert.doesNotMatch(controller,/iframe|postMessage|amc:pdf-ready|amc:pdf-error/);
+  assert.match(controller,/El presupuesto quedó guardado\. No se pudo generar el PDF automáticamente/);
   assert.doesNotMatch(app,/<span>PDF pendiente<\/span>/);
-  assert.equal((bridge.match(/makePdf\(quoteForDocument\(draft\)\)/g)||[]).length,0);
 });
 
 test('admin budget detail opens the exact quote and only one overflow menu stays open',async()=>{

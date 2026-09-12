@@ -4,31 +4,37 @@ import {readFileSync} from 'node:fs';
 import {quotePersistentDocument,quoteContentVersion} from '../public/quote-persistence.js';
 import {createQuoteSaveController,parseQuoteClientRef,resolveQuoteClientRef,buildDirectRequestPayload,validateQuoteDraft,queueAutomaticQuotePdf} from '../public/quote-save-controller.js';
 
-test('controlador Guardar/Enviar usa API canónica y delega el PDF automático al generador existente',()=>{
+test('controlador Guardar/Enviar usa estado local y PDF directo sin refresh ni iframe',()=>{
  const controller=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
  const wrapper=readFileSync(new URL('../public/features-ui.js',import.meta.url),'utf8');
- assert.match(wrapper,/createQuoteSaveController/);
- assert.match(wrapper,/generatePdf:legacy\.generatePdf/);
+ const pdfController=readFileSync(new URL('../public/quote-pdf-controller.js',import.meta.url),'utf8');
+ assert.match(wrapper,/createQuotePdfController/);
+ assert.match(wrapper,/generatePdf:pdf\.generatePdf/);
+ assert.doesNotMatch(wrapper,/generatePdf:legacy\.generatePdf/);
  assert.match(controller,/\/api\/admin\/requests/);
  assert.match(controller,/\/api\/quotes/);
  assert.match(controller,/quotePersistentDocument/);
  assert.match(controller,/quoteContentVersion/);
+ assert.match(controller,/syncSavedState/);
  assert.match(controller,/queueAutomaticQuotePdf/);
- assert.match(controller,/Generando PDF automáticamente/);
+ assert.match(controller,/Preparando el PDF/);
  assert.match(controller,/dataset\.qwSaveQuote/);
  assert.match(controller,/presupuesto-admin\//);
  assert.match(controller,/new MutationObserver/);
  assert.match(controller,/hostObserver\.observe\(host,\{childList:true,subtree:true\}\)/);
  assert.match(controller,/button\.textContent!==label/);
  assert.match(controller,/button\.disabled!==disabled/);
- assert.doesNotMatch(controller,/presupuestos-bridge/);
- assert.doesNotMatch(controller,/createAndAttach|generatePendingPdf|pdfId/);
+ assert.doesNotMatch(controller,/\brefresh\b/);
+ assert.doesNotMatch(controller,/presupuestos-bridge|createAndAttach|generatePendingPdf|pdfId|iframe/i);
+ assert.doesNotMatch(pdfController,/iframe|postMessage|AMCBusy|\/api\/state/i);
 });
 
-test('PDF automático se solicita una sola vez sólo cuando todavía falta',()=>{
+test('PDF automático se libera en microtarea y se solicita sólo cuando falta',async()=>{
  const calls=[];
  const generatePdf=(requestId,quoteId)=>calls.push([requestId,quoteId]);
  assert.equal(queueAutomaticQuotePdf({saved:{id:'q-1',requestId:'r-fallback',pdf:''},requestId:'r-1',generatePdf}),true);
+ assert.equal(calls.length,0);
+ await Promise.resolve();
  assert.deepEqual(calls,[['r-1','q-1']]);
  assert.equal(queueAutomaticQuotePdf({saved:{id:'q-2',requestId:'r-2',pdf:'/media/listo'},requestId:'r-2',generatePdf}),false);
  assert.equal(queueAutomaticQuotePdf({saved:{id:'q-3',requestId:'r-3',pdf:''},requestId:'r-3'}),false);
@@ -95,7 +101,7 @@ test('revisión reactiva Enviar presupuesto después de cada repintado del wizar
   const draft={stage:4,requestId:'req-1',clientRef:'user:u1',works:[{description:'Revoque'}],finalPrice:955000};
   const controller=createQuoteSaveController({
    getState:()=>({requests:[{id:'req-1',userId:'u1',name:'Cliente'}],agendaClients:[{id:'u1',hasAccount:1,name:'Cliente'}],quotes:[]}),
-   api:async()=>({}),refresh:async()=>{},navigate(){},toast(){},wizard:{getDraft:()=>draft}
+   api:async()=>({}),navigate(){},toast(){},wizard:{getDraft:()=>draft}
   });
   controller.afterRender('cotizador');
   assert.equal(button.disabled,false);
