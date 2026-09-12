@@ -51,7 +51,7 @@ test('client, admin and employee notices become read when their related content 
 test('notice UI updates counters, visual state and browser notifications without a page reload',async()=>{
  const [app,features,worker,notices]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/chat-features.js',import.meta.url),'utf8'),
   readFile(new URL('../public/sw.js',import.meta.url),'utf8'),
   readFile(new URL('../public/notice-ui.js',import.meta.url),'utf8')
  ]);
