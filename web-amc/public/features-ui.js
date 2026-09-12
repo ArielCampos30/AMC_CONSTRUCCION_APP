@@ -3,7 +3,7 @@ import {createQuoteWizard} from './quote-wizard.js';
 
 export function createFeatures(deps){
  const legacy=createLegacyFeatures(deps);
- const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast});
+ const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast,api:deps.api,refresh:deps.refresh});
  return {
   ...legacy,
   prefillClient(id,lead=false){wizard.prefillClient(id,lead);legacy.prefillClient?.(id,lead);},
