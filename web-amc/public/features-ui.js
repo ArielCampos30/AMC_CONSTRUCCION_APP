@@ -11,7 +11,7 @@ export function createFeatures(deps){
  const pdf=createQuotePdfController({getState:deps.getState,toast:deps.toast});
  const saver=createQuoteSaveController({getState:deps.getState,api:deps.api,navigate:deps.navigate,toast:deps.toast,wizard,generatePdf:pdf.generatePdf});
  const pricingSync=createQuotePricingSyncController({wizard});
- createQuoteClientCreateController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard});
+ createQuoteClientCreateController({getState:deps.getState,api:deps.api,navigate:deps.navigate,toast:deps.toast,wizard});
  return {
   ...legacy,
   generatePdf:pdf.generatePdf,
