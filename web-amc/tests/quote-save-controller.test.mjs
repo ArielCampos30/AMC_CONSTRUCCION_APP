@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {quotePersistentDocument,quoteContentVersion} from '../public/quote-persistence.js';
+import {createQuoteSaveController} from '../public/quote-save-controller.js';
 
 test('controlador Guardar/Enviar usa API canónica sin depender del bridge legacy',()=>{
  const controller=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
@@ -19,6 +20,51 @@ test('controlador Guardar/Enviar usa API canónica sin depender del bridge legac
  assert.match(controller,/button\.disabled!==disabled/);
  assert.doesNotMatch(controller,/presupuestos-bridge/);
  assert.doesNotMatch(controller,/createAndAttach|generatePendingPdf|pdfId/);
+});
+
+test('revisión reactiva Enviar presupuesto después de cada repintado del wizard',()=>{
+ const previousDocument=globalThis.document;
+ const previousMutationObserver=globalThis.MutationObserver;
+ const previousRequestAnimationFrame=globalThis.requestAnimationFrame;
+ let observerCallback=null,summary=null;
+ const button={dataset:{},disabled:true,textContent:'Guardar / enviar · siguiente bloque'};
+ const context={
+  querySelector(selector){return selector==='[data-qw-save-summary]'?summary:null;},
+  append(node){summary=node;}
+ };
+ const host={querySelector(selector){if(selector==='.quote-wizard-controls .primary')return button;if(selector==='.quote-review-context')return context;return null;}};
+ try{
+  globalThis.document={
+   querySelector(selector){return selector==='.quote-wizard-host'?host:null;},
+   createElement(){return {className:'',dataset:{},innerHTML:''};},
+   addEventListener(){}
+  };
+  globalThis.MutationObserver=class{
+   constructor(callback){observerCallback=callback;}
+   observe(){}
+   disconnect(){}
+  };
+  globalThis.requestAnimationFrame=callback=>{callback();return 1;};
+  const draft={stage:4,requestId:'req-1',clientRef:'user:u1',works:[{description:'Revoque'}],finalPrice:955000};
+  const controller=createQuoteSaveController({
+   getState:()=>({requests:[{id:'req-1',userId:'u1',name:'Cliente'}],agendaClients:[{id:'u1',hasAccount:1,name:'Cliente'}],quotes:[]}),
+   api:async()=>({}),refresh:async()=>{},navigate(){},toast(){},wizard:{getDraft:()=>draft}
+  });
+  controller.afterRender('cotizador');
+  assert.equal(button.disabled,false);
+  assert.equal(button.textContent,'Enviar presupuesto');
+  assert.equal(button.dataset.qwSaveQuote,'1');
+  assert.ok(summary);
+  button.dataset={};button.disabled=true;button.textContent='Guardar / enviar · siguiente bloque';
+  observerCallback?.([]);
+  assert.equal(button.disabled,false);
+  assert.equal(button.textContent,'Enviar presupuesto');
+  assert.equal(button.dataset.qwSaveQuote,'1');
+ }finally{
+  if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+  if(previousMutationObserver===undefined)delete globalThis.MutationObserver;else globalThis.MutationObserver=previousMutationObserver;
+  if(previousRequestAnimationFrame===undefined)delete globalThis.requestAnimationFrame;else globalThis.requestAnimationFrame=previousRequestAnimationFrame;
+ }
 });
 
 test('documento persistente y hash cambian sólo con contenido persistente',async()=>{
