@@ -40,8 +40,13 @@ export const buildDirectRequestPayload=({draft,clients=[],externalId})=>{
  if(idempotencyKey.length<8)throw Error('AMC no pudo generar la referencia segura del presupuesto.');
  return {userId:clientId,leadId:clientId,service,description,idempotencyKey};
 };
+export const queueAutomaticQuotePdf=({saved,requestId,generatePdf})=>{
+ if(!saved?.id||saved.pdf||typeof generatePdf!=='function')return false;
+ generatePdf(requestId||saved.requestId||'',saved.id);
+ return true;
+};
 
-export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard}){
+export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard,generatePdf}){
  let saving=false;
  const identities=new Map();
  let hostObserver=null,observedHost=null,decorateScheduled=false;
@@ -134,8 +139,11 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
    const saved=await api('/api/quotes',document);
    if(!saved?.id)throw Error('AMC no devolvió el presupuesto guardado.');
    await refresh?.();
+   const latest=(state().quotes||[]).find(quote=>quote.id===saved.id)||saved;
+   const pdfQueued=queueAutomaticQuotePdf({saved:latest,requestId:request.id,generatePdf});
+   const pdfMessage=latest.pdf?' PDF listo.':pdfQueued?' Generando PDF automáticamente…':' PDF pendiente de generar.';
    const oldKey=contextKey(draft);identities.delete(oldKey);
-   toast?.(saved.status==='Enviado'?'Presupuesto enviado. El cliente ya puede verlo en AMC.':saved.status==='Guardado'?'Presupuesto guardado. Podés registrar su entrega externa.':'Presupuesto actualizado.');
+   toast?.((saved.status==='Enviado'?'Presupuesto enviado. El cliente ya puede verlo en AMC.':saved.status==='Guardado'?'Presupuesto guardado. Podés registrar su entrega externa.':'Presupuesto actualizado.')+pdfMessage);
    wizard.open();
    navigate(`presupuesto-admin/${saved.id}`);
   }catch(error){
