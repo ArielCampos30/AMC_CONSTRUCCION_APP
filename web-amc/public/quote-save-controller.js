@@ -17,16 +17,33 @@ export const resolveQuoteClientRef=(value,clients=[])=>{
   return Boolean(id)&&(id===nestedId||ref.endsWith(':'+id));
  });
  if(recovered)return {kind:Number(recovered.hasAccount)?'user':'lead',id:String(recovered.id),client:recovered};
- return {...parsed,client:null};
+ const kind=['user','lead'].includes(parsed.kind)?parsed.kind:'';
+ return {kind,id:nestedId,client:null};
+};
+export const validateQuoteDraft=draft=>{
+ if(Number(draft?.stage)!==4)throw Error('Revisá el presupuesto antes de guardarlo.');
+ if(!String(draft?.clientRef||'').trim())throw Error('Elegí un cliente.');
+ if(!Array.isArray(draft?.works)||!draft.works.length)throw Error('Agregá al menos un trabajo al presupuesto.');
+ if(draft.works.some(work=>!String(work?.description||'').trim()))throw Error('Todos los trabajos deben tener una descripción antes de guardar.');
+ const price=Number(draft?.finalPrice);
+ if(!Number.isFinite(price)||price<=0)throw Error('Definí un precio final mayor a cero.');
+ return true;
 };
 export const buildDirectRequestPayload=({draft,clients=[],externalId})=>{
- const {kind,id:clientId}=resolveQuoteClientRef(draft?.clientRef,clients);
- if(!clientId||!['user','lead'].includes(kind))throw Error('Elegí un cliente antes de guardar el presupuesto.');
- const first=draft?.works?.find(work=>String(work.description||'').trim());
- const service=String(first?.tariffRubric||first?.description||'Presupuesto').trim().slice(0,500)||'Presupuesto';
- const payload={service,description:'Presupuesto iniciado por Administración.',idempotencyKey:safeKey('quote-direct-'+externalId)};
- if(kind==='user')payload.userId=clientId;else payload.leadId=clientId;
- return payload;
+ validateQuoteDraft(draft);
+ const {id:clientId}=resolveQuoteClientRef(draft?.clientRef,clients);
+ if(!clientId)throw Error('AMC no pudo identificar la ficha del cliente seleccionado. Volvé a Cliente y seleccionalo nuevamente.');
+ const first=draft.works.find(work=>String(work?.description||'').trim());
+ const service=String(first?.tariffRubric||first?.description||'').trim().slice(0,500);
+ if(!service)throw Error('AMC no pudo determinar el trabajo principal del presupuesto.');
+ const description='Presupuesto iniciado por Administración.';
+ const idempotencyKey=safeKey('quote-direct-'+externalId);
+ if(idempotencyKey.length<8)throw Error('AMC no pudo generar la referencia segura del presupuesto.');
+ // El endpoint histórico distingue userId/leadId. Para un presupuesto directo enviamos
+ // el mismo ID canónico en ambos campos: el servidor valida contra ambas fuentes y usa
+ // únicamente la ficha que realmente existe. Así el guardado no depende de una etiqueta
+ // de tipo vieja o mal envuelta en el navegador.
+ return {userId:clientId,leadId:clientId,service,description,idempotencyKey};
 };
 
 export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard}){
@@ -53,8 +70,23 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  }
  async function ensureRequest(draft,id){
   const existing=currentRequest(draft);if(existing)return existing;
-  const payload=buildDirectRequestPayload({draft,clients:availableClients(),externalId:id.externalId});
-  return api('/api/admin/requests',payload);
+  const create=async()=>{
+   const payload=buildDirectRequestPayload({draft,clients:availableClients(),externalId:id.externalId});
+   const request=await api('/api/admin/requests',payload);
+   if(!request?.id)throw Error('AMC no devolvió la solicitud interna necesaria para guardar el presupuesto.');
+   return request;
+  };
+  try{return await create();}
+  catch(error){
+   const generic=/Elegí un cliente y describí el trabajo/i.test(String(error?.message||''));
+   if(!generic)throw error;
+   await refresh?.();
+   try{return await create();}
+   catch(retryError){
+    if(/Elegí un cliente y describí el trabajo/i.test(String(retryError?.message||'')))throw Error('AMC no encontró la ficha del cliente seleccionado al crear el presupuesto. Volvé a la etapa Cliente, seleccionalo otra vez y reintentá.');
+    throw retryError;
+   }
+  }
  }
  function decorate(){
   const host=document.querySelector('.quote-wizard-host');if(!host)return;
@@ -92,17 +124,18 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  async function save(){
   if(saving)return;
   const draft=wizard.getDraft();
-  if(draft.stage!==4)throw Error('Revisá el presupuesto antes de guardarlo.');
-  if(!draft.clientRef)throw Error('Elegí un cliente.');
-  if(!draft.works?.length||draft.works.some(work=>!String(work.description||'').trim()))throw Error('Revisá los trabajos del presupuesto.');
-  if(!(Number(draft.finalPrice)>0))throw Error('Definí un precio final mayor a cero.');
+  validateQuoteDraft(draft);
   const id=identity(draft),willSend=registered(draft),action=willSend?'Enviar':'Guardar';
   if(window.AMCConfirm){const ok=await window.AMCConfirm(`¿${action} el presupuesto ${id.number} para ${clientName(draft)} por ${money(draft.finalPrice)}?`,{title:willSend?'Enviar presupuesto':'Guardar presupuesto',confirmLabel:action});if(!ok)return;}
   saving=true;decorate();
   try{
    const request=await ensureRequest(draft,id),stored=currentQuote(draft),snapshot={internalCost:Number(draft.internalCost)||0,gain:Number(draft.estimatedGain)||0};
    const document=quotePersistentDocument({requestId:request.id,externalId:id.externalId,number:id.number,works:draft.works,travel:draft.travel,employeeDay:draft.employeeDay,finalPrice:draft.finalPrice,finalPriceManual:draft.finalPriceManual,desiredMargin:draft.desiredMargin,payment:stored?.payment||state().settings?.payment||'',notes:stored?.notes||'',snapshot});
+   if(!document.requestId)throw Error('El presupuesto quedó sin solicitud relacionada.');
+   if(!Array.isArray(document.items)||!document.items.length)throw Error('El presupuesto quedó sin trabajos públicos para guardar.');
+   if(!(Number(document.total)>0))throw Error('El presupuesto quedó sin un total válido para guardar.');
    document.version=await quoteContentVersion(document);
+   if(!/^[a-f0-9]{64}$/.test(String(document.version||'')))throw Error('AMC no pudo generar una versión válida del presupuesto.');
    const saved=await api('/api/quotes',document);
    if(!saved?.id)throw Error('AMC no devolvió el presupuesto guardado.');
    await refresh?.();
