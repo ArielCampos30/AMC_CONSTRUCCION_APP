@@ -13,6 +13,10 @@ test('controlador Guardar/Enviar usa API canónica sin depender del bridge legac
  assert.match(controller,/quoteContentVersion/);
  assert.match(controller,/dataset\.qwSaveQuote/);
  assert.match(controller,/presupuesto-admin\//);
+ assert.match(controller,/new MutationObserver/);
+ assert.match(controller,/hostObserver\.observe\(host,\{childList:true,subtree:true\}\)/);
+ assert.match(controller,/button\.textContent!==label/);
+ assert.match(controller,/button\.disabled!==disabled/);
  assert.doesNotMatch(controller,/presupuestos-bridge/);
  assert.doesNotMatch(controller,/createAndAttach|generatePendingPdf|pdfId/);
 });
