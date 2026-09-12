@@ -1,4 +1,5 @@
 import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,applyTariffSelection,workDirectCost,directCostTotal,workEffectiveLaborCost,workLaborCost,jornalReference,commercialReferenceTotal,economicSnapshot,findTariffMatches} from './quote-wizard-model.js';
+import {quotePersistentDocument,quoteContentVersion} from './quote-persistence.js';
 
 const PHASES=['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'];
 const UNITS=['m²','ml','unidad','día','hora','servicio','obra','punto','salida'];
@@ -14,10 +15,11 @@ function quantityLabel(unit){
  return 'Cantidad';
 }
 
-export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
+export function createQuoteWizard({getState,isAdmin,esc,navigate,toast,api,refresh}){
  let stage=1,requestId='',quoteId='',mode='',clientRef='',pendingClientRef='',origin='#presupuestos',works=null,lastContext='',activeWorkId='';
  let travel=DEFAULT_QUOTE_SETTINGS.travelDefault,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;
  let finalPrice=0,finalPriceManual=false,desiredMargin=30;
+ let externalId='',number='',payment='',notes='',saveState='idle',saveError='',savedQuote=null;
  let tariffs=[],tariffState='idle',tariffError='';
  let localClients=[],newClientOpen=false,newClientSaving=false,newClientError='';
  let newClientDraft={name:'',phone:'',town:''};
@@ -42,7 +44,8 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  }
  function selectedRequest(){return availableRequests().find(request=>request.id===requestId)||null;}
  function contextKey(){return [clientRef||'sin-cliente',requestId||'directo',quoteId||'nuevo'].join('|');}
- function resetWorks(){works=null;lastContext='';activeWorkId='';travel=DEFAULT_QUOTE_SETTINGS.travelDefault;employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;finalPrice=0;finalPriceManual=false;desiredMargin=30;}
+ function resetWorks(){works=null;lastContext='';activeWorkId='';travel=DEFAULT_QUOTE_SETTINGS.travelDefault;employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay;finalPrice=0;finalPriceManual=false;desiredMargin=30;externalId='';number='';payment='';notes='';saveState='idle';saveError='';savedQuote=null;}
+ function touch(){if(saveState==='success'){saveState='idle';savedQuote=null;}saveError='';}
  function createWork(source={}){
   const work=normaliseWork(source);work.id=work.id||uid();work.referenceSearch=String(source.referenceSearch||source.details?.referenceSearch||'');
   work.quantityExplicit=Object.prototype.hasOwnProperty.call(source,'quantity')||Object.prototype.hasOwnProperty.call(source.details||{},'quantity');
@@ -53,8 +56,8 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
   if(!clientRef)return [];
   const key=contextKey();if(works&&lastContext===key)return works;
   lastContext=key;
-  const quote=quoteId?quotes().find(item=>item.id===quoteId):null;
-  const quoteItems=quote?.items||[];
+  const quote=quoteId?quotes().find(item=>item.id===quoteId):null,editable=quote?.adminModel?.schemaVersion===1?quote.adminModel:null;
+  const quoteItems=editable?.works||quote?.items||[];
   if(quoteItems.length){
    works=quoteItems.map(item=>createWork(item));
    const legacyTravel=amount(quoteItems[0]?.details?.travel,-1);if(legacyTravel>=0)travel=legacyTravel;
@@ -65,9 +68,11 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
    if(!works.length)works=[createWork({description:''})];
   }
   if(quote){
-   desiredMargin=Math.min(95,amount(quote.amcDesiredMargin,30));
-   const stored=amount(quote.amcClientPrice,0);
-   if(stored>0){finalPrice=stored;finalPriceManual=quote.amcPriceManual!==false;}
+   externalId=String(quote.externalId||'');number=String(quote.number||'');payment=String(quote.payment||'');notes=String(quote.notes||'');
+   desiredMargin=Math.min(95,amount(editable?.desiredMargin??quote.amcDesiredMargin,30));
+   travel=amount(editable?.travel,travel);employeeDay=amount(editable?.employeeDay,employeeDay);
+   const stored=amount(editable?.finalPrice??quote.amcClientPrice??quote.total,0);
+   if(stored>0){finalPrice=stored;finalPriceManual=editable?editable.finalPriceManual:quote.amcPriceManual!==false;}
   }
   activeWorkId=works[0]?.id||'';
   if(tariffState==='ready')works.forEach(resolveTariff);
