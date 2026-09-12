@@ -22,19 +22,14 @@ test('ARS acepta formato argentino sin convertir 517.000 en 517',()=>{
   assert.ok(Math.abs(margin-86.0735)<0.01);
 });
 
-test('agregar trabajo sincroniza el borrador y evita doble alta inmediata',()=>{
-  const html=read('../private/presupuestos-original.html');
-  const steps=read('../public/estimator-steps.js');
-  const features=read('../public/features-ui-legacy.js');
-  assert.match(html,/let addItemBusy=false/);
-  assert.match(html,/if \(addItemBusy\) return/);
-  assert.match(html,/notifyDraftUpdated\(clientDesc\)/);
-  assert.match(html,/type:'amc:draft-updated'/);
-  assert.match(html,/Estimación elegida:/);
-  assert.match(steps,/document\.addEventListener\('amc:draft-updated',update\)/);
-  assert.match(steps,/count===1\?'trabajo':'trabajos'/);
-  assert.match(features,/data-estimator-summary/);
-  assert.match(features,/data\.type==='amc:draft-updated'/);
+test('agregar trabajo actualiza el borrador nativo una sola vez y lo conserva en la revisión',()=>{
+  const wizard=read('../public/quote-wizard.js');
+  assert.match(wizard,/function addWork\(\)\{const rows=initialiseWorks\(\),work=createWork\(\{description:''\}\);rows\.push\(work\);activeWorkId=work\.id;/);
+  assert.match(wizard,/data-qw-add-work/);
+  assert.match(wizard,/const add=event\.target\.closest\('\[data-qw-add-work\]'\);if\(add\)\{addWork\(\);return;\}/);
+  assert.match(wizard,/function validWorks\(\)\{const rows=initialiseWorks\(\);return rows\.length>0/);
+  assert.match(wizard,/getDraft:\(\)=>\{const rows=\[\.\.\.initialiseWorks\(\)\]/);
+  assert.match(wizard,/works:rows/);
 });
 
 
@@ -134,14 +129,15 @@ test('guardar o enviar usa el precio comercial automático o editado',()=>{
   assert.match(generation,/makePdf\(document\)/);
 });
 
-test('editar presupuesto restaura el borrador persistido por externalId',()=>{
-  const bridge=read('../public/presupuestos-bridge.js');
-  const features=read('../public/features-ui-legacy.js');
-  assert.match(features,/&quote='\+encodeURIComponent\(quoteEdit\)/);
-  assert.match(bridge,/storedQuote\.externalId/);
-  assert.match(bridge,/draft=structuredClone\(saved\)/);
-  assert.match(bridge,/draft\.amcQuoteId=storedQuote\.id/);
-  assert.match(bridge,/Presupuesto .* cargado para editar/);
+test('editar presupuesto restaura el modelo persistido y el precio por quoteId',()=>{
+  const features=read('../public/features-ui.js');
+  const wizard=read('../public/quote-wizard.js');
+  assert.match(features,/openEditor\(requestId='',quoteId='',mode=''\)\{wizard\.open\(requestId,quoteId,mode\);deps\.navigate\('cotizador'\);\}/);
+  assert.match(wizard,/const quote=quoteId\?quotes\(\)\.find\(item=>item\.id===quoteId\):null,editable=quote\?\.adminModel\?\.schemaVersion===1\?quote\.adminModel:null/);
+  assert.match(wizard,/const quoteItems=editable\?\.works\|\|quote\?\.items\|\|\[\]/);
+  assert.match(wizard,/works=quoteItems\.map\(item=>createWork\(item\)\)/);
+  assert.match(wizard,/const stored=amount\(editable\?\.finalPrice\?\?quote\.amcClientPrice\?\?quote\.total,0\)/);
+  assert.match(wizard,/if\(stored>0\)\{finalPrice=stored;finalPriceManual=/);
 });
 
 test('los scripts modificados conservan sintaxis JavaScript válida',()=>{
