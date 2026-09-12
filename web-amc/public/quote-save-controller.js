@@ -2,7 +2,6 @@ import {quotePersistentDocument,quoteContentVersion} from './quote-persistence.j
 
 const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number(value)||0);
 const safeKey=value=>String(value||'').replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,80);
-const quoteNumber=(externalId,date=new Date())=>`AMC-${date.toISOString().slice(0,10).replaceAll('-','')}-${safeKey(externalId).slice(-6).toUpperCase()}`;
 export const parseQuoteClientRef=value=>{
  const ref=String(value||'');const separator=ref.indexOf(':');
  return separator>0?{kind:ref.slice(0,separator),id:ref.slice(separator+1)}:{kind:'',id:''};
@@ -39,10 +38,6 @@ export const buildDirectRequestPayload=({draft,clients=[],externalId})=>{
  const description='Presupuesto iniciado por Administración.';
  const idempotencyKey=safeKey('quote-direct-'+externalId);
  if(idempotencyKey.length<8)throw Error('AMC no pudo generar la referencia segura del presupuesto.');
- // El endpoint histórico distingue userId/leadId. Para un presupuesto directo enviamos
- // el mismo ID canónico en ambos campos: el servidor valida contra ambas fuentes y usa
- // únicamente la ficha que realmente existe. Así el guardado no depende de una etiqueta
- // de tipo vieja o mal envuelta en el navegador.
  return {userId:clientId,leadId:clientId,service,description,idempotencyKey};
 };
 
@@ -63,9 +58,9 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  };
  function identity(draft){
   const stored=currentQuote(draft);
-  if(stored?.externalId)return {externalId:String(stored.externalId),number:String(stored.number||quoteNumber(stored.externalId))};
+  if(stored?.externalId)return {externalId:String(stored.externalId)};
   const key=contextKey(draft);if(identities.has(key))return identities.get(key);
-  const externalId='qw-'+(crypto.randomUUID?.()||`${Date.now()}-${Math.random().toString(16).slice(2)}`),value={externalId,number:quoteNumber(externalId)};
+  const value={externalId:'qw-'+(crypto.randomUUID?.()||`${Date.now()}-${Math.random().toString(16).slice(2)}`)};
   identities.set(key,value);return value;
  }
  async function ensureRequest(draft,id){
@@ -126,11 +121,11 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
   const draft=wizard.getDraft();
   validateQuoteDraft(draft);
   const id=identity(draft),willSend=registered(draft),action=willSend?'Enviar':'Guardar';
-  if(window.AMCConfirm){const ok=await window.AMCConfirm(`¿${action} el presupuesto ${id.number} para ${clientName(draft)} por ${money(draft.finalPrice)}?`,{title:willSend?'Enviar presupuesto':'Guardar presupuesto',confirmLabel:action});if(!ok)return;}
+  if(window.AMCConfirm){const ok=await window.AMCConfirm(`¿${action} el presupuesto para ${clientName(draft)} por ${money(draft.finalPrice)}?`,{title:willSend?'Enviar presupuesto':'Guardar presupuesto',confirmLabel:action});if(!ok)return;}
   saving=true;decorate();
   try{
    const request=await ensureRequest(draft,id),stored=currentQuote(draft),snapshot={internalCost:Number(draft.internalCost)||0,gain:Number(draft.estimatedGain)||0};
-   const document=quotePersistentDocument({requestId:request.id,externalId:id.externalId,number:id.number,works:draft.works,travel:draft.travel,employeeDay:draft.employeeDay,finalPrice:draft.finalPrice,finalPriceManual:draft.finalPriceManual,desiredMargin:draft.desiredMargin,payment:stored?.payment||state().settings?.payment||'',notes:stored?.notes||'',snapshot});
+   const document=quotePersistentDocument({requestId:request.id,externalId:id.externalId,number:'',works:draft.works,travel:draft.travel,employeeDay:draft.employeeDay,finalPrice:draft.finalPrice,finalPriceManual:draft.finalPriceManual,desiredMargin:draft.desiredMargin,payment:stored?.payment||state().settings?.payment||'',notes:stored?.notes||'',snapshot});
    if(!document.requestId)throw Error('El presupuesto quedó sin solicitud relacionada.');
    if(!Array.isArray(document.items)||!document.items.length)throw Error('El presupuesto quedó sin trabajos públicos para guardar.');
    if(!(Number(document.total)>0))throw Error('El presupuesto quedó sin un total válido para guardar.');
@@ -139,7 +134,9 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
    const saved=await api('/api/quotes',document);
    if(!saved?.id)throw Error('AMC no devolvió el presupuesto guardado.');
    await refresh?.();
+   const oldKey=contextKey(draft);identities.delete(oldKey);
    toast?.(saved.status==='Enviado'?'Presupuesto enviado. El cliente ya puede verlo en AMC.':saved.status==='Guardado'?'Presupuesto guardado. Podés registrar su entrega externa.':'Presupuesto actualizado.');
+   wizard.open();
    navigate(`presupuesto-admin/${saved.id}`);
   }catch(error){
    toast?.(String(error?.message||'No se pudo guardar el presupuesto.'));

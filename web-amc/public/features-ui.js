@@ -1,11 +1,13 @@
 import {createFeatures as createLegacyFeatures} from './features-ui-legacy.js';
 import {createQuoteWizard} from './quote-wizard.js';
 import {createQuoteSaveController} from './quote-save-controller.js';
+import {createQuoteClientCreateController} from './quote-client-create-controller.js';
 
 export function createFeatures(deps){
  const legacy=createLegacyFeatures(deps);
  const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast,api:deps.api,refresh:deps.refresh});
  const saver=createQuoteSaveController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard});
+ createQuoteClientCreateController({getState:deps.getState,api:deps.api,refresh:deps.refresh,navigate:deps.navigate,toast:deps.toast,wizard});
  return {
   ...legacy,
   prefillClient(id,lead=false){wizard.prefillClient(id,lead);legacy.prefillClient?.(id,lead);},
