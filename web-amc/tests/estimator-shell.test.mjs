@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('cotizador nativo usa cuatro etapas compactas sin importmap ni iframe visible',()=>{
+test('cotizador nativo usa cuatro etapas de página completa sin importmap ni iframe',()=>{
  const index=read('../public/index.html');
  const app=read('../public/app.js');
  const wrapper=read('../public/features-ui.js');
@@ -18,7 +18,9 @@ test('cotizador nativo usa cuatro etapas compactas sin importmap ni iframe visib
  assert.match(wrapper,/name==='cotizador'\?wizard\.render\(\):legacy\.render\(name\)/);
  assert.match(legacy,/createFloatingChat/);
  assert.doesNotMatch(wizard,/<iframe/i);
- assert.match(wizard,/const PHASES=\['Cliente','Presupuesto','Revisión','Guardar \/ enviar'\]/);
+ assert.match(wizard,/const PHASES=\['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'\]/);
+ assert.match(wizard,/quote-wizard-page/);
+ assert.doesNotMatch(wizard,/aria-modal/);
  assert.match(wizard,/ETAPA 1 DE 4/);
  assert.match(wizard,/ETAPA 2 DE 4/);
 });
@@ -33,18 +35,17 @@ test('cliente filtra sus solicitudes y admite presupuesto directo o cliente nuev
  assert.match(wizard,/pendingClientRef/);
 });
 
-test('editor conserva lugar de trabajo al repintar y evita important y recargas',()=>{
+test('editor usa el scroll natural de la página y evita important y recargas',()=>{
  const css=read('../public/quote-wizard.css');
  const reviewCss=read('../public/quote-builder-review.css');
  const wizard=read('../public/quote-wizard.js');
  const wrapper=read('../public/features-ui.js');
- assert.match(wizard,/captureScroll/);
- assert.match(wizard,/restoreScroll/);
  assert.match(wizard,/preventScroll:true/);
- assert.match(css,/@media\(max-width:700px\)/);
- assert.match(css,/@media\(max-width:480px\)/);
- assert.match(css,/@media\(max-width:360px\)/);
- assert.match(css,/width:min\(1240px,96vw\)/);
+ assert.match(css,/@media\(max-width:800px\)/);
+ assert.match(css,/@media\(max-width:600px\)/);
+ assert.match(css,/@media\(max-width:390px\)/);
+ assert.match(css,/width:min\(100%,1440px\)/);
+ assert.doesNotMatch(css,/overflow:auto/);
  for(const source of [css,reviewCss,wizard,wrapper]){
   assert.doesNotMatch(source,/!important/);
   assert.doesNotMatch(source,/(?:window\.)?location\.reload\s*\(/);

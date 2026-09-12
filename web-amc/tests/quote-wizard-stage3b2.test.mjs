@@ -29,16 +29,21 @@ test('jornal conserva las reglas AMC y entra inmediatamente a la referencia come
  assert.equal(DEFAULT_QUOTE_SETTINGS.employeeDay,30000);
 });
 
-test('cotizador compacto integra precio y costos por trabajo sin pantallas largas separadas',()=>{
+test('cotizador usa una página completa en cuatro etapas con costos separados',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.match(wizard,/quote-builder-workspace/);
  assert.match(wizard,/Tarifario<\/button>/);
  assert.match(wizard,/Manual<\/button>/);
  assert.match(wizard,/Jornal<\/button>/);
  assert.match(wizard,/Relevamiento<\/button>/);
- assert.match(wizard,/Costos internos <small>Opcional/);
- assert.match(wizard,/Referencia acumulada/);
+ assert.match(wizard,/Costos y rentabilidad/);
+ assert.match(wizard,/Costo diario por empleado/);
+ assert.match(wizard,/Confirmé los costos de este trabajo/);
+ assert.match(wizard,/Referencia Tarifario/);
  assert.match(wizard,/Revisar presupuesto →/);
+ assert.match(wizard,/quote-wizard-page/);
+ assert.doesNotMatch(wizard,/aria-modal="true"/);
+ assert.doesNotMatch(wizard,/role="dialog"/);
  assert.doesNotMatch(wizard,/PASO 3 DE 7/);
  assert.doesNotMatch(wizard,/PASO 4 DE 7/);
 });
