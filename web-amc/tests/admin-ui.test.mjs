@@ -220,7 +220,7 @@ test('full admin chat never stacks the floating chat and blocks double send',asy
   assert.match(features,/form\.dataset\.sending==='1'/);
   assert.match(features,/sendButton\.disabled=true/);
   assert.match(features,/sendButton\.disabled=false/);
-  assert.match(floating,/body\.full-chat-page \.floating-chat-button\{display:none!important\}/);
+ assert.match(floating,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
 });
 
 test('quick budget starts with direct client data and exposes the four estimator steps',async()=>{

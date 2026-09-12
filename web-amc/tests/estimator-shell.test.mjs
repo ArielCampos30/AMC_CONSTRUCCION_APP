@@ -44,7 +44,7 @@ test('editor usa el scroll natural de la página y evita important y recargas',(
  assert.match(css,/@media\(max-width:800px\)/);
  assert.match(css,/@media\(max-width:600px\)/);
  assert.match(css,/@media\(max-width:390px\)/);
- assert.match(css,/width:min\(100%,1440px\)/);
+ assert.match(css,/\.quote-wizard-page\{width:100%;min-width:0;margin:0/);
  assert.doesNotMatch(css,/overflow:auto/);
  for(const source of [css,reviewCss,wizard,wrapper]){
   assert.doesNotMatch(source,/!important/);
