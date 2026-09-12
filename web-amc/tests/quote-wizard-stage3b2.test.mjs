@@ -35,7 +35,7 @@ test('cotizador usa una página completa en cuatro etapas con costos separados',
  assert.match(wizard,/Tarifario<\/button>/);
  assert.match(wizard,/Manual<\/button>/);
  assert.match(wizard,/Jornal<\/button>/);
- assert.match(wizard,/Relevamiento<\/button>/);
+ assert.doesNotMatch(wizard,/data-qw-pricing-mode="visit"/);
  assert.match(wizard,/Costos y rentabilidad/);
  assert.match(wizard,/Costo diario por empleado/);
  assert.match(wizard,/Confirmé los costos de este trabajo/);
@@ -48,11 +48,12 @@ test('cotizador usa una página completa en cuatro etapas con costos separados',
  assert.doesNotMatch(wizard,/PASO 4 DE 7/);
 });
 
-test('relevamiento no agrega importe automatico al presupuesto',()=>{
+test('relevamiento legado no agrega importe y obliga a elegir un precio real',()=>{
  const visit=normaliseWork({description:'Arreglos varios',tariffKind:'visit-pending',tariffPrice:55000,quantity:1});
  assert.equal(commercialReferenceTotal(visit),0);
  const wizard=read('../public/quote-wizard.js');
- assert.match(wizard,/No se suma un precio de obra ni una visita automática al presupuesto/);
+ assert.match(wizard,/Este trabajo quedó pendiente de un relevamiento anterior/);
+ assert.match(wizard,/if\(work\.tariffKind==='visit-pending'\)return false/);
 });
 
 test('código nuevo mantiene prohibidos important y recargas de página',()=>{
