@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-test('notas offline y estado del cotizador quedan fuera del router principal',async()=>{
+test('notas offline y tarifario quedan fuera del router principal sin persistencia del estimador v1',async()=>{
  const [server,utility]=await Promise.all([
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../admin-utility-routes.mjs',import.meta.url),'utf8')
@@ -13,7 +13,8 @@ test('notas offline y estado del cotizador quedan fuera del router principal',as
  assert.doesNotMatch(server,/p==='\/api\/offline-notes'/);
  assert.doesNotMatch(server,/p==='\/api\/estimator-state'/);
  assert.match(utility,/p==='\/api\/offline-notes'/);
- assert.match(utility,/p==='\/api\/estimator-state'/);
- assert.match(utility,/revision/);
+ assert.match(utility,/p==='\/api\/estimator-tariffs'/);
+ assert.doesNotMatch(utility,/p==='\/api\/estimator-state'/);
+ assert.doesNotMatch(utility,/revision/);
  assert.match(utility,/safeFile/);
 });
