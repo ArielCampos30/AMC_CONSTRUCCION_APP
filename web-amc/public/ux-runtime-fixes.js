@@ -22,12 +22,14 @@ function goBack(){
  const target=fallbackBackRoute(route);if(target!==route)location.hash=target;
 }
 function hasOwnBack(main){
- if(main.querySelector('[data-action="back"],[data-global-back]'))return true;
+ if(main.querySelector('[data-action="back"]'))return true;
  return [...main.querySelectorAll('a')].some(link=>/^←\s*(Volver|Mis trabajos|Volver al trabajo)\b/i.test(link.textContent.trim()));
 }
 function pruneDeletedNotices(){
  for(const id of deletedNoticeIds)document.querySelector('[data-notice-card="'+CSS.escape(id)+'"]')?.remove();
- const cards=[...document.querySelectorAll('[data-notice-card]')],unread=cards.filter(card=>card.classList.contains('unread')).length,count=document.querySelector('#notice-count');
+ const cards=[...document.querySelectorAll('[data-notice-card]')];
+ if(!cards.length&&currentRoute()!=='avisos')return;
+ const unread=cards.filter(card=>card.classList.contains('unread')).length,count=document.querySelector('#notice-count');
  if(count){count.textContent=String(unread);count.hidden=!unread;}
 }
 function syncBackButton(){
@@ -37,7 +39,8 @@ function syncBackButton(){
  if(!authenticatedShell()){existing?.remove();return;}
  const route=currentRoute(),home=rootPage();
  if(route===home){existing?.remove();return;}
- if(hasOwnBack(main))return;
+ if(hasOwnBack(main)){existing?.remove();return;}
+ if(existing)return;
  const nav=document.createElement('nav');nav.className='section-navigation contextual amc-global-back-nav';nav.setAttribute('aria-label','Volver');nav.innerHTML='<button type="button" data-global-back class="outline">← Volver</button>';main.prepend(nav);
 }
 function requestUiSync(){if(backSyncPending)return;backSyncPending=true;queueMicrotask(syncBackButton);}
