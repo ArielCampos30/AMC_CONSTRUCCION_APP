@@ -7,6 +7,27 @@ export const parseQuoteClientRef=value=>{
  const ref=String(value||'');const separator=ref.indexOf(':');
  return separator>0?{kind:ref.slice(0,separator),id:ref.slice(separator+1)}:{kind:'',id:''};
 };
+export const resolveQuoteClientRef=(value,clients=[])=>{
+ const ref=String(value||''),parsed=parseQuoteClientRef(ref),rows=Array.isArray(clients)?clients:[];
+ const exact=rows.find(client=>`${Number(client?.hasAccount)?'user':'lead'}:${String(client?.id||'')}`===ref);
+ if(exact)return {kind:Number(exact.hasAccount)?'user':'lead',id:String(exact.id),client:exact};
+ const nestedId=String(parsed.id||'').replace(/^(?:(?:user|lead):)+/,'');
+ const recovered=rows.find(client=>{
+  const id=String(client?.id||'');
+  return Boolean(id)&&(id===nestedId||ref.endsWith(':'+id));
+ });
+ if(recovered)return {kind:Number(recovered.hasAccount)?'user':'lead',id:String(recovered.id),client:recovered};
+ return {...parsed,client:null};
+};
+export const buildDirectRequestPayload=({draft,clients=[],externalId})=>{
+ const {kind,id:clientId}=resolveQuoteClientRef(draft?.clientRef,clients);
+ if(!clientId||!['user','lead'].includes(kind))throw Error('Elegí un cliente antes de guardar el presupuesto.');
+ const first=draft?.works?.find(work=>String(work.description||'').trim());
+ const service=String(first?.tariffRubric||first?.description||'Presupuesto').trim().slice(0,500)||'Presupuesto';
+ const payload={service,description:'Presupuesto iniciado por Administración.',idempotencyKey:safeKey('quote-direct-'+externalId)};
+ if(kind==='user')payload.userId=clientId;else payload.leadId=clientId;
+ return payload;
+};
 
 export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard}){
  let saving=false;
@@ -15,13 +36,13 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  const state=()=>getState();
  const currentQuote=draft=>draft.quoteId?(state().quotes||[]).find(quote=>quote.id===draft.quoteId)||null:null;
  const currentRequest=draft=>draft.requestId?(state().requests||[]).find(request=>request.id===draft.requestId)||null:null;
+ const availableClients=()=>state().agendaClients||state().clients||[];
+ const resolvedClient=draft=>resolveQuoteClientRef(draft?.clientRef,availableClients());
  const contextKey=draft=>draft.quoteId||`${draft.clientRef||'sin-cliente'}|${draft.requestId||'directo'}`;
- const registered=draft=>currentRequest(draft)?!currentRequest(draft).leadId:String(draft.clientRef||'').startsWith('user:');
+ const registered=draft=>currentRequest(draft)?!currentRequest(draft).leadId:resolvedClient(draft).kind==='user';
  const clientName=draft=>{
   const request=currentRequest(draft);if(request?.name)return request.name;
-  const {kind,id}=parseQuoteClientRef(draft.clientRef);
-  const clients=state().agendaClients||state().clients||[];
-  return clients.find(client=>String(client.id)===id&&(kind==='user'?Number(client.hasAccount):!Number(client.hasAccount)))?.name||'cliente';
+  return resolvedClient(draft).client?.name||'cliente';
  };
  function identity(draft){
   const stored=currentQuote(draft);
@@ -32,12 +53,7 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  }
  async function ensureRequest(draft,id){
   const existing=currentRequest(draft);if(existing)return existing;
-  const {kind,id:clientId}=parseQuoteClientRef(draft.clientRef);
-  if(!clientId||!['user','lead'].includes(kind))throw Error('Elegí un cliente antes de guardar el presupuesto.');
-  const first=draft.works?.find(work=>String(work.description||'').trim());
-  const service=String(first?.tariffRubric||first?.description||'Presupuesto').trim().slice(0,500)||'Presupuesto';
-  const payload={service,description:'Presupuesto iniciado por Administración.',idempotencyKey:safeKey('quote-direct-'+id.externalId)};
-  if(kind==='user')payload.userId=clientId;else payload.leadId=clientId;
+  const payload=buildDirectRequestPayload({draft,clients:availableClients(),externalId:id.externalId});
   return api('/api/admin/requests',payload);
  }
  function decorate(){
