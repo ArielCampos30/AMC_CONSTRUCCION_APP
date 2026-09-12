@@ -1,4 +1,4 @@
-import {estimatorTariffs} from './legacy-tariff-catalog.mjs';
+import {estimatorTariffs} from './tariff-catalog.mjs';
 
 export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now}){
  return function route({p,method,b,user,res}){
