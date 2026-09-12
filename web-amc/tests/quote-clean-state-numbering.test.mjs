@@ -36,13 +36,13 @@ test('servidor asigna correlativo comercial y conserva el número entre versione
   const requestBody={name:'Cliente numeración',phone:'3548001122',town:'La Falda',description:'Pintura exterior',service:'Pintura',type:'presupuesto'};
   const r1=await client.call('/api/requests',requestBody,201),r2=await client.call('/api/requests',{...requestBody,description:'Pintura interior'},201);
   const baseQuote={items:[{description:'Pintura'}],total:100000,internalCost:40000};
-  const q1=await admin.call('/api/quotes',{...baseQuote,requestId:r1.id,externalId:'linea-uno',version:'a'.repeat(64),number:'AMC-CODIGO-INTERNO'},201);
+  const q1=await admin.call('/api/quotes',{...baseQuote,requestId:r1.id,externalId:'linea-uno',version:'a'.repeat(64),number:'AMC-20260101-ABC123'},201);
   const year=new Date().toISOString().slice(0,4);
   assert.equal(q1.number,`AMC-${year}-0001`);
-  assert.notEqual(q1.number,'AMC-CODIGO-INTERNO');
+  assert.notEqual(q1.number,'AMC-20260101-ABC123');
   const q1v2=await admin.call('/api/quotes',{...baseQuote,total:110000,requestId:r1.id,externalId:'linea-uno',version:'b'.repeat(64),number:'OTRO-CODIGO'},201);
   assert.equal(q1v2.number,q1.number);
-  const q2=await admin.call('/api/quotes',{...baseQuote,requestId:r2.id,externalId:'linea-dos',version:'c'.repeat(64),number:'IGNORAR'},201);
+  const q2=await admin.call('/api/quotes',{...baseQuote,requestId:r2.id,externalId:'linea-dos',version:'c'.repeat(64),number:'AMC-20260101-DEF456'},201);
   assert.equal(q2.number,`AMC-${year}-0002`);
  }finally{await new Promise(resolve=>app.server.close(resolve));}
 });
