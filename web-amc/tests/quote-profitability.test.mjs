@@ -39,18 +39,26 @@ test('calcula ganancia, margen y precio sugerido con la fórmula histórica de A
  assert.ok(Math.abs(discounted.margin-37.80487804878049)<1e-9);
 });
 
-test('la revisión compacta expone rentabilidad y precio final sin filtrar datos al cliente',()=>{
+test('la revisión es una etapa nativa del asistente y conserva rentabilidad y precio final',()=>{
  const wizard=read('../public/quote-wizard.js');
- const css=read('../public/quote-builder-review.css');
- assert.match(wizard,/Rentabilidad y precio final/);
+ const reviewCss=read('../public/quote-builder-review.css');
+ const coreCss=read('../public/quote-wizard.css');
+ assert.match(wizard,/Revisar presupuesto/);
+ assert.match(wizard,/class="quote-review-stage"/);
+ assert.doesNotMatch(wizard,/quote-wizard-step quote-review-stage/);
+ assert.doesNotMatch(wizard,/<h2>Rentabilidad y precio final<\/h2>/);
  assert.match(wizard,/Margen objetivo/);
  assert.match(wizard,/Precio final editable/);
  assert.match(wizard,/No agrega jornales ocultos ni duplica mano de obra/);
  assert.match(wizard,/data-qw-use-suggested-price/);
  assert.match(wizard,/data-qw-reset-final-price/);
  assert.match(wizard,/Guardar \/ enviar · siguiente bloque/);
+ assert.match(reviewCss,/\.quote-review-layout\{display:grid/);
+ assert.doesNotMatch(reviewCss,/\.quote-review-stage\{max-width:980px/);
+ assert.match(coreCss,/\.quote-wizard-stage-3 \.quote-wizard-content\{overflow:auto/);
+ assert.match(coreCss,/\.quote-wizard-close\{display:grid;place-items:center/);
  assert.doesNotMatch(wizard,/iframe/);
- for(const source of [wizard,css]){
+ for(const source of [wizard,reviewCss,coreCss]){
   assert.doesNotMatch(source,/!important/);
   assert.doesNotMatch(source,/(?:window\.)?location\.reload\s*\(/);
  }
