@@ -1,7 +1,14 @@
-export function createQuoteClientCreateController({getState,api,refresh,navigate,toast,wizard}){
+export function createQuoteClientCreateController({getState,api,navigate,toast,wizard}){
  let saving=false;
  const clientRows=()=>getState().agendaClients||getState().clients||[];
  const cleanPhone=value=>String(value||'').replace(/\D/g,'').slice(0,15);
+ const upsertClient=client=>{
+  if(!client?.id)return client;
+  const current=getState();if(!Array.isArray(current.agendaClients))current.agendaClients=[];
+  const index=current.agendaClients.findIndex(item=>String(item?.id||'')===String(client.id));
+  if(index>=0)current.agendaClients[index]=client;else current.agendaClients.unshift(client);
+  return client;
+ };
  const setBusy=(form,busy)=>{
   const button=form?.querySelector('button[type="submit"]');
   if(button){button.disabled=busy;button.textContent=busy?'Guardando…':'Guardar y usar cliente';}
@@ -21,8 +28,6 @@ export function createQuoteClientCreateController({getState,api,refresh,navigate
  async function submit(event){
   const form=event.target?.closest?.('[data-qw-new-client-form]');
   if(!form||!document.querySelector('.quote-wizard-host'))return;
-  // Este listener vive en window/captura para que el flujo canónico sea el único que procesa
-  // el alta. Así no llega al submit histórico que todavía pueda existir en una sesión cacheada.
   event.preventDefault();
   event.stopImmediatePropagation();
   if(saving)return;
@@ -33,10 +38,8 @@ export function createQuoteClientCreateController({getState,api,refresh,navigate
   try{
    const payload=await api('/api/admin/clients',draft),client=payload?.duplicate||payload;
    if(!client?.id)throw Error('AMC no devolvió la ficha del cliente.');
-   await refresh?.();
-   const persisted=clientRows().find(item=>String(item?.id||'')===String(client.id))||client;
-   const lead=!Number(persisted?.hasAccount);
-   wizard.prefillClient(String(client.id),lead);
+   const persisted=upsertClient(client),lead=!Number(persisted?.hasAccount);
+   wizard.prefillClient(String(persisted.id),lead);
    wizard.open();
    navigate('cotizador');
    toast?.(payload?.duplicate?'Ese teléfono ya existía. Seleccioné la ficha existente.':'Cliente guardado y seleccionado.');
