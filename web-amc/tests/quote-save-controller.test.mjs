@@ -2,16 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {quotePersistentDocument,quoteContentVersion} from '../public/quote-persistence.js';
-import {createQuoteSaveController,parseQuoteClientRef,resolveQuoteClientRef,buildDirectRequestPayload,validateQuoteDraft} from '../public/quote-save-controller.js';
+import {createQuoteSaveController,parseQuoteClientRef,resolveQuoteClientRef,buildDirectRequestPayload,validateQuoteDraft,queueAutomaticQuotePdf} from '../public/quote-save-controller.js';
 
-test('controlador Guardar/Enviar usa API canónica sin depender del bridge legacy',()=>{
+test('controlador Guardar/Enviar usa API canónica y delega el PDF automático al generador existente',()=>{
  const controller=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
  const wrapper=readFileSync(new URL('../public/features-ui.js',import.meta.url),'utf8');
  assert.match(wrapper,/createQuoteSaveController/);
+ assert.match(wrapper,/generatePdf:legacy\.generatePdf/);
  assert.match(controller,/\/api\/admin\/requests/);
  assert.match(controller,/\/api\/quotes/);
  assert.match(controller,/quotePersistentDocument/);
  assert.match(controller,/quoteContentVersion/);
+ assert.match(controller,/queueAutomaticQuotePdf/);
+ assert.match(controller,/Generando PDF automáticamente/);
  assert.match(controller,/dataset\.qwSaveQuote/);
  assert.match(controller,/presupuesto-admin\//);
  assert.match(controller,/new MutationObserver/);
@@ -20,6 +23,16 @@ test('controlador Guardar/Enviar usa API canónica sin depender del bridge legac
  assert.match(controller,/button\.disabled!==disabled/);
  assert.doesNotMatch(controller,/presupuestos-bridge/);
  assert.doesNotMatch(controller,/createAndAttach|generatePendingPdf|pdfId/);
+});
+
+test('PDF automático se solicita una sola vez sólo cuando todavía falta',()=>{
+ const calls=[];
+ const generatePdf=(requestId,quoteId)=>calls.push([requestId,quoteId]);
+ assert.equal(queueAutomaticQuotePdf({saved:{id:'q-1',requestId:'r-fallback',pdf:''},requestId:'r-1',generatePdf}),true);
+ assert.deepEqual(calls,[['r-1','q-1']]);
+ assert.equal(queueAutomaticQuotePdf({saved:{id:'q-2',requestId:'r-2',pdf:'/media/listo'},requestId:'r-2',generatePdf}),false);
+ assert.equal(queueAutomaticQuotePdf({saved:{id:'q-3',requestId:'r-3',pdf:''},requestId:'r-3'}),false);
+ assert.equal(calls.length,1);
 });
 
 test('referencia de cliente conserva el id completo aunque contenga separadores históricos',()=>{
