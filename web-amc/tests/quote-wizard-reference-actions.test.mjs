@@ -5,16 +5,15 @@ import {normaliseWork,commercialReferenceTotal,jornalReference,findTariffMatches
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('editor ofrece las cuatro formas de resolver el precio dentro del trabajo seleccionado',()=>{
+test('editor ofrece sólo las tres formas que asignan un precio real',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.match(wizard,/data-qw-pricing-mode="tariff"/);
  assert.match(wizard,/data-qw-pricing-mode="manual"/);
  assert.match(wizard,/data-qw-pricing-mode="jornal"/);
- assert.match(wizard,/data-qw-pricing-mode="visit"/);
+ assert.doesNotMatch(wizard,/data-qw-pricing-mode="visit"/);
  assert.match(wizard,/Tarifario/);
  assert.match(wizard,/Manual/);
  assert.match(wizard,/Jornal/);
- assert.match(wizard,/Relevamiento/);
 });
 
 test('el mismo campo Trabajo filtra el Tarifario en vivo con precio y hasta cinco opciones',()=>{
@@ -40,14 +39,14 @@ test('la búsqueda parcial encuentra referencias sin exigir el nombre exacto',()
  assert.equal(result.matches[0].tariff.key,'1');
 });
 
-test('editar el nombre del trabajo no borra Manual, Jornal ni Relevamiento',()=>{
+test('editar el nombre del trabajo no borra Manual ni Jornal',()=>{
  const wizard=read('../public/quote-wizard.js');
  const handler=wizard.slice(wizard.indexOf('function handleWorkInput'),wizard.indexOf("document.addEventListener('click'"));
  assert.match(handler,/if\(key==='description'\)item\.description=target\.value/);
  assert.doesNotMatch(handler,/clearReference\(item\)/);
 });
 
-test('manual, jornal y relevamiento tienen impacto comercial explícito',()=>{
+test('manual y jornal tienen impacto comercial; el relevamiento legado exige resolver precio',()=>{
  const manual=normaliseWork({quantity:3,unitPrice:20000,tariffKind:'manual-reference'});
  const jornal=normaliseWork({workers:2,hours:4,tariffKind:'jornal'});
  const visit=normaliseWork({tariffKind:'visit-pending',tariffPrice:55000});
@@ -57,7 +56,16 @@ test('manual, jornal y relevamiento tienen impacto comercial explícito',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.match(wizard,/No modifica el Tarifario/);
  assert.match(wizard,/suma esta referencia al total del presupuesto inmediatamente/);
- assert.match(wizard,/No se suma un precio de obra ni una visita automática al presupuesto/);
+ assert.match(wizard,/Este trabajo quedó pendiente de un relevamiento anterior/);
+ assert.match(wizard,/elegí Tarifario, Manual o Jornal y cargá un precio real/);
+});
+
+test('usar referencia explica su estado y se habilita al editar el precio',()=>{
+ const wizard=read('../public/quote-wizard.js');
+ assert.match(wizard,/usingReference\?'Referencia aplicada':'Usar referencia'/);
+ assert.match(wizard,/reset\.disabled=usingReference\|\|automaticCommercial\(rows\)<=0/);
+ assert.match(wizard,/reset\.textContent=usingReference\?'Referencia aplicada':'Usar referencia'/);
+ assert.match(wizard,/data-qw-reset-final-price/);
 });
 
 test('mantiene prohibidos important, reload e iframe',()=>{
