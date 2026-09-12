@@ -13,9 +13,10 @@ export function amount(value,fallback=0){
 
 export function normaliseWork(raw={},fallbackDescription=''){
  const details=raw.details||{};
+ const tariffTask=String(raw.tariffTask??details.tariffTask??'').trim();
  return {
   id:String(raw.id||''),
-  description:String(raw.description||raw.clientDescription||raw.title||raw.name||raw.tarea||fallbackDescription||'').trim(),
+  description:String(tariffTask||raw.description||raw.clientDescription||raw.title||raw.name||raw.tarea||fallbackDescription||'').trim(),
   quantity:amount(raw.quantity??details.quantity,1),
   unit:String(raw.unit||details.unit||'unidad'),
   unitPrice:amount(raw.unitPrice??details.unitPrice,0),
@@ -27,12 +28,32 @@ export function normaliseWork(raw={},fallbackDescription=''){
   days:Math.max(1,Math.ceil(amount(raw.days??raw.m2Days??details.m2Days,1)||1)),
   hours:Math.max(.25,amount(raw.hours??details.hours,8)||8),
   tariffKey:String(raw.tariffKey??details.tariffKey??''),
-  tariffTask:String(raw.tariffTask??details.tariffTask??''),
+  tariffTask,
   tariffRubric:String(raw.tariffRubric??details.tariffRubric??''),
   tariffUnit:String(raw.tariffUnit??details.tariffUnit??''),
   tariffPrice:amount(raw.tariffPrice??details.tariffPrice,0),
   tariffKind:String(raw.tariffKind??details.tariffKind??'')
  };
+}
+
+// La consulta escrita para filtrar el Tarifario es transitoria. Una selección
+// confirmada reemplaza el nombre del trabajo y toda su referencia por datos
+// canónicos del Tarifario antes de que el borrador pueda revisarse o guardarse.
+export function applyTariffSelection(work,tariff,kind='tariff'){
+ if(!work||!tariff)return work;
+ const task=String(tariff.tarea||'').trim();
+ if(!task)return work;
+ work.description=task;
+ work.tariffKey=String(tariff.key||'');
+ work.tariffTask=task;
+ work.tariffRubric=String(tariff.rubro||'');
+ work.tariffUnit=String(tariff.unidad||'');
+ work.tariffPrice=amount(tariff.precio);
+ work.tariffKind=kind;
+ work.referenceSearch='';
+ work.unit=String(tariff.unidad||work.unit||'unidad');
+ work.unitPrice=0;
+ return work;
 }
 
 export const workDirectCost=work=>amount(work?.materials)+amount(work?.tools)+amount(work?.other);
@@ -42,6 +63,7 @@ export const measuredReference=work=>amount(work?.quantity,1)*amount(work?.unitP
 export const tariffReferenceTotal=work=>amount(work?.quantity,1)*amount(work?.tariffPrice);
 export const workLaborCost=(work,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>Math.max(1,Math.ceil(amount(work?.workers,1)||1))*Math.max(1,Math.ceil(amount(work?.days,1)||1))*amount(employeeDay);
 export const laborCostTotal=(works=[],employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>works.reduce((sum,work)=>sum+workLaborCost(work,employeeDay),0);
+// Estimación operativa: movilidad + costos directos + jornal implícito por equipo/días.
 export const internalCostTotal=(works=[],travel=0,employeeDay=DEFAULT_QUOTE_SETTINGS.employeeDay)=>directCostTotal(works,travel)+laborCostTotal(works,employeeDay);
 
 export function jornalTier(hours,settings=DEFAULT_QUOTE_SETTINGS){
@@ -67,6 +89,8 @@ export function commercialReferenceTotal(work,settings=DEFAULT_QUOTE_SETTINGS){
 }
 
 export function profitabilityCostTotal(works=[],travel=0){
+ // Rentabilidad visible: sólo costos cargados expresamente en trabajos cotizados.
+ // No incluye jornales implícitos y excluye relevamientos o trabajos sin precio.
  const priced=(Array.isArray(works)?works:[]).filter(work=>work?.tariffKind!=='visit-pending'&&commercialReferenceTotal(work)>0);
  if(!priced.length)return 0;
  return amount(travel)+priced.reduce((sum,work)=>sum+workLoadedInternalCost(work),0);

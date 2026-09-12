@@ -1,4 +1,4 @@
-import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,workDirectCost,directCostTotal,workLoadedInternalCost,workLaborCost,laborCostTotal,internalCostTotal,jornalReference,commercialReferenceTotal,profitabilityCostTotal,profitabilitySnapshot,suggestedPriceForMargin,findTariffMatches} from './quote-wizard-model.js';
+import {DEFAULT_QUOTE_SETTINGS,amount,normaliseWork,applyTariffSelection,workDirectCost,directCostTotal,workLoadedInternalCost,workLaborCost,laborCostTotal,internalCostTotal,jornalReference,commercialReferenceTotal,profitabilityCostTotal,profitabilitySnapshot,suggestedPriceForMargin,findTariffMatches} from './quote-wizard-model.js';
 
 const PHASES=['Cliente','Presupuesto','Revisión','Guardar / enviar'];
 const UNITS=['m²','ml','unidad','día','hora','servicio','obra','punto','salida'];
@@ -94,7 +94,7 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  function selectedTariff(work){return tariffs.find(item=>item.key===work?.tariffKey)||null;}
  function applyTariff(work,tariff,kind='tariff'){
   if(!work||!tariff)return;
-  work.tariffKey=tariff.key;work.tariffTask=tariff.tarea;work.tariffRubric=tariff.rubro;work.tariffUnit=tariff.unidad;work.tariffPrice=amount(tariff.precio);work.tariffKind=kind;work.referenceSearch='';work.unit=tariff.unidad||work.unit;work.unitPrice=0;
+  applyTariffSelection(work,tariff,kind);
   if(requiresMeasuredQuantity(tariff.unidad)&&!work.quantityExplicit)work.quantity=0;
   else if(!requiresMeasuredQuantity(tariff.unidad)&&!work.quantityExplicit&&amount(work.quantity)<=0)work.quantity=1;
  }
@@ -322,5 +322,5 @@ export function createQuoteWizard({getState,isAdmin,esc,navigate,toast}){
  });
  document.addEventListener('toggle',event=>{if(!document.querySelector('.quote-wizard-host')||!event.target.matches('[data-qw-cost-details]'))return;const id=event.target.dataset.qwCostDetails;if(event.target.open)openCostWorkIds.add(id);else openCostWorkIds.delete(id);},true);
  function afterRender(page){if(page!=='cotizador')return;ensureTariffs();requestAnimationFrame(()=>document.querySelector('.quote-wizard-dialog')?.focus?.({preventScroll:true}));}
- return {render,open,prefillClient,afterRender,getDraft:()=>{const rows=[...(works||[])],automatic=automaticCommercial(rows),sale=currentFinalPrice(rows),profit=profitabilitySnapshot(sale,profitabilityCostTotal(rows,travel));return {stage,requestId,quoteId,mode,clientRef,travel,employeeDay,works:rows,commercialReference:automatic,automaticPrice:automatic,finalPrice:sale,finalPriceManual,desiredMargin,directCost:directCostTotal(rows,travel),laborCost:laborCostTotal(rows,employeeDay),internalCost:internalCostTotal(rows,travel,employeeDay),loadedInternalCost:profit.cost,estimatedGain:profit.gain,estimatedMargin:profit.margin};}};
+ return {render,open,prefillClient,afterRender,getDraft:()=>{const rows=[...initialiseWorks()],automatic=automaticCommercial(rows),sale=currentFinalPrice(rows),profit=profitabilitySnapshot(sale,profitabilityCostTotal(rows,travel));return {stage,requestId,quoteId,mode,clientRef,travel,employeeDay,works:rows,commercialReference:automatic,automaticPrice:automatic,finalPrice:sale,finalPriceManual,desiredMargin,directCost:directCostTotal(rows,travel),laborCost:laborCostTotal(rows,employeeDay),internalCost:internalCostTotal(rows,travel,employeeDay),loadedInternalCost:profit.cost,estimatedGain:profit.gain,estimatedMargin:profit.margin};}};
 }
