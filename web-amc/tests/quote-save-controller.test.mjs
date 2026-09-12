@@ -11,7 +11,7 @@ test('controlador Guardar/Enviar usa API canónica sin depender del bridge legac
  assert.match(controller,/\/api\/quotes/);
  assert.match(controller,/quotePersistentDocument/);
  assert.match(controller,/quoteContentVersion/);
- assert.match(controller,/data\.qwSaveQuote/);
+ assert.match(controller,/dataset\.qwSaveQuote/);
  assert.match(controller,/presupuesto-admin\//);
  assert.doesNotMatch(controller,/presupuestos-bridge/);
  assert.doesNotMatch(controller,/createAndAttach|generatePendingPdf|pdfId/);
