@@ -17,15 +17,15 @@ test('portada pública no usa observadores profundos que se autoalimentan',async
 });
 
 test('Más deja un único chat global y no duplica la bandeja completa',async()=>{
- const [system,features,legacy]=await Promise.all([
+ const [system,features,adminChat]=await Promise.all([
   source('public/admin-system-ui.js'),
-  source('public/features-ui-legacy.js'),
+  source('public/chat-features.js'),
   source('public/admin-chat-ui.js')
  ]);
  assert.doesNotMatch(system,/\['chat-admin','Chat'\]/);
  assert.match(system,/\['clientes','Clientes'\].*\['empleados','Empleados'\]/s);
  assert.match(features,/floatingEmployeeContacts\(\).*filter\(e=>e\.role==='employee'&&e\.active!==false\)/s);
- assert.match(legacy,/const staff=state=>\(state\.employees\|\|\[\]\)\.filter\(item=>item\.role==='employee'&&item\.active!==false\)/);
+ assert.match(adminChat,/const staff=state=>\(state\.employees\|\|\[\]\)\.filter\(item=>item\.role==='employee'&&item\.active!==false\)/);
 });
 
 test('chat flotante de empleado muestra el spinner dentro del mensaje y no reabre teclado móvil',async()=>{
