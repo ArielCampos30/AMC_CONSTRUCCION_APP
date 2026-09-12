@@ -20,7 +20,8 @@ test('admin v3 conserva destinos, filtros y vistas responsivas',async()=>{
  assert.match(css,/@media\(max-width:800px\)/);assert.match(css,/@media\(max-width:430px\)/);
  assert.doesNotMatch(css,/min-width:\s*(?:[4-9]\d\d|\d{4,})px/);
  assert.match(system,/\['Gestión'.*'Chat'.*'Clientes'.*'Empleados'/s);
- assert.match(system,/\['Herramientas'.*'Tarifario y cotizador'.*'Resumen diario'/s);
+ assert.match(system,/\['Herramientas'.*'Tarifario'.*'Cotizador'.*'Resumen diario'/s);
+ assert.doesNotMatch(system,/Tarifario y cotizador/);
  assert.match(system,/\['Sistema'.*'Configuración'.*'Respaldos'/s);
 });
 
