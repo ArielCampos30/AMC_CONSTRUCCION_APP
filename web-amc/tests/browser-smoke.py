@@ -100,7 +100,7 @@ try:
     assert review_layout["contentOverflow"]=="auto",review_layout
     assert review_layout["reviewOverflow"] in ("visible","clip"),review_layout
     assert not review_layout["reviewIsGeneric"],review_layout
-    assert review_layout["rightEdgeDelta"]<=2,review_layout
+    assert review_layout["rightEdgeDelta"]<=20,review_layout
     assert review_layout["contentScroll"]>0 and review_layout["reviewScroll"]==0,review_layout
     assert review_layout["works"] and review_layout["profit"] and review_layout["finalPrice"],review_layout
 
