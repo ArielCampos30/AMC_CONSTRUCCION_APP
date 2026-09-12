@@ -7,6 +7,7 @@ const quoteNumber=(externalId,date=new Date())=>`AMC-${date.toISOString().slice(
 export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard}){
  let saving=false;
  const identities=new Map();
+ let hostObserver=null,observedHost=null,decorateScheduled=false;
  const state=()=>getState();
  const currentQuote=draft=>draft.quoteId?(state().quotes||[]).find(quote=>quote.id===draft.quoteId)||null:null;
  const currentRequest=draft=>draft.requestId?(state().requests||[]).find(request=>request.id===draft.requestId)||null:null;
@@ -39,15 +40,34 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
   const host=document.querySelector('.quote-wizard-host');if(!host)return;
   const draft=wizard.getDraft();if(draft.stage!==4)return;
   const button=host.querySelector('.quote-wizard-controls .primary');if(!button)return;
-  button.dataset.qwSaveQuote='1';
-  button.disabled=saving||!draft.clientRef||!draft.works?.length||!(Number(draft.finalPrice)>0);
-  button.textContent=saving?'Procesando…':registered(draft)?'Enviar presupuesto':'Guardar presupuesto';
+  const disabled=saving||!draft.clientRef||!draft.works?.length||!(Number(draft.finalPrice)>0);
+  const label=saving?'Procesando…':registered(draft)?'Enviar presupuesto':'Guardar presupuesto';
+  if(button.dataset.qwSaveQuote!=='1')button.dataset.qwSaveQuote='1';
+  if(button.disabled!==disabled)button.disabled=disabled;
+  if(button.textContent!==label)button.textContent=label;
   const context=host.querySelector('.quote-review-context');
   if(context&&!context.querySelector('[data-qw-save-summary]')){
    const node=document.createElement('div');node.className='quote-review-reference';node.dataset.qwSaveSummary='1';
    node.innerHTML=`<span>${registered(draft)?'Se enviará dentro de AMC':'Se guardará para entrega externa'}</span><strong>${money(draft.finalPrice)}</strong>`;
    context.append(node);
   }
+ }
+ function scheduleDecorate(){
+  if(decorateScheduled)return;decorateScheduled=true;
+  requestAnimationFrame(()=>{decorateScheduled=false;decorate();});
+ }
+ function stopWatching(){
+  hostObserver?.disconnect?.();hostObserver=null;observedHost=null;decorateScheduled=false;
+ }
+ function watchHost(){
+  const host=document.querySelector('.quote-wizard-host');
+  if(!host){stopWatching();return;}
+  if(observedHost!==host){
+   hostObserver?.disconnect?.();observedHost=host;
+   hostObserver=new MutationObserver(()=>scheduleDecorate());
+   hostObserver.observe(host,{childList:true,subtree:true});
+  }
+  scheduleDecorate();
  }
  async function save(){
   if(saving)return;
@@ -73,13 +93,13 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
    throw error;
   }finally{
    saving=false;
-   requestAnimationFrame(decorate);
+   scheduleDecorate();
   }
  }
  document.addEventListener('click',event=>{
   const saveButton=event.target.closest?.('[data-qw-save-quote]');
   if(saveButton){event.preventDefault();if(saveButton.disabled||saving)return;save().catch(()=>{});return;}
-  if(event.target.closest?.('.quote-wizard-host [data-qw-next],.quote-wizard-host [data-qw-back],.quote-wizard-host [data-qw-review-work]'))requestAnimationFrame(decorate);
+  if(event.target.closest?.('.quote-wizard-host [data-qw-next],.quote-wizard-host [data-qw-back],.quote-wizard-host [data-qw-review-work]'))scheduleDecorate();
  });
- return {afterRender(page){if(page==='cotizador')requestAnimationFrame(decorate);}};
+ return {afterRender(page){if(page==='cotizador')watchHost();else stopWatching();}};
 }
