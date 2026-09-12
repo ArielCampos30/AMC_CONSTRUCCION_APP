@@ -59,7 +59,7 @@ test('chat informa al emisor cuándo el otro lado leyó el mensaje',async()=>{
 
 test('UI usa checks y prepara fotos más livianas para móvil',async()=>{
   const [features,app,float,chat,team,media]=await Promise.all([
-    readFile(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8'),
+    readFile(new URL('../public/chat-features.js',import.meta.url),'utf8'),
     readFile(new URL('../public/app.js',import.meta.url),'utf8'),
     readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8'),
     readFile(new URL('../public/chat-view.js',import.meta.url),'utf8'),
