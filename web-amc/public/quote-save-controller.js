@@ -42,11 +42,11 @@ export const buildDirectRequestPayload=({draft,clients=[],externalId})=>{
 };
 export const queueAutomaticQuotePdf=({saved,requestId,generatePdf})=>{
  if(!saved?.id||saved.pdf||typeof generatePdf!=='function')return false;
- generatePdf(requestId||saved.requestId||'',saved.id);
+ Promise.resolve().then(()=>generatePdf(requestId||saved.requestId||'',saved.id)).catch(()=>{});
  return true;
 };
 
-export function createQuoteSaveController({getState,api,refresh,navigate,toast,wizard,generatePdf}){
+export function createQuoteSaveController({getState,api,navigate,toast,wizard,generatePdf}){
  let saving=false;
  const identities=new Map();
  let hostObserver=null,observedHost=null,decorateScheduled=false;
@@ -61,6 +61,11 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
   const request=currentRequest(draft);if(request?.name)return request.name;
   return resolvedClient(draft).client?.name||'cliente';
  };
+ const upsert=(name,value)=>{
+  if(!value?.id)return;
+  const current=state(),rows=Array.isArray(current[name])?current[name]:(current[name]=[]),index=rows.findIndex(item=>item.id===value.id);
+  if(index>=0)rows[index]={...rows[index],...value};else rows.unshift(value);
+ };
  function identity(draft){
   const stored=currentQuote(draft);
   if(stored?.externalId)return {externalId:String(stored.externalId)};
@@ -70,30 +75,30 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
  }
  async function ensureRequest(draft,id){
   const existing=currentRequest(draft);if(existing)return existing;
-  const create=async()=>{
+  try{
    const payload=buildDirectRequestPayload({draft,clients:availableClients(),externalId:id.externalId});
    const request=await api('/api/admin/requests',payload);
    if(!request?.id)throw Error('AMC no devolvió la solicitud interna necesaria para guardar el presupuesto.');
+   upsert('requests',request);if(Array.isArray(state().chatRequests))upsert('chatRequests',request);
    return request;
-  };
-  try{return await create();}
-  catch(error){
-   const generic=/Elegí un cliente y describí el trabajo/i.test(String(error?.message||''));
-   if(!generic)throw error;
-   await refresh?.();
-   try{return await create();}
-   catch(retryError){
-    if(/Elegí un cliente y describí el trabajo/i.test(String(retryError?.message||'')))throw Error('AMC no encontró la ficha del cliente seleccionado al crear el presupuesto. Volvé a la etapa Cliente, seleccionalo otra vez y reintentá.');
-    throw retryError;
-   }
+  }catch(error){
+   if(/Elegí un cliente y describí el trabajo/i.test(String(error?.message||'')))throw Error('AMC no encontró la ficha del cliente seleccionado. Volvé a Cliente, seleccionalo otra vez y reintentá.');
+   throw error;
   }
+ }
+ function syncSavedState(request,saved){
+  const current=state(),quotes=Array.isArray(current.quotes)?current.quotes:(current.quotes=[]),replaceable=new Set(['Enviado','Guardado','Entregado','Cambios solicitados']);
+  for(let index=0;index<quotes.length;index++)if(quotes[index].id!==saved.id&&quotes[index].requestId===request.id&&!quotes[index].archivedAt&&replaceable.has(quotes[index].status))quotes[index]={...quotes[index],status:'Reemplazado'};
+  upsert('quotes',saved);
+  const updatedRequest={...request,presupuestoIds:[...new Set([...(request.presupuestoIds||[]),saved.id])],status:request.leadId?'En contacto':'Presupuestada'};
+  upsert('requests',updatedRequest);if(Array.isArray(current.chatRequests))upsert('chatRequests',updatedRequest);
  }
  function decorate(){
   const host=document.querySelector('.quote-wizard-host');if(!host)return;
   const draft=wizard.getDraft();if(draft.stage!==4)return;
   const button=host.querySelector('.quote-wizard-controls .primary');if(!button)return;
   const disabled=saving||!draft.clientRef||!draft.works?.length||!(Number(draft.finalPrice)>0);
-  const label=saving?'Procesando…':registered(draft)?'Enviar presupuesto':'Guardar presupuesto';
+  const label=saving?'Guardando…':registered(draft)?'Enviar presupuesto':'Guardar presupuesto';
   if(button.dataset.qwSaveQuote!=='1')button.dataset.qwSaveQuote='1';
   if(button.disabled!==disabled)button.disabled=disabled;
   if(button.textContent!==label)button.textContent=label;
@@ -108,23 +113,16 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
   if(decorateScheduled)return;decorateScheduled=true;
   requestAnimationFrame(()=>{decorateScheduled=false;decorate();});
  }
- function stopWatching(){
-  hostObserver?.disconnect?.();hostObserver=null;observedHost=null;decorateScheduled=false;
- }
+ function stopWatching(){hostObserver?.disconnect?.();hostObserver=null;observedHost=null;decorateScheduled=false;}
  function watchHost(){
   const host=document.querySelector('.quote-wizard-host');
   if(!host){stopWatching();return;}
-  if(observedHost!==host){
-   hostObserver?.disconnect?.();observedHost=host;
-   hostObserver=new MutationObserver(()=>scheduleDecorate());
-   hostObserver.observe(host,{childList:true,subtree:true});
-  }
+  if(observedHost!==host){hostObserver?.disconnect?.();observedHost=host;hostObserver=new MutationObserver(()=>scheduleDecorate());hostObserver.observe(host,{childList:true,subtree:true});}
   scheduleDecorate();
  }
  async function save(){
   if(saving)return;
-  const draft=wizard.getDraft();
-  validateQuoteDraft(draft);
+  const draft=wizard.getDraft();validateQuoteDraft(draft);
   const id=identity(draft),willSend=registered(draft),action=willSend?'Enviar':'Guardar';
   if(window.AMCConfirm){const ok=await window.AMCConfirm(`¿${action} el presupuesto para ${clientName(draft)} por ${money(draft.finalPrice)}?`,{title:willSend?'Enviar presupuesto':'Guardar presupuesto',confirmLabel:action});if(!ok)return;}
   saving=true;decorate();
@@ -138,20 +136,17 @@ export function createQuoteSaveController({getState,api,refresh,navigate,toast,w
    if(!/^[a-f0-9]{64}$/.test(String(document.version||'')))throw Error('AMC no pudo generar una versión válida del presupuesto.');
    const saved=await api('/api/quotes',document);
    if(!saved?.id)throw Error('AMC no devolvió el presupuesto guardado.');
-   await refresh?.();
-   const latest=(state().quotes||[]).find(quote=>quote.id===saved.id)||saved;
-   const pdfQueued=queueAutomaticQuotePdf({saved:latest,requestId:request.id,generatePdf});
-   const pdfMessage=latest.pdf?' PDF listo.':pdfQueued?' Generando PDF automáticamente…':' PDF pendiente de generar.';
+   syncSavedState(request,saved);
    const oldKey=contextKey(draft);identities.delete(oldKey);
-   toast?.((saved.status==='Enviado'?'Presupuesto enviado. El cliente ya puede verlo en AMC.':saved.status==='Guardado'?'Presupuesto guardado. Podés registrar su entrega externa.':'Presupuesto actualizado.')+pdfMessage);
+   toast?.(saved.status==='Enviado'?'Presupuesto guardado. Preparando el PDF para enviarlo al cliente…':saved.status==='Guardado'?'Presupuesto guardado. Preparando PDF para la entrega…':'Presupuesto actualizado. Preparando PDF…');
    wizard.open();
    navigate(`presupuesto-admin/${saved.id}`);
+   queueAutomaticQuotePdf({saved,requestId:request.id,generatePdf});
   }catch(error){
    toast?.(String(error?.message||'No se pudo guardar el presupuesto.'));
    throw error;
   }finally{
-   saving=false;
-   scheduleDecorate();
+   saving=false;scheduleDecorate();
   }
  }
  document.addEventListener('click',event=>{
