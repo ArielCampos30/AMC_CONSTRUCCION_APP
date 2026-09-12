@@ -22,7 +22,13 @@ test('avisos transitorios normales duran tres segundos y borrar no muestra confi
  assert.match(runtime,/await deleteNotice\(id\)/);
 });
 
-test('volver global no toca la portada pública ni intercepta el volver nativo',async()=>{
+test('el contador de avisos no desaparece al navegar por pantallas sin tarjetas de aviso',async()=>{
+ const runtime=await source('public/ux-runtime-fixes.js');
+ assert.match(runtime,/if\(!cards\.length&&currentRoute\(\)!=='avisos'\)return;/);
+ assert.match(runtime,/const unread=cards\.filter\(card=>card\.classList\.contains\('unread'\)\)\.length/);
+});
+
+test('volver global no toca la portada pública ni se duplica con el volver propio de la pantalla',async()=>{
  const [runtime,index]=await Promise.all([source('public/ux-runtime-fixes.js'),source('public/index.html')]);
  assert.match(index,/ux-runtime-fixes\.js/);
  assert.match(runtime,/function authenticatedShell/);
@@ -31,5 +37,8 @@ test('volver global no toca la portada pública ni intercepta el volver nativo',
  assert.doesNotMatch(runtime,/observe\(app,\{childList:true,subtree:true\}\)/);
  assert.match(runtime,/closest\?\.\('\[data-global-back\]'\)/);
  assert.doesNotMatch(runtime,/\[data-global-back\],\[data-action="back"\]/);
+ assert.match(runtime,/if\(main\.querySelector\('\[data-action="back"\]'\)\)return true;/);
+ assert.match(runtime,/if\(hasOwnBack\(main\)\)\{existing\?\.remove\(\);return;\}/);
+ assert.match(runtime,/if\(existing\)return;/);
  assert.match(runtime,/function fallbackBackRoute/);
 });
