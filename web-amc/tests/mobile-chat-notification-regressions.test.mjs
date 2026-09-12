@@ -35,7 +35,7 @@ test('chat móvil conserva el compositor, sigue al teclado y evita avisos del hi
  assert.match(notices,/api\('\/api\/notices\/read',\{route:active\}\)/);
 });
 
-test('presupuesto avisa sólo al cliente y el mismo token Android pertenece a la última cuenta que lo registra',async()=>{
+test('presupuesto avisa sólo al cliente cuando el PDF está listo y el mismo token Android pertenece a la última cuenta que lo registra',async()=>{
  const app=createApp({dbPath:':memory:',origin});
  app.addUser('mobile-owner@amc.test','Strong-Owner-2026!','AMC','admin');
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
@@ -55,7 +55,11 @@ test('presupuesto avisa sólo al cliente y el mismo token Android pertenece a la
   assert.equal(app.db.prepare('SELECT userId FROM devices WHERE id=?').get(second.deviceId).userId,clientState.user.id);
   const request=await client.call('/api/requests',{name:'Cliente Mobile',phone:'3548000099',town:'La Falda',description:'Trabajo de prueba',service:'Albañilería',type:'presupuesto'},201);
   const quote=await admin.call('/api/quotes',{requestId:request.id,externalId:'mobile-quote',version:'b'.repeat(64),number:'AMC-MOBILE-1',items:[{description:'Trabajo'}],total:619000},201);
-  const afterClient=await client.call('/api/state'),afterAdmin=await admin.call('/api/state');
+  let afterClient=await client.call('/api/state');
+  assert.equal(afterClient.notices.some(n=>n.url==='/#presupuesto/'+quote.id&&n.title==='Tu presupuesto está listo'),false);
+  const pdf=await admin.call('/api/upload',{mime:'application/pdf',base64:Buffer.from('%PDF-1.4 mobile').toString('base64')},201);
+  await admin.call('/api/quotes/'+quote.id+'/pdf',{pdfId:pdf.id});
+  afterClient=await client.call('/api/state');const afterAdmin=await admin.call('/api/state');
   assert.ok(afterClient.notices.some(n=>n.url==='/#presupuesto/'+quote.id&&n.title==='Tu presupuesto está listo'));
   assert.equal(afterAdmin.notices.some(n=>n.url==='/#presupuesto/'+quote.id),false);
  }finally{await new Promise(resolve=>app.server.close(resolve));}
