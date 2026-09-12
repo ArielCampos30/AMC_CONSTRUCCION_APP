@@ -78,6 +78,9 @@ try:
         assert not stage_one["overflow"] and stage_one["headerFlow"] and not stage_one["titleCloseOverlap"],(viewport,stage_one)
         assert stage_one["closeRound"] and stage_one["iconCentered"] and stage_one["controlsClearNav"],(viewport,stage_one)
         assert not stage_one["chatVisible"] and not stage_one["outside"] and not stage_one["clientOverlap"],(viewport,stage_one)
+        structure=js("""const page=document.querySelector('.quote-wizard-page'),quoteHeader=page.querySelector('.quote-wizard-header'),internal=[...page.querySelectorAll('header:not(.quote-wizard-header)')],select=page.querySelector('[data-qw-client]'),add=page.querySelector('[data-qw-new-client]'),sr=select.getBoundingClientRect(),ar=add.getBoundingClientRect();return {outline:getComputedStyle(page).outlineStyle,quoteHeaderPosition:getComputedStyle(quoteHeader).position,stickyInternal:internal.filter(node=>['sticky','fixed'].includes(getComputedStyle(node).position)).length,clientBottomDelta:Math.abs(sr.bottom-ar.bottom),clientGrid:getComputedStyle(page.querySelector('.quote-client-picker')).gridTemplateColumns};""")
+        assert structure["outline"]=="none" and structure["quoteHeaderPosition"]=="static" and structure["stickyInternal"]==0,(viewport,structure)
+        if viewport[0]>600: assert structure["clientBottomDelta"]<=2,(viewport,structure)
     call("POST",prefix+"/window/rect",{"width":1366,"height":768})
     js("""const s=document.querySelector('[data-qw-client]');const option=[...s.options].find(o=>o.value);if(!option)return false;s.value=option.value;s.dispatchEvent(new Event('change',{bubbles:true}));return true;""")
     wait("return !!document.querySelector('[data-qw-next]:not([disabled])')")
@@ -111,6 +114,8 @@ try:
         assert stage_two["closeRound"] and stage_two["iconCentered"] and not stage_two["pricingOverlap"],(viewport,stage_two)
         assert stage_two["relevamientoFits"] and stage_two["controlsClearNav"] and not stage_two["chatVisible"],(viewport,stage_two)
         assert not stage_two["outside"],(viewport,stage_two)
+        pricing_modes=js("return [...document.querySelectorAll('[data-qw-pricing-mode]')].map(button=>button.textContent.trim())")
+        assert pricing_modes==["Tarifario","Manual","Jornal"],(viewport,pricing_modes)
     call("POST",prefix+"/window/rect",{"width":1366,"height":768})
     js("document.querySelector('[data-qw-next]').click();return true;")
     wait("return !!document.querySelector('.quote-wizard-stage-3 .quote-cost-stage')")
@@ -123,6 +128,13 @@ try:
     set_input('[data-qw-travel]',30000)
     for key,value in [('materials',100000),('tools',20000),('other',10000),('labor',0),('workers',2),('days',3)]:
         set_input('[data-qw-work-input][data-qw-key="'+key+'"]',value)
+    set_input('[data-qw-final-price]',955000)
+    reference_action=js("""const button=document.querySelector('[data-qw-reset-final-price]'),input=document.querySelector('[data-qw-final-price]');return {disabled:button.disabled,text:button.textContent.trim(),cursor:getComputedStyle(button).cursor,input:Number(input.value)};""")
+    assert reference_action=={"disabled":False,"text":"Usar referencia","cursor":"pointer","input":955000},reference_action
+    js("document.querySelector('[data-qw-reset-final-price]').click();return true;")
+    wait("return document.querySelector('[data-qw-reset-final-price]').textContent.trim()==='Referencia aplicada'")
+    applied_reference=js("""const button=document.querySelector('[data-qw-reset-final-price]'),input=document.querySelector('[data-qw-final-price]');return {disabled:button.disabled,text:button.textContent.trim(),cursor:getComputedStyle(button).cursor,input:Number(input.value)};""")
+    assert applied_reference["disabled"] and applied_reference["text"]=="Referencia aplicada" and applied_reference["cursor"]=="not-allowed" and applied_reference["input"]>0,applied_reference
     set_input('[data-qw-final-price]',955000)
     js("const c=document.querySelector('[data-qw-cost-confirm]');c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));return true;")
     wait("return document.querySelector('[data-qw-profit-margin]').textContent.includes('67.5')")
