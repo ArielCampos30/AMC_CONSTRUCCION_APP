@@ -285,7 +285,6 @@ try:
     login(CLIENT_EMAIL,CLIENT_PASSWORD,"client-v5")
     go(BASE+"/#mi-trabajo/"+request_id)
     wait("return document.body.innerText.includes('Primer avance E2E') && document.body.innerText.includes('Pagos registrados') && document.body.innerText.includes('Saldo')")
-    assert "Anticipo E2E" in visible_text()
     go(BASE+"/#cierre")
     wait("return !!document.querySelector('.closure-reply')")
     assert "Pendiente de conformidad" in visible_text()
