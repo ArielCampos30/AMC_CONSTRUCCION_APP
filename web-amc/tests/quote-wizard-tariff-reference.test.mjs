@@ -47,14 +47,14 @@ test('endpoint de referencias exige administrador y devuelve el tarifario vigent
  assert.ok(sent.payload.items.some(item=>item.tarea==='Revoque fino'&&item.precio===21000));
 });
 
-test('editor consulta referencias filtradas sin incrustar Tarifario completo ni cobrar visita automaticamente',()=>{
+test('editor consulta referencias filtradas y no ofrece un relevamiento sin precio',()=>{
  const wizard=read('../public/quote-wizard.js');
  assert.doesNotMatch(wizard,/Precio base AMC \/ unidad/);
  assert.match(wizard,/\/api\/estimator-tariffs/);
  assert.match(wizard,/Referencia del Tarifario/);
  assert.match(wizard,/findTariffMatches\(tariffs,query,5\)/);
- assert.match(wizard,/no inventa un precio ni suma una visita automáticamente/i);
- assert.match(wizard,/data-qw-pricing-mode="visit"/);
+ assert.match(wizard,/Completá el relevamiento fuera del presupuesto/i);
+ assert.doesNotMatch(wizard,/data-qw-pricing-mode="visit"/);
  assert.doesNotMatch(wizard,/data-estimator-view="tariff"/);
  assert.doesNotMatch(wizard,/<iframe/i);
  assert.doesNotMatch(wizard,/!important/);
