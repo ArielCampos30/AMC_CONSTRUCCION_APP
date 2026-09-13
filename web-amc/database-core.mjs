@@ -22,6 +22,7 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='active'))db.exec('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
  let stateRows=null,statePositions=null,stateUsers=null;
  const all=(kind,owner)=>stateRows?(stateRows.get(kind)||[]).filter(r=>owner===undefined||r.owner===owner).map(r=>r.value):db.prepare('SELECT body FROM docs WHERE kind=?'+(owner===undefined?'':' AND owner=?')+' ORDER BY rowid DESC').all(...(owner===undefined?[kind]:[kind,owner])).map(r=>JSON.parse(r.body));
+ const allEntries=(kind,owner)=>stateRows?(stateRows.get(kind)||[]).filter(r=>owner===undefined||r.owner===owner).map(r=>({owner:r.owner,value:r.value})):db.prepare('SELECT owner,body FROM docs WHERE kind=?'+(owner===undefined?'':' AND owner=?')+' ORDER BY rowid DESC').all(...(owner===undefined?[kind]:[kind,owner])).map(r=>({owner:r.owner,value:JSON.parse(r.body)}));
  const activeUsers=role=>stateUsers?stateUsers.filter(user=>!role||user.role===role):db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE active=1'+(role?' AND role=?':'')+' ORDER BY name').all(...(role?[role]:[]));
  const docPosition=key=>statePositions?.get(key)||db.prepare('SELECT rowid FROM docs WHERE id=?').get(key)?.rowid||0;
  const get=(kind,key)=>{const r=db.prepare('SELECT body FROM docs WHERE kind=? AND id=?').get(kind,key);if(!r)fail(404,'No encontrado.');return JSON.parse(r.body);};
@@ -47,5 +48,5 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
  };
  const endStateSnapshot=()=>{stateRows=null;statePositions=null;stateUsers=null;};
  runMigrations();
- return {db,remoteUrl,all,activeUsers,docPosition,get,put,transaction,runMigrations,beginStateSnapshot,endStateSnapshot};
+ return {db,remoteUrl,all,allEntries,activeUsers,docPosition,get,put,transaction,runMigrations,beginStateSnapshot,endStateSnapshot};
 }
