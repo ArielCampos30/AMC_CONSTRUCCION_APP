@@ -71,7 +71,8 @@ test('catálogo ya no depende en ejecución del HTML del estimador legacy',()=>{
  const catalog=read('../tariff-catalog.mjs'),routes=read('../admin-utility-routes.mjs'),ui=read('../public/tariff-ui.js');
  assert.doesNotMatch(catalog,/tarifario-base-source\.html|readFileSync/);
  assert.doesNotMatch(routes,/all\('estimator'/);
- assert.match(routes,/all\('tariffCatalog'/);
+ assert.match(routes,/loadTariffCatalog\(all\)/);
+ assert.match(catalog,/all\('tariffCatalog'\)/);
  assert.match(ui,/data-tariff-new-item/);
  assert.match(ui,/data-tariff-rubrics/);
  assert.match(ui,/data-tariff-bulk/);
