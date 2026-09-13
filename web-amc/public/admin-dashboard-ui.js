@@ -6,7 +6,7 @@ export function createAdminDashboardUI({getState,heading,closureNeedsAction}){
    inProgress=(state.works||[]).filter(work=>work.status==='En ejecución').length,
    toClose=(state.works||[]).filter(closureNeedsAction).length,
    waitingClient=(state.closures||[]).filter(closure=>closure.status==='Pendiente de conformidad').length,
-   unread=Object.values(state.chatUnread||{}).reduce((total,count)=>total+count,0),
+   unread=Object.values(state.clientChatUnread||state.chatUnread||{}).reduce((total,count)=>total+count,0),
    attention=[
     ['Solicitudes nuevas',(state.requests||[]).filter(request=>request.status==='Nueva').length,'solicitudes'],
     ['Presupuestos esperando respuesta',waiting,'presupuestos'],
