@@ -7,11 +7,11 @@ const origin='http://localhost:4180';
 const source=name=>readFile(new URL('../public/'+name,import.meta.url),'utf8');
 
 test('admin v3 conserva destinos, filtros y vistas responsivas',async()=>{
- const [app,css,dashboard,requestsUI,quotesUI,worksUI,chatUI,system]=await Promise.all([
-  source('app.js'),source('admin-v3.css'),source('admin-dashboard-ui.js'),source('admin-requests-ui.js'),source('admin-quotes-ui.js'),source('admin-works-ui.js'),source('admin-chat-ui.js'),source('admin-system-ui.js')
+ const [app,navigation,css,dashboard,requestsUI,quotesUI,worksUI,chatUI,system]=await Promise.all([
+  source('app.js'),source('app-shell-navigation.js'),source('admin-v3.css'),source('admin-dashboard-ui.js'),source('admin-requests-ui.js'),source('admin-quotes-ui.js'),source('admin-works-ui.js'),source('admin-chat-ui.js'),source('admin-system-ui.js')
  ]);
  const nav="[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']]";
- assert.ok(app.includes(nav));
+ assert.ok(navigation.includes(nav));assert.match(app,/getShellNavigation/);
  assert.match(dashboard,/Solicitudes nuevas.*Presupuestos esperando respuesta.*Presupuestos aceptados sin programar.*Obras en curso.*Mensajes sin leer/s);
  assert.match(requestsUI,/Nuevas.*Revisando.*Visita pendiente.*Presupuestadas.*No tomadas.*Todas/s);
  assert.match(quotesUI,/Pendientes.*Aceptados.*No aceptados.*Vencidos.*Todos/s);

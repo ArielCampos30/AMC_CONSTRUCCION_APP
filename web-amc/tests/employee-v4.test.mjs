@@ -4,13 +4,14 @@ import {readFile} from 'node:fs/promises';
 import {createApp} from '../server.mjs';
 
 test('employee v4 has isolated mobile navigation, filters and native camera contracts',async()=>{
- const [app,team,css,sw]=await Promise.all([
+ const [app,navigation,team,css,sw]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/app-shell-navigation.js',import.meta.url),'utf8'),
   readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
   readFile(new URL('../public/employee-v4.css',import.meta.url),'utf8'),
   readFile(new URL('../public/sw.js',import.meta.url),'utf8')
  ]);
- assert.match(app,/\['inicio-empleado','Inicio'.*\['mis-trabajos','Mis trabajos'.*\['chat-equipo','Chat'.*\['perfil','Perfil'/s);
+ assert.match(navigation,/\['inicio-empleado','Inicio'.*\['mis-trabajos','Mis trabajos'.*\['chat-equipo','Chat'.*\['perfil','Perfil'/s);assert.match(app,/getShellNavigation/);
  assert.match(team,/¿Qué tengo que hacer hoy\?/);
  assert.match(team,/Hoy','Pendientes','En curso','Finalizados/);
  assert.match(team,/Elegir de galería/);
