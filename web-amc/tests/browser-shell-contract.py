@@ -311,10 +311,10 @@ try:
     message_ids_before_quote = {message["id"] for message in admin_after.get("messages", []) if message.get("userId") == client_id or message.get("clientId") == client_id}
     go(BASE + "/#cotizador")
     wait("return document.body.classList.contains('quote-wizard-route')")
-    assert not js("return !!document.querySelector('.floating-chat-button') && document.querySelector('.floating-chat-button').offsetParent!==null")
+    assert js("const button=document.querySelector('.floating-chat-button');return !!button && getComputedStyle(button).display==='none'")
     assert not js("return !!document.querySelector('#amc-chat-dialog[open]')")
     go(BASE + "/#inicio")
-    wait("return !document.body.classList.contains('quote-wizard-route') && document.querySelector('.floating-chat-button')?.offsetParent!==null")
+    wait("const button=document.querySelector('.floating-chat-button');return !document.body.classList.contains('quote-wizard-route') && !!button && getComputedStyle(button).display!=='none'")
     go(BASE + "/#conversacion/" + request_two["id"])
     wait("return location.hash==='#inicio' && !!document.querySelector('#amc-chat-dialog[open] .message-log')")
     history = js("return document.querySelector('#amc-chat-dialog .message-log').innerText")
