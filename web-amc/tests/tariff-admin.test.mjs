@@ -8,13 +8,19 @@ import {adminUtilityRoutes} from '../admin-utility-routes.mjs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const context={now:'2026-09-12T21:30:00-03:00',actor:'admin-1',sha:value=>'abc123def4567890'+String(value).length};
 
-test('base comercial contiene sólo los seis rubros definidos para AMC',()=>{
+test('base comercial contiene los rubros AMC y construcción integral de septiembre',()=>{
  const catalog=defaultTariffCatalog();
- assert.deepEqual(catalog.rubrics.map(item=>item.name),['Albañilería','Plomería','Herrería','Electricidad','Gas','Pinturería']);
- assert.ok(catalog.items.length>=50);
+ assert.deepEqual(catalog.rubrics.map(item=>item.name),['Construcción integral','Albañilería','Plomería','Herrería','Electricidad','Gas','Pinturería']);
+ assert.ok(catalog.items.length>=55);
  assert.ok(catalog.items.every(item=>catalog.rubrics.some(rubric=>rubric.id===item.rubricId)));
  assert.ok(catalog.items.every(item=>item.precio>0&&item.tipo==='mano_obra'));
  assert.match(catalog.meta.region,/La Falda|Punilla/);
+ assert.match(catalog.meta.basis,/septiembre de 2026/i);
+ const turnkey=catalog.items.find(item=>item.id==='int-llave-mano-mo');
+ assert.ok(turnkey);
+ assert.equal(turnkey.unidad,'m²');
+ assert.ok(turnkey.precio>=450000);
+ assert.match(turnkey.obs,/sin materiales|No incluye materiales/i);
 });
 
 test('CRUD de rubros y trabajos valida duplicados y protege rubros con trabajos',()=>{
@@ -86,5 +92,6 @@ test('payload público mantiene contrato que consume el Cotizador',()=>{
  const sample=payload.items[0];
  assert.ok(sample.key.startsWith('tariff:'));
  for(const field of ['rubro','tarea','unidad','precio'])assert.ok(Object.hasOwn(sample,field));
- assert.equal(payload.rubrics.length,6);
+ assert.equal(payload.rubrics.length,7);
+ assert.ok(payload.items.some(item=>item.rubro==='Construcción integral'&&/llave en mano/i.test(item.tarea)));
 });
