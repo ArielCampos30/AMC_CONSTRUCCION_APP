@@ -13,7 +13,7 @@ function setup(){
  let tick=0;
  const now=()=>new Date(1789000000000+(tick++)*1000).toISOString();
  const database=createDatabaseCore({dbPath:':memory:',id,sha,now,fail});
- const {db,all,get,put}=database;
+ const {db,all,allEntries,activeUsers,docPosition,get,put}=database;
  const addUser=(id,email,name,role)=>db.prepare('INSERT INTO users(id,email,name,phone,town,role,password,active) VALUES(?,?,?,?,?,?,?,1)').run(id,email,name,'','',role,'salt:hash');
  addUser('admin','admin@amc.test','AMC','admin');
  addUser('client','client@amc.test','Cliente','client');
@@ -23,7 +23,7 @@ function setup(){
  const notices=[];
  const sent=[];
  const chat=chatFeatures({
-  db,all,get,put,own,
+  db,all,allEntries,activeUsers,docPosition,get,put,own,
   safeFile:(_user,key)=>key,
   notify:(...args)=>notices.push(['notify',...args]),
   notifyAdmins:(...args)=>notices.push(['admins',...args]),
@@ -54,6 +54,21 @@ test('chat core keeps request visibility, unread counters and read receipts',()=
   assert.equal(sent.at(-1).status,200);
   assert.deepEqual(sent.at(-1).data.noticeIds,['notice-read']);
   assert.equal(chat.chatSummary(client).chatUnread.r1,undefined);
+ }finally{database.db.close();}
+});
+
+test('chat summary conserva no leídos y recibos dentro del snapshot',()=>{
+ const {database,chat,put}=setup();
+ try{
+  const admin={id:'admin',role:'admin',name:'AMC'};
+  put('request','client',{id:'r-snapshot',userId:'client',name:'Cliente',service:'Pintura',town:'La Falda'});
+  put('message','client',{id:'m-snapshot',userId:'client',requestId:'r-snapshot',senderId:'client',date:'2026-09-10T10:00:00.000Z',text:'Hola'});
+  database.beginStateSnapshot();
+  const summary=chat.chatSummary(admin);
+  assert.equal(summary.chatUnread['r-snapshot'],1);
+  assert.equal(summary.clientChatUnread.client,1);
+  assert.equal(summary.clientChatLatest.client,'m-snapshot');
+  database.endStateSnapshot();
  }finally{database.db.close();}
 });
 

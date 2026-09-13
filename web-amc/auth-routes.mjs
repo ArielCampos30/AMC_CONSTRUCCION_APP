@@ -3,8 +3,11 @@ import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,rate,text,sha,send,fail,origin,readBody}){
  const resolve=req=>{
   const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('amc_session='))?.slice(12);
-  const session=cookie?db.prepare('SELECT * FROM sessions WHERE token=? AND expires>?').get(sha(cookie),Date.now()):null;
-  const user=session?db.prepare('SELECT * FROM users WHERE id=? AND active=1').get(session.userId):null;
+  const row=cookie?db.prepare(`SELECT s.token AS session_token,s.userId AS session_user_id,s.expires AS session_expires,s.csrf AS session_csrf,
+   u.id AS user_id,u.email AS user_email,u.name AS user_name,u.phone AS user_phone,u.town AS user_town,u.role AS user_role,u.password AS user_password,u.sound AS user_sound,u.active AS user_active
+   FROM sessions s JOIN users u ON u.id=s.userId WHERE s.token=? AND s.expires>? AND u.active=1`).get(sha(cookie),Date.now()):null;
+  const session=row?{token:row.session_token,userId:row.session_user_id,expires:row.session_expires,csrf:row.session_csrf}:null;
+  const user=row?{id:row.user_id,email:row.user_email,name:row.user_name,phone:row.user_phone,town:row.user_town,role:row.user_role,password:row.user_password,sound:row.user_sound,active:row.user_active}:null;
   return {session,user};
  };
  const handlePublic=async({p,method,req,res})=>{
