@@ -67,11 +67,8 @@
     if(clients){clients.click();await delay(60);}
     contact=dialog.querySelector('.chat-contact[data-contact="'+CSS.escape(target.id)+'"]');
    }
-   if(!contact){
-    const unread=dialog.querySelector('.chat-contact .chat-contact-unread')?.closest('.chat-contact');
-    contact=unread||dialog.querySelector('.chat-contact');
-   }
-   contact?.click();
+   if(!contact){clearPending();return;}
+   contact.click();
    clearPending();
   }finally{opening=false;}
  }
