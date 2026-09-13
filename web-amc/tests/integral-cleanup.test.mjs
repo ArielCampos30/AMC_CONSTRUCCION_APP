@@ -11,7 +11,7 @@ test('integral cleanup keeps one AMC identity, theme and admin route',()=>{
   assert.doesNotMatch(source,/AMC Presupuestos|href=["']#admin|navigate\(["']admin|Panel AMC/);
   assert.match(read('web-amc/public/index.html'),/amc-theme\.css[^]*<\/head>/);
   assert.match(read('web-amc/public/amc-theme.css'),/--green:#0b675f/);
-  assert.match(read('web-amc/public/app.js'),/LEGACY_ADMIN_ROUTES[^]*admin/);
+  assert.match(read('web-amc/public/app-page-router.js'),/LEGACY_ADMIN_ROUTES[^]*admin/);
   assert.doesNotMatch(read('web-amc/public/features-ui.js'),/features-ui-legacy|presupuestos-bridge|iframe/);
   assert.equal(existsSync(new URL('app/src/main/assets/index.html',root)),false);
 });

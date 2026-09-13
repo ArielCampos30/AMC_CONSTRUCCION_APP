@@ -8,6 +8,7 @@ const origin='http://localhost:4180';
 
 test('Cotizador canónico y avisos integrados no dependen del estimador retirado',()=>{
   const app=read('../public/app.js');
+  const router=read('../public/app-page-router.js');
   const notices=read('../public/notice-ui.js');
   const index=read('../public/index.html');
   const sw=read('../public/sw.js');
@@ -23,10 +24,11 @@ test('Cotizador canónico y avisos integrados no dependen del estimador retirado
   assert.match(notices,/function showInternal\(notice\)/);
   assert.match(notices,/notice\.priority==='normal'/);
   assert.doesNotMatch(app,/function oldRequestDetail\(\)/);
-  assert.match(app,/function requestDetail\(\)\{return state\.user\?hub\.detail\(page\.slice\(10\)\):auth\(\);\}/);
-  assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)/);
+  assert.doesNotMatch(app,/function requestDetail\(\)/);
+  assert.match(router,/page\.startsWith\('solicitud\/'\).*view:state\.user\?'request-detail':'auth'/s);
+  assert.match(router,/page\.startsWith\('presupuesto-admin\/'\)/);
   assert.match(quotesUI,/selectedId\?quote\.id===selectedId:match\(quote\)/);
-  assert.match(app,/page\.startsWith\('chat-admin\/'\)/);
+  assert.match(router,/page\.startsWith\('chat-admin\/'\)/);
   assert.match(app,/page\.startsWith\('chat-equipo\/'\)/);
   assert.match(index,/aria-live="assertive"/);
   assert.match(sw,/visibilityState==='visible'/);
