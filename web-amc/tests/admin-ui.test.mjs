@@ -90,8 +90,8 @@ test('precio sugerido y rentabilidad pertenecen al Cotizador canónico',async()=
 });
 
 test('acciones generales mantienen busy global pero PDF directo no bloquea la pantalla',async()=>{
- const [app,busy,pdf]=await Promise.all([source('app.js'),source('amc-busy.js'),source('quote-pdf-controller.js')]);
- assert.match(app,/window\.AMCBusy\?\.start\(\)/);assert.match(app,/window\.AMCBusy\?\.stop\(\)/);assert.match(busy,/amc-busy-logo-wrap/);assert.match(busy,/MIN_VISIBLE=420/);assert.match(busy,/overlay\.showModal\(\)/);assert.match(pdf,/Preparando PDF…/);assert.doesNotMatch(pdf,/AMCBusy|iframe|postMessage/);
+ const [app,http,busy,pdf]=await Promise.all([source('app.js'),source('app-http-runtime.js'),source('amc-busy.js'),source('quote-pdf-controller.js')]);
+ assert.match(app,/createAppHttpRuntime/);assert.match(http,/getBusy\(\)\?\.start\(\)/);assert.match(http,/getBusy\(\)\?\.stop\(\)/);assert.match(busy,/amc-busy-logo-wrap/);assert.match(busy,/MIN_VISIBLE=420/);assert.match(busy,/overlay\.showModal\(\)/);assert.match(pdf,/Preparando PDF…/);assert.doesNotMatch(pdf,/AMCBusy|iframe|postMessage/);
 });
 
 test('compartir PDF envía un archivo real',async()=>{
@@ -125,8 +125,8 @@ test('detalle de obra conserva resumen económico y perfil actual del cliente',a
 });
 
 test('avisos, refresh y margen evitan trabajo duplicado',async()=>{
- const [app,wizard]=await Promise.all([source('app.js'),source('quote-wizard.js')]);
- assert.match(app,/const activeRequests=new Map\(\)/);assert.match(app,/if\(activeRequests\.has\(key\)\)return activeRequests\.get\(key\)/);assert.match(app,/clientStateSignature/);assert.match(wizard,/Precio final automático/);assert.match(wizard,/El precio actual alcanza el margen objetivo/);assert.doesNotMatch(wizard,/presupuestos-bridge/);
+ const [app,http,wizard]=await Promise.all([source('app.js'),source('app-http-runtime.js'),source('quote-wizard.js')]);
+ assert.match(http,/const activeRequests=new Map\(\)/);assert.match(http,/if\(activeRequests\.has\(key\)\)return activeRequests\.get\(key\)/);assert.match(app,/clientStateSignature/);assert.match(wizard,/Precio final automático/);assert.match(wizard,/El precio actual alcanza el margen objetivo/);assert.doesNotMatch(wizard,/presupuestos-bridge/);
 });
 
 test('Respaldos abre una pantalla de sistema y no cae en Inicio',async()=>{
