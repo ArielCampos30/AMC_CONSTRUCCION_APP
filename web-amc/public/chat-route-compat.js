@@ -1,6 +1,5 @@
 (()=>{
  const PENDING_KEY='amc-pending-floating-chat';
- const CLIENT_GROUP='Clientes';
  let opening=false;
 
  function parse(hash=location.hash){
@@ -37,10 +36,9 @@
  }
 
  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
- async function waitFor(selector,root=document,tries=30){
+ async function waitForChatApi(tries=30){
   for(let i=0;i<tries;i++){
-   const node=root.querySelector(selector);
-   if(node)return node;
+   if(typeof window.AMCOpenChatRequest==='function')return window.AMCOpenChatRequest;
    await delay(80);
   }
   return null;
@@ -53,23 +51,16 @@
   opening=true;
   try{
    stripLegacyChatNavigation();
-   const trigger=await waitFor('.floating-chat-button');
-   if(!trigger)return;
-   if(!document.getElementById('amc-chat-dialog')?.open)trigger.click();
-   const dialog=await waitFor('#amc-chat-dialog[open]');
-   if(!dialog)return;
-   if(target.kind==='client-list'){clearPending();return;}
-
-   let contact=dialog.querySelector('.chat-contact[data-contact="'+CSS.escape(target.id)+'"]');
-   if(!contact){
-    const groups=[...dialog.querySelectorAll('.chat-group')];
-    const clients=groups.find(node=>node.querySelector('strong')?.textContent?.trim()===CLIENT_GROUP)||groups[0];
-    if(clients){clients.click();await delay(60);}
-    contact=dialog.querySelector('.chat-contact[data-contact="'+CSS.escape(target.id)+'"]');
+   if(target.kind==='client-list'){
+    const trigger=document.querySelector('.floating-chat-button');
+    if(trigger&&!document.getElementById('amc-chat-dialog')?.open)trigger.click();
+    clearPending();
+    return;
    }
-   if(!contact){clearPending();return;}
-   contact.click();
-   clearPending();
+   const openRequest=await waitForChatApi();
+   if(!openRequest)return;
+   const opened=openRequest(target.id);
+   if(opened!==false)clearPending();
   }finally{opening=false;}
  }
 
