@@ -1,34 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildClientContacts,contactForRequest,messagesForContact} from '../public/chat-client-thread.js';
+import {buildClientContacts,contactForReference,messagesForContact} from '../public/chat-client-thread.js';
 
+const clients=[{id:'cliente-1',name:'Melisa'},{id:'cliente-2',name:'Juan'}];
 const requests=[
- {id:'req-viejo',userId:'cliente-1',name:'Melisa',service:'Albañilería',date:'2026-09-01T10:00:00Z'},
- {id:'req-nuevo',userId:'cliente-1',name:'Melisa',service:'Pintura',date:'2026-09-10T10:00:00Z'},
- {id:'req-otro',userId:'cliente-2',name:'Juan',service:'Plomería',date:'2026-09-11T10:00:00Z'}
+ {id:'req-viejo',userId:'cliente-1',service:'Albañilería'},
+ {id:'req-nuevo',userId:'cliente-1',service:'Pintura'},
+ {id:'req-otro',userId:'cliente-2',service:'Plomería'}
 ];
 const messages=[
- {id:'m1',requestId:'req-viejo',text:'Hola viejo',date:'2026-09-12T10:00:00Z'},
- {id:'m2',requestId:'req-nuevo',text:'Hola nuevo',date:'2026-09-13T10:00:00Z'},
- {id:'m3',requestId:'req-otro',text:'Otro cliente',date:'2026-09-13T11:00:00Z'}
+ {id:'m1',userId:'cliente-1',requestId:'req-viejo',text:'Mensaje histórico',date:'2026-09-12T10:00:00Z'},
+ {id:'m2',clientId:'cliente-1',userId:'cliente-1',text:'Mensaje directo',date:'2026-09-13T10:00:00Z'},
+ {id:'m3',userId:'cliente-2',requestId:'req-otro',text:'Otro cliente',date:'2026-09-13T11:00:00Z'}
 ];
 
-test('administración conserva un único contacto por cliente con todos sus proyectos',()=>{
- const contacts=buildClientContacts({requests,messages,chatUnread:{'req-viejo':1,'req-nuevo':2},admin:true});
+test('administración muestra exactamente un chat por usuario cliente',()=>{
+ const contacts=buildClientContacts({clients,messages,clientChatUnread:{'cliente-1':2},admin:true});
  assert.equal(contacts.length,2);
- const melisa=contacts.find(contact=>contact.name==='Melisa');
- assert.deepEqual(new Set(melisa.requestIds),new Set(['req-viejo','req-nuevo']));
- assert.equal(melisa.unread,3);
- assert.equal(melisa.replyRequestId,'req-nuevo');
- assert.equal(contactForRequest(contacts,'req-viejo'),melisa);
- assert.equal(contactForRequest(contacts,'req-nuevo'),melisa);
+ const melisa=contacts.find(contact=>contact.id==='cliente-1');
+ assert.equal(melisa.name,'Melisa');
+ assert.equal(melisa.unread,2);
+ assert.equal(melisa.last,'Mensaje directo');
  assert.deepEqual(messagesForContact(melisa,messages).map(message=>message.id),['m1','m2']);
+ assert.equal(contactForReference({contacts,reference:'req-viejo',requests,self:null}),melisa);
+ assert.equal(contactForReference({contacts,reference:'cliente-1',requests,self:null}),melisa);
 });
 
-test('el cliente ve un solo historial con AMC aunque tenga varios proyectos',()=>{
- const contacts=buildClientContacts({requests:requests.slice(0,2),messages,chatUnread:{'req-viejo':1},admin:false});
+test('el cliente tiene un único chat con AMC aunque no tenga obras',()=>{
+ const self={id:'cliente-1',name:'Melisa'},contacts=buildClientContacts({clients:[],messages:[],clientChatUnread:{},admin:false,self});
  assert.equal(contacts.length,1);
+ assert.equal(contacts[0].id,'cliente-1');
  assert.equal(contacts[0].name,'AMC');
- assert.deepEqual(new Set(contacts[0].requestIds),new Set(['req-viejo','req-nuevo']));
- assert.equal(contacts[0].unread,1);
+ assert.equal(contacts[0].service,'Chat permanente');
 });
