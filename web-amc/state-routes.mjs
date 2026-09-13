@@ -2,7 +2,7 @@ export function stateRoutes({all,activeUsers,userView,chatSummary,planning,servi
  return function route({p,method,user,session,res}){
   if(p==='/api/state/system'&&method==='GET'){if(!user){send(res,401,{error:'Ingresá a tu cuenta para continuar.'});return true;}if(user.role!=='admin'){send(res,403,{error:'Acceso restringido.'});return true;}send(res,200,{system:systemStatus()});return true;}
   if(p!=='/api/state'||method!=='GET')return false;
-  lifecycle.run();
+  lifecycle.run({throttle:true});
   const snapshot=!!user;if(snapshot)beginStateSnapshot();try{
    const savedProfile=user?all('clientProfile',user.id)[0]:null,appearance=planning.appearance(),publicAppearance=user?.role==='admin'?appearance:(()=>{const {history,...rest}=appearance;return rest;})(),common={user:user?{...userView(user),address:savedProfile?.address||''}:null,...(user?chatSummary(user):{}),csrf:session?.csrf,appearance:publicAppearance,posts:all('post').filter(p=>!p.demo),reviews:all('review').filter(r=>r.approved),myReview:user?.role==='client'?all('review',user.id)[0]||null:null,services,serviceCatalog};if(!user){send(res,200,common);return true;}
    if(user.role==='employee'){send(res,200,{...common,...team.state(user),...fieldwork.state(user),...recovery.state(user),...closure.state(user),...planning.state(user),notices:all('notice',user.id),staffMessages:[],staffUnread:staffUnread(user),staffReadByAdmin:'',chatClients:[],chatRequests:[],messages:[],appointments:[],extras:[],receipts:[],favorites:[],requests:[],quotes:[],works:all('work').filter(w=>canAccessWork(user,w)).map(employeeWork),referrals:[],clients:[],pendingReviews:[]});return true;}
