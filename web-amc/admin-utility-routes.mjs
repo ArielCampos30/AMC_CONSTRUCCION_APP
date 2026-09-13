@@ -1,4 +1,4 @@
-import {estimatorTariffs} from './legacy-tariff-catalog.mjs';
+import {estimatorTariffs} from './tariff-catalog.mjs';
 
 export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now}){
  return function route({p,method,b,user,res}){
@@ -10,11 +10,6 @@ export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,
   }
   if(p==='/api/estimator-tariffs'&&method==='GET'){
    requireAdmin(user);const saved=all('estimator',user.id)[0];send(res,200,{items:estimatorTariffs(saved?.db||{}),updatedAt:saved?.updatedAt||null});return true;
-  }
-  if(p==='/api/estimator-state'&&method==='POST'){
-   requireAdmin(user);const old=all('estimator',user.id)[0];if(b.revision!==(old?.revision||0))fail(409,'Hay cambios guardados desde otra ventana. Descargá tu copia antes de recargar.');
-   if(!b.db||typeof b.db!=='object'||!Array.isArray(b.db.quotes)||!Array.isArray(b.db.customTariffs)||!b.draft||typeof b.draft!=='object'||!Array.isArray(b.draft.items))fail(400,'Datos del cotizador inválidos.');
-   const saved=put('estimator',user.id,{id:'estimator-'+user.id,revision:(old?.revision||0)+1,db:b.db,draft:b.draft,updatedAt:now()});send(res,200,{revision:saved.revision,updatedAt:saved.updatedAt});return true;
   }
   return false;
  };

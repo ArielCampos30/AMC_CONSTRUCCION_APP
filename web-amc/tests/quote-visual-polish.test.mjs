@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 const css=readFileSync(new URL('../public/quote-wizard.css',import.meta.url),'utf8');
 const reviewCss=readFileSync(new URL('../public/quote-builder-review.css',import.meta.url),'utf8');
 const wizard=readFileSync(new URL('../public/quote-wizard.js',import.meta.url),'utf8');
-const legacy=readFileSync(new URL('../public/features-ui-legacy.js',import.meta.url),'utf8');
+const chatFeatures=readFileSync(new URL('../public/chat-features.js',import.meta.url),'utf8');
 const chat=readFileSync(new URL('../public/floating-chat.js',import.meta.url),'utf8');
 const shell=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
 const theme=readFileSync(new URL('../public/amc-theme.css',import.meta.url),'utf8');
@@ -33,8 +33,8 @@ test('la fórmula visible puede envolver sin salirse del panel',()=>{
 });
 
 test('el shell entrega toda su zona útil y oculta el chat únicamente durante el Cotizador',()=>{
- assert.match(legacy,/classList\.toggle\('quote-wizard-route',quotePage\)/);
- assert.match(legacy,/fullPageChat\|\|quotePage\)floating\.close/);
+ assert.match(chatFeatures,/classList\.toggle\('quote-wizard-route',quotePage\)/);
+ assert.match(chatFeatures,/fullPageChat\|\|quotePage\)floating\.close/);
  assert.match(chat,/body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
  assert.match(shell,/body\.quote-wizard-route \.workspace>main\{width:100%;max-width:none;margin:0;padding:0\}/);
 });

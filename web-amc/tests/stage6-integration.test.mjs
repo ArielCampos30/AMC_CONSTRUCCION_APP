@@ -26,9 +26,12 @@ test('stage 6 full client-admin-multiemployee lifecycle, rejection and no-take',
  }finally{await new Promise(resolve=>app.server.close(resolve));}
 });
 
-test('stage 6 interactive contracts expose deep links, grouped services and preview viewer',()=>{
- const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8'),requestUI=readFileSync(new URL('../public/request-ui.js',import.meta.url),'utf8'),bridge=readFileSync(new URL('../public/presupuestos-bridge.js',import.meta.url),'utf8'),viewer=readFileSync(new URL('../public/media-viewer.js',import.meta.url),'utf8'),team=readFileSync(new URL('../public/team-ui.js',import.meta.url),'utf8');
- assert.match(requestUI,/name="services"/);assert.match(requestUI,/serviceCatalog/);assert.match(app,/page\.startsWith\('presupuesto\/'\)/);assert.match(app,/page\.startsWith\('obra\/'\)/);assert.match(app,/api\/notices\/read/);assert.match(bridge,/suggested-rubrics/);assert.match(bridge,/Ver todo el tarifario/);assert.match(bridge,/Mano de obra estimada/);assert.match(viewer,/\^blob:/);assert.match(team,/employee-profile/);assert.match(team,/Jornal acordado para esta obra/);assert.match(bridge,/function suggestedPrice/);assert.ok(Math.abs(400000/(1-.30)-571428.57)<.01);const handler=bridge.slice(bridge.indexOf("teamBox.addEventListener('input'"),bridge.indexOf("teamBox.addEventListener('click'"));assert.doesNotMatch(handler,/renderEstimatedTeam/);assert.match(handler,/renderSuggestedPrice/);
+test('stage 6 interactive contracts expose deep links, grouped services and canonical quote tools',()=>{
+ const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8'),requestUI=readFileSync(new URL('../public/request-ui.js',import.meta.url),'utf8'),wizard=readFileSync(new URL('../public/quote-wizard.js',import.meta.url),'utf8'),model=readFileSync(new URL('../public/quote-wizard-model.js',import.meta.url),'utf8'),viewer=readFileSync(new URL('../public/media-viewer.js',import.meta.url),'utf8'),team=readFileSync(new URL('../public/team-ui.js',import.meta.url),'utf8');
+ assert.match(requestUI,/name="services"/);assert.match(requestUI,/serviceCatalog/);
+ assert.match(app,/page\.startsWith\('presupuesto\/'\)/);assert.match(app,/page\.startsWith\('obra\/'\)/);assert.match(app,/api\/notices\/read/);
+ assert.match(wizard,/\/api\/estimator-tariffs/);assert.match(wizard,/findTariffMatches\(tariffs,query,5\)/);assert.match(wizard,/Mano de obra explícita/);assert.match(wizard,/data-qw-estimated-labor/);
+ assert.match(model,/export function suggestedPriceForMargin/);assert.ok(Math.abs(400000/(1-.30)-571428.57)<.01);
+ assert.match(viewer,/\^blob:/);assert.match(team,/employee-profile/);assert.match(team,/Jornal acordado para esta obra/);
+ assert.doesNotMatch(wizard,/presupuestos-bridge|estimator-v1|iframe/);
 });
-
-

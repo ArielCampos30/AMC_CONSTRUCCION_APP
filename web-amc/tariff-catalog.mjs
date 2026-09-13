@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 
 function extractArray(source,marker){
  const markerAt=source.indexOf(marker);
- if(markerAt<0)throw new Error('No se encontró el tarifario base del cotizador legado.');
+ if(markerAt<0)throw new Error('No se encontró el tarifario base de AMC.');
  const start=source.indexOf('[',markerAt+marker.length);
  if(start<0)throw new Error('El tarifario base no contiene un arreglo válido.');
  let depth=0,quote='',escaped=false;
@@ -21,7 +21,7 @@ function extractArray(source,marker){
  throw new Error('No se pudo cerrar el arreglo del tarifario base.');
 }
 
-const source=readFileSync(new URL('./private/presupuestos-original.html',import.meta.url),'utf8');
+const source=readFileSync(new URL('./data/tarifario-base-source.html',import.meta.url),'utf8');
 const BASE_TARIFF=Object.freeze(extractArray(source,'const BASE_TARIFF = ').map(item=>Object.freeze({...item})));
 const number=value=>{const parsed=Number(value);return Number.isFinite(parsed)&&parsed>=0?parsed:0;};
 const text=value=>String(value??'').trim();

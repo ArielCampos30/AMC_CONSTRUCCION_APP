@@ -1,26 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
 import {createApp} from '../server.mjs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const origin='http://localhost:4180';
 
-test('estimator comparison is explicit and integrated AMC notices avoid duplicate push',()=>{
-  const html=read('../private/presupuestos-original.html');
+test('Cotizador canónico y avisos integrados no dependen del estimador retirado',()=>{
   const app=read('../public/app.js');
   const notices=read('../public/notice-ui.js');
   const index=read('../public/index.html');
   const sw=read('../public/sw.js');
-  const bridge=read('../public/presupuestos-bridge.js');
+  const wizard=read('../public/quote-wizard.js');
+  const pdf=read('../public/quote-pdf-document.js');
   const quotesUI=read('../public/admin-quotes-ui.js');
-  assert.match(html,/Elegir estimación/);
-  assert.match(html,/Precio base del trabajo:/);
-  assert.match(html,/Movilidad:/);
-  assert.match(html,/Materiales:/);
-  assert.match(html,/Herramientas:/);
-  assert.match(html,/Otros costos:/);
-  assert.match(html,/Agregar esta opción al presupuesto/);
+  assert.match(wizard,/Tarifario/);
+  assert.match(wizard,/Materiales/);
+  assert.match(wizard,/Herramientas \/ consumibles/);
+  assert.match(wizard,/Otros \/ contingencia/);
+  assert.match(wizard,/Movilidad general del presupuesto/);
+  assert.match(wizard,/data-qw-final-price/);
   assert.match(notices,/function showInternal\(notice\)/);
   assert.match(notices,/notice\.priority==='normal'/);
   assert.doesNotMatch(app,/function oldRequestDetail\(\)/);
@@ -33,9 +32,8 @@ test('estimator comparison is explicit and integrated AMC notices avoid duplicat
   assert.match(sw,/visibilityState==='visible'/);
   assert.match(sw,/postMessage\(\{type:'AMC_NOTICE'/);
   assert.match(sw,/\/assets\/amc-logo\.webp/);
-  assert.match(bridge,/if\(embedded\)window\.alert=toast/);
-  assert.match(bridge,/\.tabs,.app>\.header,#app-version,#view-home\{display:none!important\}/);
-  assert.doesNotMatch(read('../public/pdf-logo.js'),/LOGO_JPG_B64|base64/);
+  assert.match(pdf,/\/assets\/amc-logo-pdf\.jpg/);
+  for(const path of ['../public/presupuestos-bridge.js','../public/pdf-logo.js','../private/presupuestos-original.html'])assert.equal(existsSync(new URL(path,import.meta.url)),false);
 });
 
 test('external quote delivery can be rejected and quote notices use exact deep links',async()=>{
@@ -84,7 +82,6 @@ test('external quote delivery can be rejected and quote notices use exact deep l
     assert.equal(acceptedNotice.priority,'important');
   }finally{await new Promise(resolve=>service.server.close(resolve));}
 });
-
 
 test('external client work finalizes and releases the team without conformity',async()=>{
   const service=createApp({dbPath:':memory:',origin});

@@ -1,14 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync, readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 
-test('el cotizador usa el logo oficial como recurso visible',()=>{
-  const html=readFileSync(new URL('../private/presupuestos-original.html',import.meta.url),'utf8');
-  assert.ok(existsSync(new URL('../public/assets/amc-logo.webp',import.meta.url)));
-  assert.ok(existsSync(new URL('../public/assets/amc-logo-pdf.jpg',import.meta.url)));
-  assert.match(html,/const LOGO_PNG = '\/assets\/amc-logo\.webp';/);
-  assert.doesNotMatch(html,/const LOGO_PNG = "data:image\/png;base64/);
-  const pdfLogo=readFileSync(new URL('../public/pdf-logo.js',import.meta.url),'utf8');
-  assert.match(pdfLogo,/\/assets\/amc-logo-pdf\.jpg/);
-  assert.doesNotMatch(pdfLogo,/LOGO_JPG_B64|base64/);
+test('AMC usa el logo oficial en la aplicación y en el PDF canónico',()=>{
+ const index=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+ const pdf=readFileSync(new URL('../public/quote-pdf-document.js',import.meta.url),'utf8');
+ assert.ok(existsSync(new URL('../public/assets/amc-logo.webp',import.meta.url)));
+ assert.ok(existsSync(new URL('../public/assets/amc-logo-pdf.jpg',import.meta.url)));
+ assert.match(index,/\/assets\/amc-logo\.webp/);
+ assert.match(pdf,/fetch\('\/assets\/amc-logo-pdf\.jpg'/);
+ assert.doesNotMatch(pdf,/LOGO_JPG_B64|data:image|base64,/);
 });

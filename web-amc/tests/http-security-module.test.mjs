@@ -8,7 +8,7 @@ function response(){
  return {headers,setHeader(name,value){headers.set(name.toLowerCase(),value);}};
 }
 
-test('seguridad HTTP conserva las cabeceras y el CSP especial del cotizador',()=>{
+test('seguridad HTTP conserva una política única sin excepción inline del estimador viejo',()=>{
  const root=response();
  applyHttpSecurity({res:root,origin:'https://amc.test',pathname:'/'});
  assert.equal(root.headers.get('strict-transport-security'),'max-age=31536000; includeSubDomains');
@@ -21,9 +21,10 @@ test('seguridad HTTP conserva las cabeceras y el CSP especial del cotizador',()=
  assert.match(root.headers.get('permissions-policy'),/microphone=\(\)/);
  assert.doesNotMatch(root.headers.get('content-security-policy'),/script-src[^;]*'unsafe-inline'/);
 
- const estimator=response();
- applyHttpSecurity({res:estimator,origin:'https://amc.test',pathname:'/presupuestos'});
- assert.match(estimator.headers.get('content-security-policy'),/script-src[^;]*'unsafe-inline'/);
+ const historic=response();
+ applyHttpSecurity({res:historic,origin:'https://amc.test',pathname:'/presupuestos'});
+ assert.equal(historic.headers.get('content-security-policy'),root.headers.get('content-security-policy'));
+ assert.doesNotMatch(historic.headers.get('content-security-policy'),/script-src[^;]*'unsafe-inline'/);
 
  const local=response();
  applyHttpSecurity({res:local,origin:'http://localhost:4180',pathname:'/'});
@@ -40,5 +41,5 @@ test('server delega la política HTTP sin duplicar sus cabeceras',async()=>{
  assert.doesNotMatch(server,/setHeader\('Content-Security-Policy'/);
  assert.match(module,/Strict-Transport-Security/);
  assert.match(module,/Content-Security-Policy/);
- assert.match(module,/pathname==='\/presupuestos'/);
+ assert.doesNotMatch(module,/pathname==='\/presupuestos'/);
 });

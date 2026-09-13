@@ -10,7 +10,7 @@ export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  const more=()=>{scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
    [['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['resenas','Reseñas']]],
     ['Sitio público',[['portada','Portada pública']]],
-    ['Herramientas',[['cotizador','Tarifario y cotizador'],['resumen-diario','Resumen diario']]],
+    ['Herramientas',[['tarifario','Tarifario'],['cotizador','Cotizador'],['resumen-diario','Resumen diario']]],
     ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]]
    .map(([title,items])=>`<section class="admin-v3-more"><h2>${title}</h2>${items.map(([p,t])=>`<a href="#${p}"><span>${t}</span><b>›</b></a>`).join('')}</section>`).join('')+
    `<section id="amc-system-status" class="panel">${statusContent()}</section>`;};
