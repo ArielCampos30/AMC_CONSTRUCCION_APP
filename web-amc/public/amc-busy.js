@@ -1,6 +1,9 @@
 (function(root){
   let count=0,shownAt=0,hideTimer=null;
   const MIN_VISIBLE=420;
+  function chatOwnsFeedback(){
+    return !!document.querySelector('#amc-chat-dialog[open] .message-log, body.full-chat-page .message-log, .message-form[data-client][data-sending="1"]');
+  }
   function ensure(){
     let overlay=document.getElementById('amc-busy-overlay');
     if(overlay)return overlay;
@@ -18,19 +21,23 @@
     document.body.append(overlay);
     return overlay;
   }
+  function showIfNeeded(overlay){
+    if(!count||chatOwnsFeedback()||overlay.open)return;
+    overlay.showModal();
+    shownAt=performance.now();
+  }
   function start(){
     count++;
     if(hideTimer){clearTimeout(hideTimer);hideTimer=null;}
     const overlay=ensure();
-    if(!overlay.open){
-      overlay.showModal();
-      shownAt=performance.now();
-    }
+    showIfNeeded(overlay);
   }
   function stop(){
     count=Math.max(0,count-1);
-    if(count)return;
-    const overlay=ensure(),remaining=Math.max(0,MIN_VISIBLE-(performance.now()-shownAt));
+    const overlay=ensure();
+    if(count){showIfNeeded(overlay);return;}
+    if(!overlay.open)return;
+    const remaining=Math.max(0,MIN_VISIBLE-(performance.now()-shownAt));
     hideTimer=setTimeout(()=>{
       if(!count&&overlay.open)overlay.close();
       hideTimer=null;
