@@ -46,7 +46,7 @@ const {text,amount,optionalAmount,validDate}=createInputValues({fail});
 export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,origin='http://localhost:4180',clock=Date.now,sendRecovery,twoFactorKey=process.env.AMC_2FA_KEY,fileStore}={}){
  const version=(process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA||process.env.AMC_VERSION||'dev').slice(0,7),startedAt=Date.now();
  const recentServerErrors=[];const recentErrorCount=()=>{const cutoff=Date.now()-15*60*1000;while(recentServerErrors.length&&recentServerErrors[0]<cutoff)recentServerErrors.shift();return recentServerErrors.length;};
- const {db,remoteUrl,all,get,put,transaction,beginStateSnapshot,endStateSnapshot}=createDatabaseCore({dbPath,id,sha,now,fail});
+ const {db,remoteUrl,all,allEntries,activeUsers,docPosition,get,put,transaction,beginStateSnapshot,endStateSnapshot}=createDatabaseCore({dbPath,id,sha,now,fail});
  const objectStore=fileStore||createSupabaseFileStore();
  const {backupHealth,systemStatus}=createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt});
  const {userView,passwordHash,addUser,own,requireAdmin,canAccessRequest,canAccessQuote,canAccessWork,requireResource,createAdminVerifier}=createAuthCore({db,all,id,fail});
@@ -74,14 +74,14 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  const closure=closureFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,now,id,sha});
  const fieldwork=fieldworkFeatures({all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,sha});
  const team=teamFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,addUser,passwordHash,planning});
- const chat=chatFeatures({db,all,get,put,own,safeFile,notify,notifyAdmins,send,fail,text,now,sha,markNoticesForRoute});
+ const chat=chatFeatures({db,all,allEntries,activeUsers,docPosition,get,put,own,safeFile,notify,notifyAdmins,send,fail,text,now,sha,markNoticesForRoute});
  const {clientChatIds,chatOwn,chatSummary,staffMessages,staffUnread,staffReadByEmployee,staffReadByAdmin}=chat;
  const mediaAccess=mediaAccessFeatures({db,all,objectStore,planning,team,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail});
  const {canAccessPrivateFile}=mediaAccess;
  const clientRequests=clientRequestFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,services,serviceCatalog,planning});
  const handleQuoteWork=quoteWorkRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,optionalAmount,validDate,now,id,sha,lifecycle});
  const handleFeature=featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning,markNoticesForRoute});
- const handleState=stateRoutes({db,all,userView,chatSummary,planning,services,serviceCatalog,team,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
+ const handleState=stateRoutes({all,activeUsers,userView,chatSummary,planning,services,serviceCatalog,team,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,beginStateSnapshot,endStateSnapshot,send});
  const handleCommunity=communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmins,send,fail,text,services,now,id});
  const handleAdminUtility=adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now});
  const handleProfile=profileRoutes({db,put,send,fail,text});
