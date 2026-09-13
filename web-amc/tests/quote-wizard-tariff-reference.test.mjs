@@ -46,7 +46,8 @@ test('endpoint de referencias exige administrador y devuelve el catálogo indepe
  assert.equal(checked,true);
  assert.equal(sent.status,200);
  assert.ok(sent.payload.items.some(item=>item.tarea==='Revoque fino'&&item.precio===21000));
- assert.equal(sent.payload.rubrics.length,6);
+ assert.equal(sent.payload.rubrics.length,7);
+ assert.ok(sent.payload.items.some(item=>item.rubro==='Construcción integral'));
 });
 
 test('editor consulta referencias filtradas y no ofrece un relevamiento sin precio',()=>{
