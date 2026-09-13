@@ -120,8 +120,8 @@ def api(path, payload=None, method=None, expected=(200, 201)):
 
 def nav_contract(expected):
     actual = js(
-        "return [...document.querySelectorAll('.bottom-nav a')]"
-        ".filter(node=>node.offsetParent!==null).map(node=>(node.textContent||'').trim());"
+        "return [...document.querySelectorAll('.sidebar [data-nav],.bottom-nav a')]"
+        ".map(node=>(node.textContent||'').trim());"
     )
     for label in expected:
         assert any(label in item for item in actual), (expected, actual)
