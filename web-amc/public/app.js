@@ -34,6 +34,7 @@ import {createAdminTeamDialog} from './admin-team-dialog-ui.js';
 import {createAdminDeclineDialog} from './admin-decline-dialog-ui.js';
 import {createAdminHelpers} from './admin-helpers.js';
 import {createAdminChatUI} from './admin-chat-ui.js';
+import {createAppHttpRuntime} from './app-http-runtime.js';
 const adminStyle=document.createElement('link');adminStyle.rel='stylesheet';adminStyle.href='/admin-v3.css';document.head.append(adminStyle);
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(v),date=v=>v?new Date(v.length===10?v+'T12:00:00':v).toLocaleDateString('es-AR'):'Por coordinar';
@@ -43,8 +44,7 @@ const field=(label,name,type='text',value='',required=true)=>`<label>${label}<in
 const heading=(tag,title,body='')=>`<div class="page-heading"><span class="eyebrow">${tag}</span><h1>${title}</h1>${body?`<p>${body}</p>`:''}</div>`,empty=(title,body)=>`<section class="panel empty"><h2>${title}</h2><p>${body}</p></section>`;
 const thumb=(urls,meta={})=>`<div class="mini-photos">${(urls||[]).map(url=>`<a href="${esc(url)}" data-sender="${esc(meta.sender||'AMC')}" data-date="${esc(meta.date||'')}" download><img loading="lazy" decoding="async" width="110" height="95" src="${esc(url)}?thumb=1" alt="Foto del proyecto"></a>`).join('')}</div>`;
 function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),5000);}
-let sessionEpoch=0,loggingOut=false;const activeRequests=new Map(),instantRequests=new Set(['/api/notices/read','/api/staff-chat/read']);
-async function api(url,body,method='POST'){const key=method+' '+url+' '+JSON.stringify(body||{});if(activeRequests.has(key))return activeRequests.get(key);const chatMutation=url==='/api/staff-chat/messages'||/^\/api\/requests\/[^/]+\/messages$/.test(url),visible=method!=='GET'&&!instantRequests.has(url)&&!chatMutation;const task=(async()=>{if(visible)window.AMCBusy?.start();try{const r=await fetch(url,{method,credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':state.csrf||''},...(method!=='GET'?{body:JSON.stringify(body||{})}:{})});const result=await r.json();if(!r.ok){const error=Error(result.error||'No se pudo completar la operación.');Object.assign(error,result);throw error;}return result;}finally{if(visible)window.AMCBusy?.stop();activeRequests.delete(key);}})();activeRequests.set(key,task);return task;}
+let sessionEpoch=0,loggingOut=false;const {api}=createAppHttpRuntime({getCsrf:()=>state.csrf||'',getBusy:()=>window.AMCBusy});
 const clientStateSignature=value=>value?.user?.role==='client'?JSON.stringify({user:value.user,requests:value.requests,quotes:value.quotes,works:value.works,closures:value.closures,dateProposals:value.dateProposals,appointments:value.appointments,extras:value.extras,receipts:value.receipts,notices:value.notices,chatUnread:value.chatUnread,myReview:value.myReview}):'';
 const noticeUI=createNoticeUI({getState:()=>state,getPage:()=>page,api,esc,date,heading,btn,empty,sound});
 const communityUI=createCommunityUI({getState:()=>state,isAdmin,heading,options,esc,date,empty,btn,field});
