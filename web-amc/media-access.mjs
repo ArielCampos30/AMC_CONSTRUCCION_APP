@@ -13,6 +13,7 @@ export function mediaAccessFeatures({db,all,objectStore,planning,team,fieldwork,
    ||all('quote',user.id).some(quote=>quote.pdf===p)
    ||all('work',user.id).some(work=>(work.photos||[]).includes(p)||(work.updates||[]).some(update=>update.image===p))
    ||all('message',user.id).some(message=>clientChatIds(user).has(message.requestId)&&message.photos?.includes(p))
+   ||all('clientMessage',user.id).some(message=>message.photos?.includes(p))
    ||all('receipt',user.id).some(receipt=>receipt.file===p);
  };
  const serve=async({user,p,method,req,res})=>{

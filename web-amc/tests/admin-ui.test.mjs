@@ -68,7 +68,7 @@ test('búsqueda de clientes y alta desde Cotizador no recargan toda AMC',async()
 
 test('chat flotante separa clientes y empleados y envía sin reload',async()=>{
  const [chat,float,team]=await Promise.all([source('chat-features.js'),source('floating-chat.js'),source('team-ui.js')]);
- assert.match(chat,/floatingEmployeeContacts/);assert.match(chat,/floatingClientContacts/);assert.match(chat,/label:'Clientes'/);assert.match(chat,/label:'Empleados'/);
+ assert.match(chat,/floatingEmployeeContacts/);assert.match(chat,/clientContacts/);assert.match(chat,/label:'Clientes'/);assert.match(chat,/label:'Empleados'/);assert.match(chat,/\/api\/client-chat\/messages/);
  assert.match(float,/function showGroups\(\)/);assert.match(float,/submitCustom/);assert.match(chat,/status\.textContent=''/);assert.match(team,/return 'message-sent'/);
  assert.doesNotMatch(chat,/location\.reload|toast\('Mensaje enviado\.'\)/);
 });

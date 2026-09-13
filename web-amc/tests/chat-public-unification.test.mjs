@@ -24,7 +24,9 @@ test('Más deja un único chat global y no duplica la bandeja completa',async()=
  ]);
  assert.doesNotMatch(system,/\['chat-admin','Chat'\]/);
  assert.match(system,/\['clientes','Clientes'\].*\['empleados','Empleados'\]/s);
- assert.match(features,/floatingEmployeeContacts\(\).*filter\(e=>e\.role==='employee'&&e\.active!==false\)/s);
+ assert.match(features,/floatingEmployeeContacts/);
+ assert.match(features,/filter\(employee=>employee\.role==='employee'&&employee\.active!==false\)/);
+ assert.match(features,/Una conversación por cliente/);
  assert.match(adminChat,/const staff=state=>\(state\.employees\|\|\[\]\)\.filter\(item=>item\.role==='employee'&&item\.active!==false\)/);
 });
 

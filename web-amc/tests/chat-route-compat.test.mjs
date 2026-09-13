@@ -4,16 +4,16 @@ import {readFile} from 'node:fs/promises';
 
 const source=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
-test('rutas viejas de chat se convierten en apertura del chat flotante',async()=>{
+test('rutas históricas y actuales de chat abren el chat flotante del cliente',async()=>{
  const [compat,index]=await Promise.all([
   source('public/chat-route-compat.js'),
   source('public/index.html')
  ]);
  assert.match(index,/chat-route-compat\.js[^]*app\.js/);
- assert.match(compat,/\(\?:chat\|chat-admin\|conversacion\)/);
+ assert.match(compat,/\(\?:chat\|chat-admin\|chat-user\|conversacion\)/);
+ assert.match(compat,/AMCOpenChatRequest/);
  assert.match(compat,/chat-cliente/);
  assert.match(compat,/floating-chat-button/);
- assert.match(compat,/chat-contact\[data-contact/);
  assert.match(compat,/history\.replaceState\(null,'','#'\+target\.fallback\)/);
 });
 

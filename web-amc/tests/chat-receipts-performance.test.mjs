@@ -66,7 +66,7 @@ test('UI usa checks y prepara fotos más livianas para móvil',async()=>{
     readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
     readFile(new URL('../public/media-upload-ui.js',import.meta.url),'utf8')
   ]);
-  assert.match(features,/chatReadByOther/);
+  assert.match(features,/clientChatReadByOther/);
   assert.match(features,/message-check/);
   assert.match(features,/message-upload-spinner/);
   assert.doesNotMatch(features,/<small>\$\{esc\(x\.state\)\}/);

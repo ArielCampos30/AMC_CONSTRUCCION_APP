@@ -17,6 +17,7 @@ function setup(){
  const addUser=(id,email,name,role)=>db.prepare('INSERT INTO users(id,email,name,phone,town,role,password,active) VALUES(?,?,?,?,?,?,?,1)').run(id,email,name,'','',role,'salt:hash');
  addUser('admin','admin@amc.test','AMC','admin');
  addUser('client','client@amc.test','Cliente','client');
+ addUser('client2','client2@amc.test','Cliente 2','client');
  addUser('employee','employee@amc.test','Operario','employee');
  const own=(user,resource)=>{if(user.role!=='admin'&&resource.userId!==user.id)fail(404,'No encontrado.');return resource;};
  const notices=[];
@@ -39,7 +40,7 @@ test('chat core keeps request visibility, unread counters and read receipts',()=
   const client={id:'client',role:'client'},employee={id:'employee',role:'employee'};
   put('request','client',{id:'r1',userId:'client',name:'Cliente',service:'Pintura',town:'La Falda'});
   put('assignment','employee',{id:'a1',employeeId:'employee',requestId:'r1',status:'Asignada'});
-  put('message','client',{id:'m1',requestId:'r1',senderId:'admin',date:'2026-09-10T10:00:00.000Z',text:'Hola'});
+  put('message','client',{id:'m1',userId:'client',requestId:'r1',senderId:'admin',date:'2026-09-10T10:00:00.000Z',text:'Hola'});
 
   assert.deepEqual([...chat.clientChatIds(client)],['r1']);
   assert.deepEqual([...chat.chatIds(employee)],['r1']);
@@ -47,11 +48,38 @@ test('chat core keeps request visibility, unread counters and read receipts',()=
   assert.throws(()=>chat.chatOwn(employee,{id:'r1',userId:'client'}),error=>error.status===404);
   assert.equal(chat.chatSummary(client).chatUnread.r1,1);
   assert.equal(chat.chatSummary(client).chatLatest.r1,'m1');
+  assert.equal(chat.chatSummary(client).clientChatUnread.client,1);
 
   assert.equal(chat.routeAfterBody({p:'/api/requests/r1/messages/read',method:'POST',b:{lastMessageId:'m1'},user:client,url:new URL('http://localhost/api/requests/r1/messages/read'),res:{}}),true);
   assert.equal(sent.at(-1).status,200);
   assert.deepEqual(sent.at(-1).data.noticeIds,['notice-read']);
   assert.equal(chat.chatSummary(client).chatUnread.r1,undefined);
+ }finally{database.db.close();}
+});
+
+test('client chat is permanent by user and works without any request',()=>{
+ const {database,chat,sent,notices,all}=setup();
+ try{
+  const client={id:'client2',role:'client',name:'Cliente 2'},admin={id:'admin',role:'admin',name:'AMC'};
+  const firstPayload={text:'Hola AMC',photos:[],idempotencyKey:'client-chat-001'};
+  assert.equal(chat.routeAfterBody({p:'/api/client-chat/messages',method:'POST',b:firstPayload,user:client,url:new URL('http://localhost/api/client-chat/messages'),res:{}}),true);
+  assert.equal(sent.at(-1).status,201);
+  const first=sent.at(-1).data;
+  assert.equal(first.clientId,'client2');
+  assert.equal(first.requestId,undefined);
+  assert.equal(chat.chatSummary(admin).clientChatUnread.client2,1);
+  assert.equal(notices.at(-1)[0],'admins');
+
+  assert.equal(chat.routeAfterBody({p:'/api/client-chat/read',method:'POST',b:{clientId:'client2',lastMessageId:first.id},user:admin,url:new URL('http://localhost/api/client-chat/read'),res:{}}),true);
+  assert.equal(sent.at(-1).status,200);
+  assert.equal(chat.chatSummary(admin).clientChatUnread.client2,undefined);
+
+  const replyPayload={clientId:'client2',text:'Hola, ¿cómo estás?',photos:[],idempotencyKey:'client-chat-002'};
+  assert.equal(chat.routeAfterBody({p:'/api/client-chat/messages',method:'POST',b:replyPayload,user:admin,url:new URL('http://localhost/api/client-chat/messages'),res:{}}),true);
+  const reply=sent.at(-1).data;
+  assert.equal(reply.clientId,'client2');
+  assert.equal(chat.chatSummary(client).clientChatUnread.client2,1);
+  assert.equal(all('clientMessage','client2').length,2);
  }finally{database.db.close();}
 });
 

@@ -17,7 +17,9 @@ export function notificationFeatures({db,all,put,origin,now,id,schedulePush,send
   if(!hash)hash=String(value||'').replace(/^#|^\/#/g,'');
   const [head,...parts]=hash.split('/'),key=decodeURIComponent(parts.join('/')||''),specifics=[];
   const add=value=>{if(value&&!specifics.includes(value))specifics.push(value);};
-  if(['chat','chat-admin'].includes(head)&&key){add('chat:'+key);return {specifics,section:'chat'};}
+  if(head==='chat-user'&&key){add('client-chat:'+key);return {specifics,section:'chat'};}
+  if(['chat','chat-admin'].includes(head)&&key){add('chat:'+key);const request=all('request').find(item=>item.id===key);if(request?.userId)add('client-chat:'+request.userId);return {specifics,section:'chat'};}
+  if(head==='chat'&&!key)return {specifics,section:'chat',broad:true};
   if(head==='chat-equipo'){add(key?'staff-chat:'+key:'staff-chat');return {specifics,section:'staff-chat',broad:!key};}
   if(['solicitud','mi-trabajo'].includes(head)&&key){add('request:'+key);return {specifics,section:'requests'};}
   if(head==='solicitudes')return {specifics,section:'requests',broad:true};

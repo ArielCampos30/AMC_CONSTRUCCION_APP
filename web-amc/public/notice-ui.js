@@ -4,7 +4,7 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
  const LIVE_NOTICE_MS=3000;
  const notices=()=>getState().notices||[];
  const routeKey=value=>{try{return new URL(String(value||''),location.href).hash.replace(/^#/,'');}catch{return String(value||'').replace(/^\/?#/,'');}};
- const pageChatRoute=()=>{const hash=location.hash.replace(/^#/,'');return /^(chat-admin|chat|chat-equipo)\/[A-Za-z0-9_-]+$/.test(hash)?'/#'+hash:'';};
+ const pageChatRoute=()=>{const hash=location.hash.replace(/^#/,'');return /^(chat-admin|chat|chat-user|chat-equipo)\/[A-Za-z0-9_-]+$/.test(hash)?'/#'+hash:'';};
  const activeChatRoute=()=>pageChatRoute()||document.documentElement?.dataset.amcActiveChatRoute||'';
  function clearLiveAlert(id=''){
   const host=document.querySelector('#amc-live-alert');
