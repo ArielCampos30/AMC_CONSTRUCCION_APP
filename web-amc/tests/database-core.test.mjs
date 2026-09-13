@@ -31,8 +31,14 @@ test('database core initializes schema, storage helpers, snapshots and migration
   assert.deepEqual(request.presupuestoIds,['q1']);
   assert.deepEqual(request.obraIds,['w1']);
   assert.equal(booking.status,'Finalizada');
+  core.db.prepare('INSERT INTO users(id,email,name,phone,town,role,password,active) VALUES(?,?,?,?,?,?,?,1)').run('client-snapshot','snapshot@amc.test','Cliente snapshot','','La Falda','client','salt:hash');
+  core.put('message','client-snapshot',{id:'m-snapshot',userId:'client-snapshot',requestId:'r1',senderId:'admin',date:'2026-09-12T20:00:00.000Z'});
+  core.put('chatRead','client-snapshot',{id:'read-snapshot',requestId:'r1',lastMessageId:'m-snapshot'});
   core.put('post','',{id:'p1',title:'Uno'});
   core.beginStateSnapshot();
+  assert.equal(core.activeUsers('client').some(user=>user.id==='client-snapshot'),true);
+  assert.ok(core.docPosition('m-snapshot')>0);
+  assert.equal(core.allEntries('chatRead').find(entry=>entry.value.id==='read-snapshot')?.owner,'client-snapshot');
   core.put('post','',{id:'p2',title:'Dos'});
   assert.deepEqual(core.all('post').map(p=>p.id),['p1']);
   core.endStateSnapshot();
