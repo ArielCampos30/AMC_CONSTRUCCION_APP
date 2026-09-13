@@ -1,4 +1,4 @@
-import {estimatorTariffs} from './tariff-catalog.mjs';
+import {loadTariffCatalog,mutateTariffCatalog,tariffCatalogPayload} from './tariff-catalog.mjs';
 
 export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now}){
  return function route({p,method,b,user,res}){
@@ -9,7 +9,15 @@ export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,
    send(res,201,put('offlineNote',user.id,{id:key,assignmentId:task.id,title:task.clientName+' · '+task.day,text:text(b.text,4000),photos,date:now()}));return true;
   }
   if(p==='/api/estimator-tariffs'&&method==='GET'){
-   requireAdmin(user);const saved=all('estimator',user.id)[0];send(res,200,{items:estimatorTariffs(saved?.db||{}),updatedAt:saved?.updatedAt||null});return true;
+   requireAdmin(user);send(res,200,tariffCatalogPayload(loadTariffCatalog(all)));return true;
+  }
+  if(p==='/api/estimator-tariffs'&&method==='POST'){
+   requireAdmin(user);
+   try{
+    const current=loadTariffCatalog(all),next=mutateTariffCatalog(current,b,{now:now(),actor:user.id,sha});
+    put('tariffCatalog','',next);send(res,200,tariffCatalogPayload(next));
+   }catch(error){fail(error?.statusCode||400,error?.message||'No se pudo actualizar el Tarifario.');}
+   return true;
   }
   return false;
  };

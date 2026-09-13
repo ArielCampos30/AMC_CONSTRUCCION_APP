@@ -14,7 +14,7 @@ export function createFeatures(deps){
  const quoteViews=createQuoteViewTracker({getState:deps.getState,isAdmin:deps.isAdmin,api:deps.api,onNoticesRead:deps.onNoticesRead});
  const wizard=createQuoteWizard({getState:deps.getState,isAdmin:deps.isAdmin,esc:deps.esc,navigate:deps.navigate,toast:deps.toast,api:deps.api});
  const pdf=createQuotePdfController({getState:deps.getState,toast:deps.toast});
- const tariff=createTariffUI({isAdmin:deps.isAdmin,heading:deps.heading,esc:deps.esc,money:deps.money,api:deps.api});
+ const tariff=createTariffUI({isAdmin:deps.isAdmin,heading:deps.heading,esc:deps.esc,money:deps.money,api:deps.api,toast:deps.toast});
  const saver=createQuoteSaveController({getState:deps.getState,api:deps.api,navigate:deps.navigate,toast:deps.toast,wizard,generatePdf:pdf.generatePdf});
  const pricingSync=createQuotePricingSyncController({wizard});
  createQuoteClientCreateController({getState:deps.getState,api:deps.api,navigate:deps.navigate,toast:deps.toast,wizard});
