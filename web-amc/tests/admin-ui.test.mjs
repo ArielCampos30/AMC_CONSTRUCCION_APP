@@ -74,8 +74,8 @@ test('chat flotante separa clientes y empleados y envía sin reload',async()=>{
 });
 
 test('chat de pantalla completa no apila el flotante y bloquea doble envío',async()=>{
- const [app,chat,float]=await Promise.all([source('app.js'),source('chat-features.js'),source('floating-chat.js')]);
- assert.match(app,/page\.startsWith\('chat-admin\/'\)/);assert.match(chat,/fullPageChat/);assert.match(chat,/floating\.close\?\.\(\)/);assert.match(chat,/form\.dataset\.sending==='1'/);assert.match(chat,/sendButton\.disabled=true/);assert.match(chat,/sendButton\.disabled=false/);assert.match(float,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
+ const [router,chat,float]=await Promise.all([source('app-page-router.js'),source('chat-features.js'),source('floating-chat.js')]);
+ assert.match(router,/page\.startsWith\('chat-admin\/'\)/);assert.match(chat,/fullPageChat/);assert.match(chat,/floating\.close\?\.\(\)/);assert.match(chat,/form\.dataset\.sending==='1'/);assert.match(chat,/sendButton\.disabled=true/);assert.match(chat,/sendButton\.disabled=false/);assert.match(float,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
 });
 
 test('presupuesto rápido usa datos directos y cuatro etapas nativas',async()=>{
@@ -105,8 +105,8 @@ test('PDF pendiente se regenera directamente y permite reintento',async()=>{
 });
 
 test('detalle admin abre presupuesto exacto y mantiene un solo menú de acciones',async()=>{
- const [app,quotesUI]=await Promise.all([source('app.js'),source('admin-quotes-ui.js')]);
- assert.match(quotesUI,/Trabajos incluidos/);assert.match(quotesUI,/Importe/);assert.match(quotesUI,/Datos internos/);assert.match(app,/page\.startsWith\('presupuesto-admin\/'\)/);assert.match(app,/detail\.removeAttribute\('open'\)/);
+ const [app,router,quotesUI]=await Promise.all([source('app.js'),source('app-page-router.js'),source('admin-quotes-ui.js')]);
+ assert.match(quotesUI,/Trabajos incluidos/);assert.match(quotesUI,/Importe/);assert.match(quotesUI,/Datos internos/);assert.match(router,/page\.startsWith\('presupuesto-admin\/'\)/);assert.match(app,/case'admin-quote-detail':html=adminQuoteDetail\(\)/);assert.match(app,/detail\.removeAttribute\('open'\)/);
 });
 
 test('programación usa etiquetas claras y vuelve a la obra exacta',async()=>{
@@ -130,6 +130,6 @@ test('avisos, refresh y margen evitan trabajo duplicado',async()=>{
 });
 
 test('Respaldos abre una pantalla de sistema y no cae en Inicio',async()=>{
- const [app,system]=await Promise.all([source('app.js'),source('admin-system-ui.js')]);
- assert.match(app,/page==='respaldos'\)html=adminSystem\.backups\(\)/);assert.match(system,/Respaldo automático/);assert.match(system,/03:00 \(hora de Argentina\)/);assert.match(system,/Retención:<\/strong> 30 días/);assert.match(system,/Último respaldo correcto/);assert.match(system,/Errores del servidor en los últimos 15 minutos/);
+ const [app,router,system]=await Promise.all([source('app.js'),source('app-page-router.js'),source('admin-system-ui.js')]);
+ assert.match(router,/page==='respaldos'\)return \{view:'admin-backups'\}/);assert.match(app,/case'admin-backups':html=adminSystem\.backups\(\)/);assert.match(system,/Respaldo automático/);assert.match(system,/03:00 \(hora de Argentina\)/);assert.match(system,/Retención:<\/strong> 30 días/);assert.match(system,/Último respaldo correcto/);assert.match(system,/Errores del servidor en los últimos 15 minutos/);
 });
