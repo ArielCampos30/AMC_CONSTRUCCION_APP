@@ -31,6 +31,6 @@ test('extracciones conservan estilos y saltos de línea del chat',()=>{
  const actions=read('../public/project-actions-features.js');
  const chat=read('../public/chat-features.js');
  assert.ok(actions.includes('value="Rechazado" class="outline">Rechazar'));
- assert.ok(chat.includes("esc(m.text||'').replace(/\\n/g,'<br>')"),'el chat de equipo debe convertir saltos de línea reales');
- assert.ok(!chat.includes("esc(m.text||'').replace(/\\\\n/g,'<br>')"),'no debe buscar el texto literal \\n');
+ assert.match(chat,/\.replace\(\/\\n\/g,'<br>'\)/,'el chat debe convertir saltos de línea reales');
+ assert.doesNotMatch(chat,/\.replace\(\/\\\\n\/g,'<br>'\)/,'no debe buscar el texto literal \\n');
 });
