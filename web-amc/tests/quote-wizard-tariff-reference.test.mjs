@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {findTariffMatches,isGenericWorkDescription,tariffReferenceTotal,normaliseWork,commercialReferenceTotal} from '../public/quote-wizard-model.js';
-import {baseTariffCount,estimatorTariffs} from '../tariff-catalog.mjs';
+import {baseTariffCount,defaultTariffCatalog,estimatorTariffs,TARIFF_CATALOG_ID} from '../tariff-catalog.mjs';
 import {adminUtilityRoutes} from '../admin-utility-routes.mjs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
@@ -25,26 +25,28 @@ test('reconoce referencias claras y no toma arreglos varios como tarifa literal'
  assert.equal(commercialReferenceTotal(work),216000);
 });
 
-test('usa el catálogo AMC preservando overrides históricos y trabajos propios',()=>{
- assert.ok(baseTariffCount()>20);
- const base=estimatorTariffs({overrides:{'Revoque fino':19999},customTariffs:[{id:'propio-1',rubro:'Propios',tarea:'Prueba propia',unidad:'unidad',precio:77777,custom:true}]});
+test('usa el catálogo AMC y conserva lectura temporal de overrides heredados',()=>{
+ assert.ok(baseTariffCount()>40);
+ const base=estimatorTariffs({overrides:{'Revoque fino':19999},customTariffs:[{id:'propio-1',rubro:'Albañilería',tarea:'Prueba propia',unidad:'unidad',precio:77777,custom:true}]});
  assert.equal(base.find(item=>item.tarea==='Revoque fino')?.precio,19999);
  assert.equal(base.find(item=>item.tarea==='Prueba propia')?.precio,77777);
 });
 
-test('endpoint de referencias exige administrador y devuelve el tarifario vigente',()=>{
+test('endpoint de referencias exige administrador y devuelve el catálogo independiente vigente',()=>{
  let checked=false,sent=null;
+ const catalog=defaultTariffCatalog();catalog.items.find(item=>item.tarea==='Revoque fino').precio=21000;
  const route=adminUtilityRoutes({
-  all:(type)=>type==='estimator'?[{db:{overrides:{'Revoque fino':21000},customTariffs:[]},updatedAt:'2026-09-11'}]:[],
+  all:type=>type==='tariffCatalog'?[{...catalog,id:TARIFF_CATALOG_ID,updatedAt:'2026-09-12T20:00:00-03:00'}]:[],
   get:()=>null,put:()=>null,
   requireAdmin:()=>{checked=true;},safeFile:()=>null,
-  send:(_res,status,payload)=>{sent={status,payload};},fail:()=>{},text:value=>String(value||''),sha:value=>String(value),now:()=>''
+  send:(_res,status,payload)=>{sent={status,payload};},fail:(status,message)=>{throw Object.assign(new Error(message),{status});},text:value=>String(value||''),sha:value=>String(value),now:()=>''
  });
  const handled=route({p:'/api/estimator-tariffs',method:'GET',b:{},user:{id:'admin'},res:{}});
  assert.equal(handled,true);
  assert.equal(checked,true);
  assert.equal(sent.status,200);
  assert.ok(sent.payload.items.some(item=>item.tarea==='Revoque fino'&&item.precio===21000));
+ assert.equal(sent.payload.rubrics.length,6);
 });
 
 test('editor consulta referencias filtradas y no ofrece un relevamiento sin precio',()=>{
