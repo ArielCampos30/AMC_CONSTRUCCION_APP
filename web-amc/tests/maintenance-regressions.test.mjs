@@ -29,7 +29,8 @@ test('chat flotante de empleado hidrata historial y abre mostrando el final',()=
 
 test('portada pública expone una sola entrada y gestión comprensible con historial',()=>{
  const ui=source('public/planning-ui.js');
- const routes=source('planning.mjs');
+ const appearance=source('appearance.mjs');
+ const planning=source('planning.mjs');
  const menu=source('public/admin-system-ui.js');
  const extras=source('public/admin-menu-extras.js');
  assert.match(menu,/\['Sitio público',\[\['portada','Portada pública'\]\]\]/);
@@ -40,8 +41,10 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
  assert.match(ui,/Dejar sólo el logo AMC/);
  assert.match(ui,/Publicar un trabajo realizado/);
  assert.match(ui,/restore-appearance/);
- assert.match(routes,/appearanceSnapshot/);
- assert.match(routes,/api\/appearance\/restore/);
+ assert.match(appearance,/appearanceSnapshot/);
+ assert.match(appearance,/api\/appearance\/restore/);
+ assert.doesNotMatch(planning,/appearanceSnapshot/);
+ assert.doesNotMatch(planning,/api\/appearance\/restore/);
 });
 
 test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la página',()=>{
