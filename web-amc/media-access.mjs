@@ -1,9 +1,9 @@
-export function mediaAccessFeatures({db,all,objectStore,appearance,team,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail}){
+export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchases,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail}){
  const canAccessPrivateFile=(user,p,file)=>{
   if(!user)return false;
   if(user.role==='admin'||file.owner===user.id)return true;
   if(staffMessages(user).some(message=>message.photos?.includes(p)))return true;
-  if(team.media(user,p)||fieldwork.media(user,p)||closure.media(user,p))return true;
+  if(team.media(user,p)||purchases.media(user,p)||fieldwork.media(user,p)||closure.media(user,p))return true;
   if(user.role==='employee'){
    return all('request').some(request=>canAccessRequest(user,request)&&request.photos?.includes(p))
     ||all('work').some(work=>canAccessWork(user,work)&&((work.photos||[]).includes(p)||(work.updates||[]).some(update=>update.image===p)));
