@@ -90,6 +90,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-back-contract.py
+      - name: Contrato real de toast
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-toast-contract.py
       - name: Ciclo completo Cliente Admin Empleado
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}

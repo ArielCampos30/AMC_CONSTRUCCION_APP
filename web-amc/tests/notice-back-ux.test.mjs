@@ -12,15 +12,13 @@ test('avisos internos no reciclan avisos viejos y duran tres segundos',async()=>
  assert.match(notices,/liveAlertTimer=setTimeout\(close,LIVE_NOTICE_MS\)/);
 });
 
-test('avisos transitorios normales duran tres segundos y el patch UX queda dedicado a toasts',async()=>{
- const runtime=await source('public/ux-runtime-fixes.js');
- assert.match(runtime,/const TRANSIENT_MS=3000/);
+test('avisos transitorios normales duran tres segundos en el runtime oficial',async()=>{
+ const [runtime,index]=await Promise.all([source('public/app-toast-runtime.js'),source('public/index.html')]);
+ assert.match(runtime,/export const TRANSIENT_MS=3000/);
  assert.match(runtime,/borrad\[oa\]s\?/);
  assert.match(runtime,/toast\.classList\.remove\('show'\)/);
- assert.doesNotMatch(runtime,/\[data-maintenance-action="delete-notice"\]/);
- assert.doesNotMatch(runtime,/deletedNoticeIds/);
- assert.doesNotMatch(runtime,/function deleteNotice/);
- assert.doesNotMatch(runtime,/data-global-back|fallbackBackRoute|routeStack|hashchange/);
+ assert.match(index,/app-toast-runtime\.js/);
+ assert.doesNotMatch(index,/ux-runtime-fixes\.js/);
 });
 
 test('el controlador de avisos preserva el contador global fuera de la bandeja',async()=>{
@@ -30,9 +28,9 @@ test('el controlador de avisos preserva el contador global fuera de la bandeja',
 });
 
 test('volver global vive en su controlador, no toca portada y no se duplica con el volver propio',async()=>{
- const [controller,runtime,index]=await Promise.all([source('public/app-shell-back-controller.js'),source('public/ux-runtime-fixes.js'),source('public/index.html')]);
+ const [controller,index]=await Promise.all([source('public/app-shell-back-controller.js'),source('public/index.html')]);
  assert.match(index,/app-shell-back-controller\.js/);
- assert.match(index,/app-shell-back-controller\.js[\s\S]*ux-runtime-fixes\.js/);
+ assert.match(index,/app-shell-back-controller\.js[\s\S]*app-toast-runtime\.js/);
  assert.match(controller,/const authenticatedShell=/);
  assert.match(controller,/if\(!authenticatedShell\(\)\)\{existing\?\.remove\(\);return;\}/);
  assert.match(controller,/observer\?\.observe\(app,\{childList:true\}\)/);
@@ -42,5 +40,4 @@ test('volver global vive en su controlador, no toca portada y no se duplica con 
  assert.match(controller,/if\(hasOwnBack\(main\)\)\{existing\?\.remove\(\);return;\}/);
  assert.match(controller,/if\(existing\)return;/);
  assert.match(controller,/function fallbackBackRoute/);
- assert.doesNotMatch(runtime,/data-global-back|fallbackBackRoute|routeStack|hashchange/);
 });

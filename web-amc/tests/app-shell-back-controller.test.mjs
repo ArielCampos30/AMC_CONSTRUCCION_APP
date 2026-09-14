@@ -90,13 +90,13 @@ test('attach conserva observer liviano, click en captura y hashchange',()=>{
  assert.deepEqual(observed[0].slice(0,2),[app,{childList:true}]);
 });
 
-test('ux-runtime-fixes queda dedicado sólo a toasts y el índice carga el controlador',async()=>{
- const [runtime,index]=await Promise.all([
-  readFile(new URL('../public/ux-runtime-fixes.js',import.meta.url),'utf8'),
+test('el índice conserva Volver y carga después el runtime oficial de toasts sin el patch UX',async()=>{
+ const [toastRuntime,index]=await Promise.all([
+  readFile(new URL('../public/app-toast-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/index.html',import.meta.url),'utf8'),
  ]);
  assert.match(index,/app-shell-back-controller\.js/);
- assert.match(index,/app-shell-back-controller\.js[\s\S]*ux-runtime-fixes\.js/);
- assert.match(runtime,/const TRANSIENT_MS=3000/);
- assert.doesNotMatch(runtime,/fallbackBackRoute|data-global-back|routeStack|hashchange|requestUiSync/);
+ assert.match(index,/app-shell-back-controller\.js[\s\S]*app-toast-runtime\.js/);
+ assert.doesNotMatch(index,/ux-runtime-fixes\.js/);
+ assert.match(toastRuntime,/export const TRANSIENT_MS=3000/);
 });
