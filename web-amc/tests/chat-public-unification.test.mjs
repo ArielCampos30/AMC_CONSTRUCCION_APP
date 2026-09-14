@@ -4,16 +4,17 @@ import {readFile} from 'node:fs/promises';
 
 const source=name=>readFile(new URL('../'+name,import.meta.url),'utf8');
 
-test('portada pública no usa observadores profundos que se autoalimentan',async()=>{
- const [maintenance,extras]=await Promise.all([
+test('portada pública no usa observadores profundos ni un parche dedicado del menú',async()=>{
+ const [maintenance,index,system]=await Promise.all([
   source('public/admin-maintenance-ui.js'),
-  source('public/admin-menu-extras.js')
+  source('public/index.html'),
+  source('public/admin-system-ui.js')
  ]);
  assert.doesNotMatch(maintenance,/observe\(document\.documentElement,\{subtree:true,childList:true\}\)/);
  assert.match(maintenance,/observe\(appRoot,\{childList:true\}\)/);
  assert.match(maintenance,/badge&&badge\.textContent!==next/);
- assert.doesNotMatch(extras,/subtree:true/);
- assert.match(extras,/observe\(app,\{childList:true\}\)/);
+ assert.doesNotMatch(index,/admin-menu-extras\.js/);
+ assert.match(system,/uniqueMoreSections\(\)\.map/);
 });
 
 test('Más deja un único chat global y no duplica la bandeja completa',async()=>{

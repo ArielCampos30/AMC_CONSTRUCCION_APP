@@ -32,10 +32,11 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
  const appearance=source('appearance.mjs');
  const planning=source('planning.mjs');
  const menu=source('public/admin-system-ui.js');
- const extras=source('public/admin-menu-extras.js');
+ const index=source('public/index.html');
  assert.match(menu,/\['Sitio público',\[\['portada','Portada pública'\]\]\]/);
- assert.doesNotMatch(extras,/append\(link\)/);
- assert.match(extras,/links\.slice\(1\)/);
+ assert.match(menu,/const uniqueMoreSections=/);
+ assert.match(menu,/if\(routes\.has\(route\)\)return false/);
+ assert.doesNotMatch(index,/admin-menu-extras\.js/);
  assert.match(ui,/VISTA PREVIA ACTUAL/);
  assert.match(ui,/Usar como portada/);
  assert.match(ui,/Dejar sólo el logo AMC/);

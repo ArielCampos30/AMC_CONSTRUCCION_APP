@@ -6,13 +6,16 @@ export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  const paint=()=>{const status=document.getElementById('amc-system-status');if(status)status.innerHTML=statusContent();const backup=document.getElementById('amc-backup-content');if(backup)backup.innerHTML=backupContent();};
  const load=async()=>{if(getState().user?.role!=='admin'||loading||Date.now()-loadedAt<30000)return;loading=true;try{const response=await fetch('/api/state/system',{credentials:'same-origin'});if(!response.ok)return;const data=await response.json();if(getState().user?.role!=='admin')return;system=data.system||{};loadedAt=Date.now();paint();}catch{}finally{loading=false;}};
  const scheduleLoad=()=>queueMicrotask(load);
+ const moreSections=[
+  ['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
+  ['Sitio público',[['portada','Portada pública']]],
+  ['Herramientas',[['tarifario','Tarifario'],['cotizador','Cotizador'],['resumen-diario','Resumen diario']]],
+  ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]
+ ];
+ const uniqueMoreSections=()=>{const routes=new Set();return moreSections.map(([title,items])=>[title,items.filter(([route])=>{if(routes.has(route))return false;routes.add(route);return true;})]);};
  // Compatibilidad de cobertura histórica: ['Gestión' 'Chat' 'Clientes' 'Empleados']. Chat ahora se usa sólo desde el botón flotante.
  const more=()=>{scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
-   [['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
-    ['Sitio público',[['portada','Portada pública']]],
-    ['Herramientas',[['tarifario','Tarifario'],['cotizador','Cotizador'],['resumen-diario','Resumen diario']]],
-    ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]]
-   .map(([title,items])=>`<section class="admin-v3-more"><h2>${title}</h2>${items.map(([p,t])=>`<a href="#${p}"><span>${t}</span><b>›</b></a>`).join('')}</section>`).join('')+
+   uniqueMoreSections().map(([title,items])=>`<section class="admin-v3-more"><h2>${title}</h2>${items.map(([p,t])=>`<a href="#${p}"><span>${t}</span><b>›</b></a>`).join('')}</section>`).join('')+
    `<section id="amc-system-status" class="panel">${statusContent()}</section>`;};
  const backups=()=>{scheduleLoad();return heading('SISTEMA','Respaldos','Protección y recuperación de los datos de AMC.')+`<div id="amc-backup-content">${backupContent()}</div><a class="inline-action" href="#mas-admin">← Volver a Más</a>`;};
  return {more,backups};
