@@ -26,13 +26,12 @@ test('estado de envío muestra icono sin porcentaje',async()=>{
 });
 
 test('avisos, presupuestos y apariencia conservan respuestas optimistas sin refrescar toda la pantalla',async()=>{
- const [maintenance,noticeController,quoteController,appearanceController]=await Promise.all([
-  source('public/admin-maintenance-ui.js'),
+ const [noticeController,quoteController,appearanceController,index]=await Promise.all([
   source('public/app-shell-notice-click-controller.js'),
   source('public/app-admin-quote-maintenance-controller.js'),
-  source('public/app-admin-appearance-controller.js')
+  source('public/app-admin-appearance-controller.js'),
+  source('public/index.html')
  ]);
- assert.doesNotMatch(maintenance,/csrfValue|fetch\('\/api\/state'|archive-quote|unarchive-quote|delete-quote|delete-notice|delete-read-notices|delete-all-notices|syncNoticeChrome/);
  assert.match(noticeController,/const deleteNotice=async\(button,event\)=>/);
  assert.match(noticeController,/const deleteScope=async\(button,event,scope\)=>/);
  assert.match(noticeController,/card\?\.remove\(\)/);
@@ -44,8 +43,8 @@ test('avisos, presupuestos y apariencia conservan respuestas optimistas sin refr
  assert.match(quoteController,/await api\('\/api\/quotes\/'\+encodeURIComponent\(button\.dataset\.id\)\+'\/unarchive',\{\}\)/);
  assert.match(quoteController,/await api\('\/api\/quotes\/'\+encodeURIComponent\(button\.dataset\.id\)\+'\/delete',\{\}\)/);
  assert.match(quoteController,/parent\.insertBefore\(card/);
- assert.doesNotMatch(maintenance,/restore-appearance|refreshWithoutReload/);
  assert.match(appearanceController,/action!=='restore-appearance'/);
  assert.match(appearanceController,/await api\('\/api\/appearance\/restore',\{versionAt:button\.dataset\.version\}\)/);
  assert.match(appearanceController,/refreshWithoutReload\(\)/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
 });

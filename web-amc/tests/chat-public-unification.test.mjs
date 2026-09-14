@@ -4,18 +4,16 @@ import {readFile} from 'node:fs/promises';
 
 const source=name=>readFile(new URL('../'+name,import.meta.url),'utf8');
 
-test('portada pública no usa observadores profundos ni un parche dedicado del menú',async()=>{
- const [maintenance,appearance,index,system]=await Promise.all([
-  source('public/admin-maintenance-ui.js'),
+test('portada pública no usa observadores profundos ni parches legacy',async()=>{
+ const [appearance,index,system]=await Promise.all([
   source('public/app-admin-appearance-controller.js'),
   source('public/index.html'),
   source('public/admin-system-ui.js')
  ]);
- assert.doesNotMatch(maintenance,/appearanceSyncPending|refreshAppearanceLabels|restore-appearance/);
  assert.doesNotMatch(appearance,/observe\(document\.documentElement,\{subtree:true,childList:true\}\)/);
  assert.match(appearance,/observe\(appRoot,\{childList:true\}\)/);
  assert.match(appearance,/badge&&badge\.textContent!==next/);
- assert.doesNotMatch(index,/admin-menu-extras\.js/);
+ assert.doesNotMatch(index,/admin-menu-extras\.js|admin-maintenance-ui\.js/);
  assert.match(index,/admin-appearance\.css/);
  assert.match(system,/uniqueMoreSections\(\)\.map/);
 });
@@ -32,6 +30,14 @@ test('Más deja un único chat global y no duplica la bandeja completa',async()=
  assert.match(features,/filter\(employee=>employee\.role==='employee'&&employee\.active!==false\)/);
  assert.match(features,/Una conversación por cliente/);
  assert.match(adminChat,/const staff=state=>\(state\.employees\|\|\[\]\)\.filter\(item=>item\.role==='employee'&&item\.active!==false\)/);
+});
+
+test('chat flotante posee cierre exterior y layout propio sin !important',async()=>{
+ const floating=await source('public/floating-chat.js');
+ assert.match(floating,/onOutsidePointerDown/);
+ assert.match(floating,/getBoundingClientRect\(\)/);
+ assert.match(floating,/grid-template-columns:40px minmax\(0,1fr\) 44px/);
+ assert.doesNotMatch(floating,/!important/);
 });
 
 test('chat flotante de empleado muestra el spinner dentro del mensaje y no reabre teclado móvil',async()=>{

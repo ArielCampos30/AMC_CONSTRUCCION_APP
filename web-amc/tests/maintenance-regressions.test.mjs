@@ -4,14 +4,17 @@ import {readFileSync} from 'node:fs';
 
 const source=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 
-test('chat flotante conserva ancho útil, cierre exterior y supresión por ruta activa',()=>{
- const maintenance=source('public/admin-maintenance-ui.js');
+test('chat flotante conserva layout, cierre exterior y supresión por ruta activa sin !important propio',()=>{
+ const floating=source('public/floating-chat.js');
  const mobile=source('public/mobile-runtime-fixes.js');
  const notices=source('public/notice-ui.js');
- assert.match(maintenance,/compact-composer>textarea/);
- assert.match(maintenance,/getBoundingClientRect\(\)/);
- assert.match(maintenance,/dialog\.close\(\)/);
- assert.doesNotMatch(maintenance,/fetch\(|csrfValue|archive-quote|delete-read-notices|restore-appearance/);
+ const index=source('public/index.html');
+ assert.match(floating,/compact-composer>textarea/);
+ assert.match(floating,/getBoundingClientRect\(\)/);
+ assert.match(floating,/document\.addEventListener\('pointerdown',onOutsidePointerDown,true\)/);
+ assert.match(floating,/grid-template-columns:40px minmax\(0,1fr\) 44px/);
+ assert.doesNotMatch(floating,/!important/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
  assert.match(mobile,/matchMedia\('\(max-width:560px\)'\)\.matches/);
  assert.match(mobile,/@media\(max-width:560px\)[\s\S]*amc-keyboard-open/);
  assert.match(notices,/pageChatRoute/);
@@ -20,17 +23,15 @@ test('chat flotante conserva ancho útil, cierre exterior y supresión por ruta 
 });
 
 test('chat flotante de empleado hidrata historial desde runtime dedicado y abre mostrando el final',()=>{
- const maintenance=source('public/admin-maintenance-ui.js');
  const runtime=source('public/app-admin-staff-chat-runtime.js');
  const index=source('public/index.html');
- assert.doesNotMatch(maintenance,/staff-chat\/messages\?employeeId=/);
- assert.doesNotMatch(maintenance,/renderFloatingStaffMessages/);
  assert.match(runtime,/staff-chat\/messages\?employeeId=/);
  assert.match(runtime,/credentials:'same-origin'/);
  assert.match(runtime,/scrollTop=log\.scrollHeight/);
  assert.match(runtime,/empty-conversation/);
  assert.match(runtime,/floating-staff-message/);
- assert.match(index,/admin-maintenance-ui\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
+ assert.match(index,/mobile-runtime-fixes\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
 });
 
 test('portada pública expone una sola entrada y gestión comprensible con historial',()=>{
@@ -40,11 +41,10 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
  const menu=source('public/admin-system-ui.js');
  const index=source('public/index.html');
  const controller=source('public/app-admin-appearance-controller.js');
- const maintenance=source('public/admin-maintenance-ui.js');
  assert.match(menu,/\['Sitio público',\[\['portada','Portada pública'\]\]\]/);
  assert.match(menu,/const uniqueMoreSections=/);
  assert.match(menu,/if\(routes\.has\(route\)\)return false/);
- assert.doesNotMatch(index,/admin-menu-extras\.js/);
+ assert.doesNotMatch(index,/admin-menu-extras\.js|admin-maintenance-ui\.js/);
  assert.match(index,/admin-appearance\.css/);
  assert.match(ui,/VISTA PREVIA ACTUAL/);
  assert.match(ui,/Usar como portada/);
@@ -54,14 +54,13 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
  assert.match(ui,/createAdminAppearanceController/);
  assert.match(controller,/refreshAppearanceLabels/);
  assert.match(controller,/api\('\/api\/appearance\/restore'/);
- assert.doesNotMatch(maintenance,/restore-appearance|refreshAppearanceLabels/);
  assert.match(appearance,/appearanceSnapshot/);
  assert.match(appearance,/api\/appearance\/restore/);
  assert.doesNotMatch(planning,/appearanceSnapshot/);
  assert.doesNotMatch(planning,/api\/appearance\/restore/);
 });
 
-test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la página',()=>{
+test('avisos y presupuestos tienen limpieza y archivado seguro sin mantenimiento legacy',()=>{
  const notices=source('notifications.mjs');
  const noticeUI=source('public/notice-ui.js');
  const noticeController=source('public/app-shell-notice-click-controller.js');
@@ -69,7 +68,6 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la p
  const quotes=source('quote-work-routes.mjs');
  const quoteUI=source('public/admin-quotes-ui.js');
  const shell=source('public/app-shell-click-controller.js');
- const maintenance=source('public/admin-maintenance-ui.js');
  const index=source('public/index.html');
  assert.match(notices,/deleteNotices/);
  assert.match(notices,/deleteScope/);
@@ -78,8 +76,8 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la p
  assert.match(noticeController,/deleteScope/);
  assert.match(noticeController,/\{deleteScope:scope\}/);
  assert.match(noticeController,/syncNoticeCount/);
- assert.doesNotMatch(maintenance,/delete-read-notices|delete-all-notices|syncNoticeChrome/);
  assert.match(index,/notice-ui\.css/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
  assert.match(quotes,/\/archive/);
  assert.match(quotes,/\/unarchive/);
  assert.match(quotes,/Archivá primero el presupuesto/);
@@ -91,5 +89,4 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la p
  assert.match(quoteController,/const detachCard=button=>/);
  assert.match(shell,/createAdminQuoteMaintenanceController/);
  assert.match(shell,/quoteMaintenanceController\.attach\(\)/);
- assert.doesNotMatch(maintenance,/archive-quote|unarchive-quote|delete-quote|location\.reload|function detachNodes|csrfValue|fetch\(/);
 });

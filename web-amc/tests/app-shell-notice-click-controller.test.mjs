@@ -232,14 +232,13 @@ test('click ajeno a avisos no hace nada',async()=>{
 });
 
 test('app.js delega lectura y todo el borrado de avisos al controlador especializado',async()=>{
- const [app,maintenance,index]=await Promise.all([
+ const [app,index]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/admin-maintenance-ui.js',import.meta.url),'utf8'),
   readFile(new URL('../public/index.html',import.meta.url),'utf8'),
  ]);
  assert.match(app,/createAppShellNoticeClickController/);
  assert.match(app,/shellNoticeClickController\.attach\(\)/);
  assert.doesNotMatch(app,/document\.addEventListener\('click',async e=>\{const link=e\.target\.closest\('\[data-notice\]'\)/);
- assert.doesNotMatch(maintenance,/delete-read-notices|delete-all-notices|syncNoticeChrome/);
  assert.match(index,/notice-ui\.css/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
 });
