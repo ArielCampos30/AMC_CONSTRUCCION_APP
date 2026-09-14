@@ -20,9 +20,10 @@ test('enviar desde chat flotante móvil cierra el teclado y no lo reabre al term
 });
 
 test('estado de envío muestra icono sin porcentaje',async()=>{
- const [mobile,features]=await Promise.all([source('public/mobile-runtime-fixes.js'),source('public/chat-features.js')]);
+ const [mobileStyles,features]=await Promise.all([source('public/mobile-chat.css'),source('public/chat-features.js')]);
  assert.match(features,/message-upload-spinner/);
- assert.match(mobile,/upload-state>span:not\(\.message-upload-spinner\)\{display:none!important\}/);
+ assert.match(mobileStyles,/\.upload-state\s*>\s*span:not\(\.message-upload-spinner\)\s*\{\s*display:\s*none/);
+ assert.match(mobileStyles,/\.upload-state \.message-upload-spinner\s*\{\s*display:\s*inline-block/);
 });
 
 test('avisos, presupuestos y apariencia conservan respuestas optimistas sin refrescar toda la pantalla',async()=>{

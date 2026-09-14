@@ -7,6 +7,7 @@ const source=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 test('chat flotante conserva layout, cierre exterior y supresión por ruta activa sin !important propio',()=>{
  const floating=source('public/floating-chat.js');
  const mobile=source('public/mobile-runtime-fixes.js');
+ const mobileStyles=source('public/mobile-chat.css');
  const notices=source('public/notice-ui.js');
  const index=source('public/index.html');
  assert.match(floating,/compact-composer>textarea/);
@@ -16,7 +17,9 @@ test('chat flotante conserva layout, cierre exterior y supresión por ruta activ
  assert.doesNotMatch(floating,/!important/);
  assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
  assert.match(mobile,/matchMedia\('\(max-width:560px\)'\)\.matches/);
- assert.match(mobile,/@media\(max-width:560px\)[\s\S]*amc-keyboard-open/);
+ assert.match(mobileStyles,/@media \(max-width: 560px\)[\s\S]*amc-keyboard-open/);
+ assert.doesNotMatch(mobileStyles,/!important/);
+ assert.doesNotMatch(mobile,/createElement\(['"]style['"]\)|!important/);
  assert.match(notices,/pageChatRoute/);
  assert.match(notices,/amcActiveChatRoute/);
  assert.match(notices,/amc-live-alert/);
