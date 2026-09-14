@@ -121,7 +121,9 @@ try:
     wait("return !!document.querySelector('.employee-staff-chat .employee-message-log')")
     wait("return document.querySelector('.employee-message-log').innerText.includes("+json.dumps(REMOTE_MESSAGE)+")")
     wait("return !document.querySelector('.employee-staff-chat').dataset.staffChatLoading")
-    assert js("return [...document.querySelectorAll('style')].some(s=>s.textContent.includes('employee-send-spinner'))")
+    assert js("return !!document.querySelector('link[href=\"/employee-staff-chat.css\"]')")
+    assert not js("return [...document.querySelectorAll('style')].some(s=>s.textContent.includes('employee-send-spinner'))")
+    assert js("return getComputedStyle(document.querySelector('.employee-staff-chat .staff-message textarea[name=\"text\"]')).fontSize==='16px'")
 
     js("""
       const textarea=document.querySelector('.employee-staff-chat .staff-message textarea[name="text"]');
