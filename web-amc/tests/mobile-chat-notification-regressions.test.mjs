@@ -7,8 +7,9 @@ const origin='http://localhost:4180';
 const actor=base=>({cookie:'',csrf:'',async call(path,body,status=200,method){const actual=method||(body===undefined?'GET':'POST'),response=await fetch(base+path,{method:actual,headers:{Origin:origin,'Content-Type':'application/json',Cookie:this.cookie,'X-CSRF-Token':this.csrf},...(actual==='GET'?{}:{body:JSON.stringify(body||{})})});const data=await response.json();assert.equal(response.status,status,JSON.stringify(data));const cookie=response.headers.get('set-cookie');if(cookie)this.cookie=cookie.split(';')[0];if(data.csrf)this.csrf=data.csrf;return data;}});
 
 test('chat móvil conserva el compositor, sigue al teclado y evita avisos del hilo visible',async()=>{
- const [runtime,confirm,index,manifest,activity,push,notices]=await Promise.all([
+ const [runtime,mobileStyles,confirm,index,manifest,activity,push,notices]=await Promise.all([
   readFile(new URL('../public/mobile-runtime-fixes.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/mobile-chat.css',import.meta.url),'utf8'),
   readFile(new URL('../public/amc-confirm.js',import.meta.url),'utf8'),
   readFile(new URL('../public/index.html',import.meta.url),'utf8'),
   readFile(new URL('../../app/src/main/AndroidManifest.xml',import.meta.url),'utf8'),
@@ -17,7 +18,10 @@ test('chat móvil conserva el compositor, sigue al teclado y evita avisos del hi
   readFile(new URL('../public/notice-ui.js',import.meta.url),'utf8')
  ]);
  assert.match(index,/mobile-runtime-fixes\.js/);
- assert.match(runtime,/compact-composer\.no-attach\{display:grid!important;grid-template-columns:minmax\(0,1fr\) 44px!important/);
+ assert.match(index,/notice-ui\.css[\s\S]*mobile-chat\.css/);
+ assert.match(mobileStyles,/#amc-chat-dialog \.compact-composer\.no-attach\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) 44px/);
+ assert.doesNotMatch(mobileStyles,/!important/);
+ assert.doesNotMatch(runtime,/createElement\(['"]style['"]\)|amc-mobile-runtime-fixes|!important/);
  assert.match(runtime,/window\.visualViewport/);
  assert.match(runtime,/amc-keyboard-open/);
  assert.match(runtime,/refreshPushToken/);
