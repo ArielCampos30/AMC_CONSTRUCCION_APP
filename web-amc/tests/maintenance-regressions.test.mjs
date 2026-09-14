@@ -6,7 +6,7 @@ const source=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 
 test('chat flotante conserva layout, cierre exterior y supresión por ruta activa sin !important propio',()=>{
  const floating=source('public/floating-chat.js');
- const mobile=source('public/mobile-runtime-fixes.js');
+ const mobile=source('public/app-mobile-runtime.js');
  const viewport=source('public/mobile-chat-viewport-runtime.js');
  const mobileStyles=source('public/mobile-chat.css');
  const notices=source('public/notice-ui.js');
@@ -16,7 +16,8 @@ test('chat flotante conserva layout, cierre exterior y supresión por ruta activ
  assert.match(floating,/document\.addEventListener\('pointerdown',onOutsidePointerDown,true\)/);
  assert.match(floating,/grid-template-columns:40px minmax\(0,1fr\) 44px/);
  assert.doesNotMatch(floating,/!important/);
- assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js|mobile-runtime-fixes\.js/);
+ assert.match(index,/app-mobile-runtime\.js/);
  assert.match(mobile,/import '\.\/mobile-chat-viewport-runtime\.js'/);
  assert.match(viewport,/matchMedia\('\(max-width:560px\)'\)\.matches/);
  assert.match(mobileStyles,/@media \(max-width: 560px\)[\s\S]*amc-keyboard-open/);
@@ -35,8 +36,8 @@ test('chat flotante de empleado hidrata historial desde runtime dedicado y abre 
  assert.match(runtime,/scrollTop=log\.scrollHeight/);
  assert.match(runtime,/empty-conversation/);
  assert.match(runtime,/floating-staff-message/);
- assert.match(index,/mobile-runtime-fixes\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
- assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
+ assert.match(index,/app-mobile-runtime\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
+ assert.doesNotMatch(index,/mobile-runtime-fixes\.js|admin-maintenance-ui\.js/);
 });
 
 test('portada pública expone una sola entrada y gestión comprensible con historial',()=>{
