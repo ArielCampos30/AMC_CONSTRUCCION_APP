@@ -48,30 +48,11 @@ function optimisticTargets(action,button){
  return [];
 }
 
-let floatingEmployeeId='',staffHydration=0;
-function scrollFloatingStaffEnd(){requestAnimationFrame(()=>{const log=document.querySelector('#amc-chat-dialog[open] .floating-staff-message')?.closest('.compact-thread')?.querySelector('.message-log');if(log)log.scrollTop=log.scrollHeight;});}
-function renderFloatingStaffMessages(log,messages,readAt){
- const rows=[...(Array.isArray(messages)?messages:[])].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.id||'').localeCompare(String(b.id||''))),serverIds=new Set(rows.map(message=>String(message.id||''))),local=[...log.querySelectorAll('.message.optimistic,.message[data-message-id]')].filter(node=>!serverIds.has(node.dataset.messageId||''));
- log.replaceChildren();
- for(const message of rows){const mine=message.senderRole==='admin',article=document.createElement('article');article.className='message'+(mine?' mine':'');article.dataset.messageId=message.id||'';const strong=document.createElement('strong');strong.textContent=message.senderName||(mine?'AMC':'Equipo AMC');const text=document.createElement('p');text.textContent=message.text||'';text.style.whiteSpace='pre-wrap';const meta=document.createElement('small');meta.className='message-meta';const time=document.createElement('span');time.textContent=message.date?new Date(message.date).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}):'';meta.append(time);if(mine){const read=!!readAt&&message.date<=readAt,check=document.createElement('span');check.className='message-check'+(read?' read':'');check.title=read?'Leído':'Enviado';check.textContent='✓';meta.append(check);}article.append(strong,text,meta);log.append(article);}
- for(const node of local)log.append(node);
- if(!rows.length&&!local.length){const empty=document.createElement('div');empty.className='empty-conversation';empty.textContent='Sin mensajes todavía.';log.append(empty);}
-}
-async function hydrateFloatingStaffChat(){
- const dialog=document.querySelector('#amc-chat-dialog[open]'),form=dialog?.querySelector('.floating-staff-message'),log=form?.closest('.compact-thread')?.querySelector('.message-log'),employeeId=floatingEmployeeId;if(!dialog||!form||!log||!employeeId)return;
- const run=++staffHydration;scrollFloatingStaffEnd();
- try{const response=await fetch('/api/staff-chat/messages?employeeId='+encodeURIComponent(employeeId),{credentials:'same-origin'});if(!response.ok)throw Error();const data=await response.json();if(run!==staffHydration||!dialog.open||!dialog.contains(form))return;renderFloatingStaffMessages(log,data.messages,data.readAt||'');scrollFloatingStaffEnd();}catch{scrollFloatingStaffEnd();}
-}
-
 document.addEventListener('pointerdown',event=>{
- const row=event.target.closest?.('#amc-chat-dialog .chat-contact[data-contact]');if(row)floatingEmployeeId=row.dataset.contact||'';
  const dialog=document.querySelector('#amc-chat-dialog[open]');if(!dialog)return;
  const rect=dialog.getBoundingClientRect(),outside=event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom;
  if(outside){event.preventDefault();dialog.close();}
 },true);
-
-document.addEventListener('click',event=>{if(event.target.closest?.('.chat-contact[data-contact],.floating-chat-button'))setTimeout(hydrateFloatingStaffChat,0);});
-document.addEventListener('submit',event=>{if(event.target.matches?.('#amc-chat-dialog .floating-staff-message')){event.target.closest('.compact-thread')?.querySelector('.empty-conversation')?.remove();setTimeout(scrollFloatingStaffEnd,0);}},{capture:true});
 
 function refreshAppearanceLabels(){const list=document.querySelector('#appearance-form .appearance-photo-list');if(!list)return;[...list.querySelectorAll('.appearance-photo-card')].forEach((card,index)=>{const badge=card.querySelector('[data-photo-role]'),next=index===0?'Foto principal':'Galería';if(badge&&badge.textContent!==next)badge.textContent=next;});}
 
