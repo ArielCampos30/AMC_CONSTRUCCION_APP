@@ -6,7 +6,7 @@ const source=name=>readFile(new URL('../public/'+name,import.meta.url),'utf8');
 
 test('G-C separa viewport/teclado y G-D deja push nativo en runtime propio',async()=>{
  const [shell,viewport,pushRuntime,styles]=await Promise.all([
-  source('mobile-runtime-fixes.js'),
+  source('app-mobile-runtime.js'),
   source('mobile-chat-viewport-runtime.js'),
   source('native-push-registration-runtime.js'),
   source('mobile-chat.css')

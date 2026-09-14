@@ -20,7 +20,7 @@ test('chat flotante admin ordena mensajes y conserva recibos de lectura',()=>{
 test('runtime dedicado conserva hidratación y hooks móviles con shell flotante propio',async()=>{
  const [runtime,mobile,routeRuntime,index,floating]=await Promise.all([
   readFile(new URL('../public/app-admin-staff-chat-runtime.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/mobile-runtime-fixes.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/app-mobile-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/active-chat-route-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/index.html',import.meta.url),'utf8'),
   readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8'),
@@ -39,6 +39,6 @@ test('runtime dedicado conserva hidratación y hooks móviles con shell flotante
  assert.match(routeRuntime,/floating-staff-message/);
  assert.match(routeRuntime,/selectedFloatingContact/);
  assert.doesNotMatch(mobile,/floating-staff-message|selectedFloatingContact/);
- assert.match(index,/mobile-runtime-fixes\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
- assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
+ assert.match(index,/app-mobile-runtime\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
+ assert.doesNotMatch(index,/mobile-runtime-fixes\.js|admin-maintenance-ui\.js/);
 });

@@ -6,7 +6,7 @@ const source=name=>readFile(new URL('../public/'+name,import.meta.url),'utf8');
 
 test('G-D separa sincronización push nativa del agregador móvil sin cambiar su contrato',async()=>{
  const [shell,pushRuntime,viewportRuntime,routeRuntime]=await Promise.all([
-  source('mobile-runtime-fixes.js'),
+  source('app-mobile-runtime.js'),
   source('native-push-registration-runtime.js'),
   source('mobile-chat-viewport-runtime.js'),
   source('active-chat-route-runtime.js')
