@@ -25,14 +25,18 @@ test('estado de envío muestra icono sin porcentaje',async()=>{
  assert.match(mobile,/upload-state>span:not\(\.message-upload-spinner\)\{display:none!important\}/);
 });
 
-test('borrar y archivar usan respuesta optimista sin refrescar toda la pantalla',async()=>{
- const maintenance=await source('public/admin-maintenance-ui.js');
+test('borrar avisos y archivar presupuesto conservan respuestas optimistas sin refrescar toda la pantalla',async()=>{
+ const [maintenance,noticeController]=await Promise.all([source('public/admin-maintenance-ui.js'),source('public/app-shell-notice-click-controller.js')]);
  assert.match(maintenance,/let csrfValue='',csrfPending=null/);
  assert.match(maintenance,/queueMicrotask\(\(\)=>csrf\(\)\.catch/);
  assert.match(maintenance,/function detachNodes\(nodes\)/);
  assert.match(maintenance,/optimisticTargets\(action,button\)/);
  assert.match(maintenance,/action==='archive-quote'[\s\S]*detachNodes/);
- assert.match(maintenance,/action==='delete-notice'[\s\S]*detachNodes/);
+ assert.doesNotMatch(maintenance,/action==='delete-notice'/);
+ assert.match(noticeController,/const deleteNotice=async\(button,event\)=>/);
+ assert.match(noticeController,/card\?\.remove\(\)/);
+ assert.match(noticeController,/await api\('\/api\/notices\/read',\{deleteId:id\}\)/);
+ assert.match(noticeController,/parent\.insertBefore\(card/);
  assert.match(maintenance,/action==='restore-appearance'[\s\S]*refreshWithoutReload\(\)/);
  assert.doesNotMatch(maintenance,/\n  refreshWithoutReload\(\);\n \}catch/);
 });
