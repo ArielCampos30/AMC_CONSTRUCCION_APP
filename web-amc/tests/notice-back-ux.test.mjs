@@ -12,20 +12,20 @@ test('avisos internos no reciclan avisos viejos y duran tres segundos',async()=>
  assert.match(notices,/liveAlertTimer=setTimeout\(close,LIVE_NOTICE_MS\)/);
 });
 
-test('avisos transitorios normales duran tres segundos y borrar no muestra confirmación negra de éxito',async()=>{
+test('avisos transitorios normales duran tres segundos y el patch UX ya no borra avisos',async()=>{
  const runtime=await source('public/ux-runtime-fixes.js');
  assert.match(runtime,/const TRANSIENT_MS=3000/);
  assert.match(runtime,/borrad\[oa\]s\?/);
  assert.match(runtime,/toast\.classList\.remove\('show'\)/);
- assert.match(runtime,/\[data-maintenance-action="delete-notice"\]/);
- assert.match(runtime,/deletedNoticeIds\.add\(id\)/);
- assert.match(runtime,/await deleteNotice\(id\)/);
+ assert.doesNotMatch(runtime,/\[data-maintenance-action="delete-notice"\]/);
+ assert.doesNotMatch(runtime,/deletedNoticeIds/);
+ assert.doesNotMatch(runtime,/function deleteNotice/);
 });
 
-test('el contador de avisos no desaparece al navegar por pantallas sin tarjetas de aviso',async()=>{
- const runtime=await source('public/ux-runtime-fixes.js');
- assert.match(runtime,/if\(!cards\.length&&currentRoute\(\)!=='avisos'\)return;/);
- assert.match(runtime,/const unread=cards\.filter\(card=>card\.classList\.contains\('unread'\)\)\.length/);
+test('el controlador de avisos preserva el contador global fuera de la bandeja',async()=>{
+ const controller=await source('public/app-shell-notice-click-controller.js');
+ assert.match(controller,/if\(!cards\.length&&currentRoute\(\)!=='avisos'\)return;/);
+ assert.match(controller,/const unread=cards\.filter\(card=>card\.classList\?\.contains\('unread'\)\)\.length/);
 });
 
 test('volver global no toca la portada pública ni se duplica con el volver propio de la pantalla',async()=>{
