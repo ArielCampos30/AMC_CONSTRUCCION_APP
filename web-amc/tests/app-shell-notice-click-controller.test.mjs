@@ -10,16 +10,27 @@ const documentStub=()=>({
  alert:{cleared:false,replaceChildren(){this.cleared=true;}},
  app:{},
  addEventListener(type,handler){this.listeners.push([type,handler]);},
- querySelectorAll(selector){return selector==='[data-notice-card]'?this.cards:[];},
+ querySelectorAll(selector){
+  if(selector==='[data-notice-card]')return this.cards;
+  if(selector==='[data-notice-card]:not(.unread)')return this.cards.filter(card=>!card.classList.contains('unread'));
+  return [];
+ },
  querySelector(selector){
   if(selector==='#notice-count')return this.count;
   if(selector==='#app')return this.app;
+  if(selector==='#toast')return this.toast||null;
   if(selector.startsWith('[data-notice-card="')){const id=selector.match(/^\[data-notice-card="(.+)"\]$/)?.[1];return this.cards.find(card=>card.dataset.noticeCard===id)||null;}
   if(selector.startsWith('#amc-live-alert['))return this.alert;
   return null;
  },
 });
-const eventTarget=({link=null,button=null}={})=>({closest:selector=>selector==='[data-notice]'?link:selector==='[data-maintenance-action="delete-notice"]'?button:null});
+const eventTarget=({link=null,button=null,deleteRead=null,deleteAll=null}={})=>({closest:selector=>{
+ if(selector==='[data-notice]')return link;
+ if(selector==='[data-maintenance-action="delete-notice"]')return button;
+ if(selector==='[data-maintenance-action="delete-read-notices"]')return deleteRead;
+ if(selector==='[data-maintenance-action="delete-all-notices"]')return deleteAll;
+ return null;
+}});
 const addCard=(documentRef,id,{unread=true}={})=>{
  const parent={isConnected:true,insertBefore(node){if(!documentRef.cards.includes(node))documentRef.cards.push(node);node.isConnected=true;node.parentNode=this;}};
  const card={
@@ -34,6 +45,8 @@ const addCard=(documentRef,id,{unread=true}={})=>{
  const button={dataset:{id},disabled:false,isConnected:true,closest:selector=>selector==='[data-notice-card]'?card:null};
  return {card,button,parent};
 };
+const bulkButton=()=>({dataset:{},disabled:false,isConnected:true});
+const quietEvent=target=>({target,preventDefault(){},stopPropagation(){},stopImmediatePropagation(){}});
 const base=(overrides={})=>{
  const documentRef=overrides.documentRef||documentStub(),calls=[];
  const locationRef=overrides.locationRef||{href:'https://amc.test/#avisos',hash:'#avisos'};
@@ -43,6 +56,8 @@ const base=(overrides={})=>{
   api:async(path,body)=>{calls.push(['api',path,body]);return {noticeIds:['n1']};},
   applyNoticeRead:ids=>calls.push(['read',ids]),
   onError:error=>calls.push(['error',error.message]),
+  onSuccess:text=>calls.push(['success',text]),
+  confirmAction:async(message,title,label)=>{calls.push(['confirm',message,title,label]);return true;},
   createMutationObserver:()=>null,
   ...overrides,
  });
@@ -119,7 +134,7 @@ test('borrar aviso es optimista, no confirma, actualiza contador y limpia alerta
 test('un render intermedio no vuelve a mostrar un aviso borrado mientras la API ya confirmó',async()=>{
  const {controller,documentRef}=base({setTimeoutRef:()=>{}});
  const {button}=addCard(documentRef,'n6');
- await controller.handleClick({target:eventTarget({button}),preventDefault(){},stopPropagation(){},stopImmediatePropagation(){}});
+ await controller.handleClick(quietEvent(eventTarget({button})));
  const {card:rerendered}=addCard(documentRef,'n6');
  controller.pruneDeletedNotices();
  assert.equal(rerendered.isConnected,false);
@@ -127,14 +142,75 @@ test('un render intermedio no vuelve a mostrar un aviso borrado mientras la API 
 });
 
 test('si falla borrar aviso restaura la tarjeta, el contador y delega el error',async()=>{
- const {controller,documentRef,calls}=base({api:async()=>{throw new Error('no se pudo');}});
+ const calls=[];
+ const {controller,documentRef}=base({api:async()=>{throw new Error('no se pudo');},onError:error=>calls.push(['error',error.message])});
  const {card,button}=addCard(documentRef,'n8');
- await controller.handleClick({target:eventTarget({button}),preventDefault(){},stopPropagation(){},stopImmediatePropagation(){}});
+ await controller.handleClick(quietEvent(eventTarget({button})));
  assert.equal(card.isConnected,true);
  assert.equal(documentRef.cards.includes(card),true);
  assert.equal(documentRef.count.textContent,'1');
  assert.equal(documentRef.count.hidden,false);
  assert.deepEqual(calls,[['error','no se pudo']]);
+ assert.equal(button.disabled,false);
+});
+
+test('Borrar leídos elimina sólo tarjetas leídas, sincroniza contador y usa deleteScope read',async()=>{
+ const {controller,documentRef,calls}=base();
+ const read=addCard(documentRef,'r1',{unread:false}).card;
+ const unread=addCard(documentRef,'u1',{unread:true}).card;
+ const button=bulkButton();
+ await controller.handleClick(quietEvent(eventTarget({deleteRead:button})));
+ assert.equal(read.isConnected,false);
+ assert.equal(unread.isConnected,true);
+ assert.deepEqual(documentRef.cards,[unread]);
+ assert.equal(documentRef.count.textContent,'1');
+ assert.equal(documentRef.count.hidden,false);
+ assert.deepEqual(calls,[
+  ['confirm','¿Borrar todos los avisos que ya están leídos?','Limpiar avisos','Borrar leídos'],
+  ['api','/api/notices/read',{deleteScope:'read'}],
+  ['success','Avisos leídos borrados.'],
+ ]);
+ assert.equal(button.disabled,false);
+});
+
+test('Borrar todos vacía tarjetas y contador y usa deleteScope all',async()=>{
+ const {controller,documentRef,calls}=base();
+ addCard(documentRef,'r1',{unread:false});addCard(documentRef,'u1',{unread:true});
+ const button=bulkButton();
+ await controller.handleClick(quietEvent(eventTarget({deleteAll:button})));
+ assert.equal(documentRef.cards.length,0);
+ assert.equal(documentRef.count.textContent,'0');
+ assert.equal(documentRef.count.hidden,true);
+ assert.deepEqual(calls,[
+  ['confirm','¿Borrar toda la bandeja de avisos? Esta acción no elimina presupuestos, obras ni mensajes.','Vaciar bandeja','Borrar todos'],
+  ['api','/api/notices/read',{deleteScope:'all'}],
+  ['success','Bandeja de avisos vaciada.'],
+ ]);
+ assert.equal(button.disabled,false);
+});
+
+test('cancelar borrado masivo conserva tarjetas, no llama API y libera el botón',async()=>{
+ const calls=[];
+ const {controller,documentRef}=base({confirmAction:async()=>false,api:async(path,body)=>calls.push([path,body])});
+ const card=addCard(documentRef,'r1',{unread:false}).card,button=bulkButton();
+ await controller.handleClick(quietEvent(eventTarget({deleteRead:button})));
+ assert.equal(card.isConnected,true);
+ assert.equal(documentRef.cards.length,1);
+ assert.deepEqual(calls,[]);
+ assert.equal(button.disabled,false);
+});
+
+test('si falla borrado masivo restaura tarjetas y contador',async()=>{
+ const errors=[];
+ const {controller,documentRef}=base({api:async()=>{throw new Error('falló limpieza');},onError:error=>errors.push(error.message)});
+ const read=addCard(documentRef,'r1',{unread:false}).card,unread=addCard(documentRef,'u1',{unread:true}).card,button=bulkButton();
+ await controller.handleClick(quietEvent(eventTarget({deleteAll:button})));
+ assert.equal(read.isConnected,true);
+ assert.equal(unread.isConnected,true);
+ assert.equal(documentRef.cards.length,2);
+ assert.equal(documentRef.count.textContent,'1');
+ assert.equal(documentRef.count.hidden,false);
+ assert.deepEqual(errors,['falló limpieza']);
  assert.equal(button.disabled,false);
 });
 
@@ -155,9 +231,15 @@ test('click ajeno a avisos no hace nada',async()=>{
  assert.deepEqual(calls,[]);
 });
 
-test('app.js delega lectura y borrado individual al controlador especializado',async()=>{
- const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+test('app.js delega lectura y todo el borrado de avisos al controlador especializado',async()=>{
+ const [app,maintenance,index]=await Promise.all([
+  readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/admin-maintenance-ui.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/index.html',import.meta.url),'utf8'),
+ ]);
  assert.match(app,/createAppShellNoticeClickController/);
  assert.match(app,/shellNoticeClickController\.attach\(\)/);
  assert.doesNotMatch(app,/document\.addEventListener\('click',async e=>\{const link=e\.target\.closest\('\[data-notice\]'\)/);
+ assert.doesNotMatch(maintenance,/delete-read-notices|delete-all-notices|syncNoticeChrome/);
+ assert.match(index,/notice-ui\.css/);
 });
