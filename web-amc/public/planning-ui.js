@@ -1,5 +1,7 @@
 import {slotsOn} from './calendar-rules.js';
+import {createAdminAppearanceController} from './app-admin-appearance-controller.js';
 export function createPlanning({getState,esc,api,upload}){
+ const appearanceController=createAdminAppearanceController({api});appearanceController.attach();
  let prepared=null;
  let month=new Date().toLocaleDateString('en-CA').slice(0,7),team='',edit='',day='';
  const select=(name,values,value)=>`<select name="${name}">${values.map(([id,label])=>`<option value="${esc(id)}" ${id===value?'selected':''}>${esc(label)}</option>`).join('')}</select>`;
