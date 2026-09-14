@@ -94,6 +94,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-toast-contract.py
+      - name: Contrato real del controlador Admin Apariencia
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-admin-appearance-controller.py
       - name: Contrato real del chat flotante Admin Equipo
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
