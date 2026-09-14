@@ -3,15 +3,19 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {renderEmployeeStaffMessages,hydrateEmployeeStaffChat} from '../public/employee-staff-chat-view.js';
 
-test('chat del empleado renderiza historial diferido y recibo de lectura',()=>{
+test('chat del empleado renderiza historial, recibo y fotos mediante miniatura interna',()=>{
  const html=renderEmployeeStaffMessages([
-  {id:'m2',senderRole:'employee',text:'Recibido',date:'2030-01-01T10:05:00.000Z'},
-  {id:'m1',senderRole:'admin',text:'Hola equipo',date:'2030-01-01T10:00:00.000Z'}
+  {id:'m2',senderRole:'employee',senderName:'Operario',text:'Recibido',photos:['/media/foto-1'],date:'2030-01-01T10:05:00.000Z'},
+  {id:'m1',senderRole:'admin',senderName:'AMC',text:'Hola equipo',date:'2030-01-01T10:00:00.000Z'}
  ],'2030-01-01T10:10:00.000Z');
  assert.ok(html.indexOf('Hola equipo')<html.indexOf('Recibido'));
  assert.match(html,/message mine/);
  assert.match(html,/message-check read/);
  assert.match(html,/title="Leído"/);
+ assert.match(html,/href="\/media\/foto-1"/);
+ assert.match(html,/src="\/media\/foto-1\?thumb=1"/);
+ assert.match(html,/loading="lazy"/);
+ assert.doesNotMatch(html,/target="_blank"/);
 });
 
 test('vista del chat hidrata sólo desde el endpoint dedicado y lleva el log al final',async()=>{
