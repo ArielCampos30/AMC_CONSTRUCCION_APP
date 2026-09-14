@@ -42,7 +42,6 @@ function syncNoticeChrome(){
  if(count){count.textContent=String(unread);count.hidden=!unread;}
 }
 function optimisticTargets(action,button){
- if(action==='delete-notice')return [button.closest('[data-notice-card]')];
  if(action==='delete-read-notices')return [...document.querySelectorAll('[data-notice-card]:not(.unread)')];
  if(action==='delete-all-notices')return [...document.querySelectorAll('[data-notice-card]')];
  if(['archive-quote','unarchive-quote','delete-quote'].includes(action))return [button.closest('.admin-v3-card')];
@@ -82,15 +81,10 @@ document.addEventListener('click',async event=>{
  if(action==='appearance-remove-photo'){button.closest('.appearance-photo-card')?.remove();refreshAppearanceLabels();return;}
  if(action==='appearance-main-photo'){const card=button.closest('.appearance-photo-card'),list=card?.parentElement;if(card&&list){list.prepend(card);refreshAppearanceLabels();}return;}
  if(action==='appearance-clear-photos'){if(await confirmAction('La portada volverá a mostrar sólo la marca AMC cuando guardes los cambios.','Quitar fotos de portada','Dejar sólo el logo')){document.querySelector('#appearance-form .appearance-photo-list')?.replaceChildren();refreshAppearanceLabels();}return;}
- if(!['delete-notice','delete-read-notices','delete-all-notices','restore-appearance','archive-quote','unarchive-quote','delete-quote'].includes(action))return;
+ if(!['delete-read-notices','delete-all-notices','restore-appearance','archive-quote','unarchive-quote','delete-quote'].includes(action))return;
  event.preventDefault();event.stopImmediatePropagation();if(button.disabled)return;button.disabled=true;
  let restoreOptimistic=()=>{};
  try{
-  if(action==='delete-notice'){
-   if(!await confirmAction('¿Borrar este aviso de la bandeja?','Borrar aviso','Borrar'))return;
-   restoreOptimistic=detachNodes(optimisticTargets(action,button));syncNoticeChrome();
-   await post('/api/notices/read',{deleteId:button.dataset.id});toast('Aviso borrado.');
-  }
   if(action==='delete-read-notices'){
    if(!await confirmAction('¿Borrar todos los avisos que ya están leídos?','Limpiar avisos','Borrar leídos'))return;
    restoreOptimistic=detachNodes(optimisticTargets(action,button));syncNoticeChrome();
