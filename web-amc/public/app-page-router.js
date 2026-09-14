@@ -45,7 +45,8 @@ export function resolveAppPage(page,state={}){
 
  if(page.startsWith('solicitud/'))return {view:state.user?'request-detail':'auth',id:page.slice('solicitud/'.length)};
  if(page.startsWith('trabajo/')&&role==='employee')return {view:'employee-work-detail',id:page.slice(8)};
- if(role==='employee'&&['inicio-empleado','mis-trabajos','chat-equipo'].includes(page))return {view:'team',page};
+ if(role==='employee'&&page==='chat-equipo')return {view:'team',page:'inicio-empleado',legacyEmployeeChat:true};
+ if(role==='employee'&&['inicio-empleado','mis-trabajos'].includes(page))return {view:'team',page};
  if(!state.user&&PROTECTED_PAGES.has(page))return {view:'auth'};
  if(page==='calendario'||page==='portada')return {view:'planning',page};
  if(['recuperar','restablecer','recuperar-cuentas','cierre'].includes(page))return {view:'accounts',page};
