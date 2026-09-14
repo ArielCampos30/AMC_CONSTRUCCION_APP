@@ -97,6 +97,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-mobile-chat-viewport-runtime.py
+      - name: Sincronización push nativa
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-native-push-registration.py
       - name: Ruta activa del chat y bridge Android
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
