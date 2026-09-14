@@ -68,7 +68,7 @@ try:
       const form=document.querySelector('#amc-chat-dialog .floating-staff-message'),bytes=Uint8Array.from(atob('"""+PNG_B64+"""'),c=>c.charCodeAt(0)),file=new File([bytes],'chat-e2e.png',{type:'image/png'}),dt=new DataTransfer();dt.items.add(file);form.elements.photos.files=dt.files;form.elements.photos.dispatchEvent(new Event('change',{bubbles:true}));form.elements.text.value="""+json.dumps(EMPLOYEE_MESSAGE)+""";form.requestSubmit();return true;
     """)
     wait("return document.querySelector('#amc-chat-dialog .message-log').innerText.includes("+json.dumps(EMPLOYEE_MESSAGE)+")")
-    wait("return !!document.querySelector('#amc-chat-dialog .message[data-message-id] .mini-photos img[src*='?thumb=1']')",30)
+    wait("return !!document.querySelector('#amc-chat-dialog .message[data-message-id] .mini-photos img[src*=\"?thumb=1\"]')",30)
     messages=api('/api/staff-chat/messages',None,'GET');sent=[m for m in messages.get('messages',[]) if m.get('text')==EMPLOYEE_MESSAGE]
     assert sent and len(sent[-1].get('photos') or [])==1,messages
     js("document.querySelector('#amc-chat-dialog .message[data-message-id] .mini-photos img').click();return true;")
