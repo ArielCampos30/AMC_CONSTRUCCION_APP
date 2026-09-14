@@ -6,8 +6,9 @@ import {createAppShellClickController} from '../public/app-shell-click-controlle
 const target=map=>({closest:selector=>map[selector]||null});
 const documentStub=(menus=[])=>({
  listeners:[],
- addEventListener(type,handler){this.listeners.push([type,handler]);},
+ addEventListener(type,handler,options){this.listeners.push([type,handler,options]);},
  querySelectorAll(selector){return selector==='.admin-v3-actions details[open]'?menus:[];},
+ querySelector(){return null;},
 });
 const base=(overrides={})=>{
  const documentRef=documentStub();
@@ -27,17 +28,18 @@ const base=(overrides={})=>{
   setDirty:value=>calls.push(['dirty',value]),
   onAction:async button=>calls.push(['action',button.dataset.action]),
   onError:error=>calls.push(['error',error.message]),
+  onMessage:text=>calls.push(['message',text]),
   ...overrides,
  });
  return {controller,documentRef,calls};
 };
 
-test('attach registra exactamente un listener click con el handler del controlador',()=>{
+test('attach registra mantenimiento de presupuestos en captura y listener general del shell',()=>{
  const {controller,documentRef}=base();
  controller.attach();
- assert.equal(documentRef.listeners.length,1);
- assert.equal(documentRef.listeners[0][0],'click');
- assert.equal(documentRef.listeners[0][1],controller.handleClick);
+ assert.equal(documentRef.listeners.length,2);
+ assert.deepEqual(documentRef.listeners[0],['click',controller.quoteMaintenanceController.handleClick,true]);
+ assert.deepEqual(documentRef.listeners[1],['click',controller.handleClick,undefined]);
 });
 
 test('quitar foto conserva archivos restantes y dispara change burbujeante',async()=>{
@@ -120,7 +122,11 @@ test('acciones normales se delegan una vez y los errores mantienen el filtro Abo
 });
 
 test('app.js delega el listener principal sin absorber clicks especializados',async()=>{
- const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+ const [app,shell,maintenance]=await Promise.all([
+  readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/app-shell-click-controller.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/admin-maintenance-ui.js',import.meta.url),'utf8'),
+ ]);
  assert.match(app,/createAppShellClickController/);
  assert.match(app,/shellClickController\.attach\(\)/);
  assert.doesNotMatch(app,/document\.addEventListener\('click',async e=>\{const removePhoto=/);
@@ -128,4 +134,7 @@ test('app.js delega el listener principal sin absorber clicks especializados',as
  assert.match(app,/shellNoticeClickController\.attach\(\)/);
  assert.doesNotMatch(app,/document\.addEventListener\('click',async e=>\{const link=e\.target\.closest\('\[data-notice\]'\)/);
  assert.match(app,/share-quote-whatsapp/);
+ assert.match(shell,/createAdminQuoteMaintenanceController/);
+ assert.match(shell,/quoteMaintenanceController\.attach\(\)/);
+ assert.doesNotMatch(maintenance,/archive-quote|unarchive-quote|delete-quote|csrfValue|fetch\('\/api\/state'/);
 });
