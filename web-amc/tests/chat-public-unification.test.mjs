@@ -5,15 +5,18 @@ import {readFile} from 'node:fs/promises';
 const source=name=>readFile(new URL('../'+name,import.meta.url),'utf8');
 
 test('portada pública no usa observadores profundos ni un parche dedicado del menú',async()=>{
- const [maintenance,index,system]=await Promise.all([
+ const [maintenance,appearance,index,system]=await Promise.all([
   source('public/admin-maintenance-ui.js'),
+  source('public/app-admin-appearance-controller.js'),
   source('public/index.html'),
   source('public/admin-system-ui.js')
  ]);
- assert.doesNotMatch(maintenance,/observe\(document\.documentElement,\{subtree:true,childList:true\}\)/);
- assert.match(maintenance,/observe\(appRoot,\{childList:true\}\)/);
- assert.match(maintenance,/badge&&badge\.textContent!==next/);
+ assert.doesNotMatch(maintenance,/appearanceSyncPending|refreshAppearanceLabels|restore-appearance/);
+ assert.doesNotMatch(appearance,/observe\(document\.documentElement,\{subtree:true,childList:true\}\)/);
+ assert.match(appearance,/observe\(appRoot,\{childList:true\}\)/);
+ assert.match(appearance,/badge&&badge\.textContent!==next/);
  assert.doesNotMatch(index,/admin-menu-extras\.js/);
+ assert.match(index,/admin-appearance\.css/);
  assert.match(system,/uniqueMoreSections\(\)\.map/);
 });
 
