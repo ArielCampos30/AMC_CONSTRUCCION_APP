@@ -119,11 +119,13 @@ test('acciones normales se delegan una vez y los errores mantienen el filtro Abo
  assert.deepEqual(calls,[]);
 });
 
-test('app.js delega el listener principal al controlador sin absorber clicks especializados',async()=>{
+test('app.js delega el listener principal sin absorber clicks especializados',async()=>{
  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
  assert.match(app,/createAppShellClickController/);
  assert.match(app,/shellClickController\.attach\(\)/);
  assert.doesNotMatch(app,/document\.addEventListener\('click',async e=>\{const removePhoto=/);
- assert.match(app,/\[data-notice\]/);
+ assert.match(app,/createAppShellNoticeClickController/);
+ assert.match(app,/shellNoticeClickController\.attach\(\)/);
+ assert.doesNotMatch(app,/document\.addEventListener\('click',async e=>\{const link=e\.target\.closest\('\[data-notice\]'\)/);
  assert.match(app,/share-quote-whatsapp/);
 });
