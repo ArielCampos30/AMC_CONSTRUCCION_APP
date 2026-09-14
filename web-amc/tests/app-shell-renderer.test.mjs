@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {renderAppShell} from '../public/app-shell-renderer.js';
 import {getShellNavigation,getShellRoleClasses} from '../public/app-shell-navigation.js';
 
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const target=()=>{const classes=new Set();return {classes,classList:{toggle:(name,enabled)=>enabled?classes.add(name):classes.delete(name)}};};
 const root=()=>({innerHTML:''});
 const shell=(role,page)=>({navigation:getShellNavigation({role,page}),roleClasses:getShellRoleClasses(role)});
