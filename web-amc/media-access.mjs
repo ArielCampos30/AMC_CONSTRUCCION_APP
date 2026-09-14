@@ -1,4 +1,4 @@
-export function mediaAccessFeatures({db,all,objectStore,planning,team,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail}){
+export function mediaAccessFeatures({db,all,objectStore,appearance,team,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail}){
  const canAccessPrivateFile=(user,p,file)=>{
   if(!user)return false;
   if(user.role==='admin'||file.owner===user.id)return true;
@@ -20,7 +20,7 @@ export function mediaAccessFeatures({db,all,objectStore,planning,team,fieldwork,
   if(!(p==='/media/'+p.split('/')[2]&&p.startsWith('/media/')&&method==='GET'))return false;
   const key=p.split('/')[2],file=db.prepare('SELECT id,owner,mime FROM files WHERE id=?').get(key);
   if(!file)fail(404,'Archivo no encontrado.');
-  const publicFile=planning.publicMedia(p)||all('post').filter(post=>!post.demo).some(post=>post.image===p||post.before===p);
+  const publicFile=appearance.publicMedia(p)||all('post').filter(post=>!post.demo).some(post=>post.image===p||post.before===p);
   const authorized=canAccessPrivateFile(user,p,file);
   if(!publicFile&&!authorized)fail(404,'Archivo no encontrado.');
   const wantsThumb=new URL(req.url,'http://localhost').searchParams.has('thumb')&&file.mime.startsWith('image/');
