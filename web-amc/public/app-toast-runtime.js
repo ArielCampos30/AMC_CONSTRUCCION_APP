@@ -12,8 +12,6 @@ export function createAppToastRuntime({
   if(!toast?.classList?.contains('show'))return;
   const text=(toast.textContent||'').trim();
   if(/\b(borrad[oa]s?|eliminad[oa]s?|vaciad[oa]s?)\b/i.test(text)){
-   clearTimeoutRef(toastTimer);
-   toastTimer=0;
    toast.classList.remove('show');
    return;
   }
