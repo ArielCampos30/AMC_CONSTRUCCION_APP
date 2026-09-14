@@ -60,9 +60,9 @@ test('admin puede clasificar una solicitud como no tomada sin borrarla',async()=
 });
 
 test('búsqueda de clientes y alta desde Cotizador no recargan toda AMC',async()=>{
- const [app,directory,wizard,clientCreate]=await Promise.all([source('app.js'),source('client-directory.js'),source('quote-wizard.js'),source('quote-client-create-controller.js')]);
+ const [app,inputController,directory,wizard,clientCreate]=await Promise.all([source('app.js'),source('app-shell-input-controller.js'),source('client-directory.js'),source('quote-wizard.js'),source('quote-client-create-controller.js')]);
  assert.match(directory,/id="client-search-input"/);assert.match(directory,/id="client-search-results"/);
- assert.match(app,/client-search-input/);assert.doesNotMatch(app,/location\.reload\(/);assert.doesNotMatch(app,/location\.assign\(/);
+ assert.match(app,/createAppShellInputController/);assert.match(inputController,/client-search-input/);assert.doesNotMatch(app,/location\.reload\(/);assert.doesNotMatch(app,/location\.assign\(/);
  assert.match(wizard,/data-qw-client/);assert.match(wizard,/data-qw-new-client/);assert.match(clientCreate,/upsertClient/);assert.match(clientCreate,/wizard\.prefillClient/);assert.doesNotMatch(clientCreate,/\brefresh\b|\/api\/state/);
 });
 
