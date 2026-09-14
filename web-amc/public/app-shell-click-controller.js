@@ -1,3 +1,5 @@
+import {createAdminQuoteMaintenanceController} from './app-admin-quote-maintenance-controller.js';
+
 export function createAppShellClickController({
   documentRef=globalThis.document,
   render,
@@ -13,9 +15,12 @@ export function createAppShellClickController({
   setDirty,
   onAction,
   onError,
+  onMessage=text=>{const el=documentRef?.querySelector?.('#toast');if(!el)return;el.textContent=text;el.classList.add('show');},
   createDataTransfer=()=>new globalThis.DataTransfer(),
   createEvent=(type,options)=>new globalThis.Event(type,options),
 }={}){
+  const quoteMaintenanceController=createAdminQuoteMaintenanceController({documentRef,api,onSuccess:onMessage,onError});
+
   async function handleClick(e){
     const removePhoto=e.target.closest('[data-remove-request-photo]');
     if(removePhoto){
@@ -83,6 +88,6 @@ export function createAppShellClickController({
     }
   }
 
-  function attach(){documentRef.addEventListener('click',handleClick);}
-  return {handleClick,attach};
+  function attach(){quoteMaintenanceController.attach();documentRef.addEventListener('click',handleClick);}
+  return {handleClick,attach,quoteMaintenanceController};
 }

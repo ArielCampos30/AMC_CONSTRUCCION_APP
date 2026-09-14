@@ -25,24 +25,25 @@ test('estado de envío muestra icono sin porcentaje',async()=>{
  assert.match(mobile,/upload-state>span:not\(\.message-upload-spinner\)\{display:none!important\}/);
 });
 
-test('borrar avisos y archivar presupuesto conservan respuestas optimistas sin refrescar toda la pantalla',async()=>{
- const [maintenance,noticeController,appearanceController]=await Promise.all([
+test('avisos, presupuestos y apariencia conservan respuestas optimistas sin refrescar toda la pantalla',async()=>{
+ const [maintenance,noticeController,quoteController,appearanceController]=await Promise.all([
   source('public/admin-maintenance-ui.js'),
   source('public/app-shell-notice-click-controller.js'),
+  source('public/app-admin-quote-maintenance-controller.js'),
   source('public/app-admin-appearance-controller.js')
  ]);
- assert.match(maintenance,/let csrfValue='',csrfPending=null/);
- assert.match(maintenance,/queueMicrotask\(\(\)=>csrf\(\)\.catch/);
- assert.match(maintenance,/function detachNodes\(nodes\)/);
- assert.match(maintenance,/optimisticTargets\(button\)/);
- assert.match(maintenance,/action==='archive-quote'[\s\S]*detachNodes/);
- assert.doesNotMatch(maintenance,/delete-notice|delete-read-notices|delete-all-notices|syncNoticeChrome/);
+ assert.doesNotMatch(maintenance,/csrfValue|fetch\('\/api\/state'|archive-quote|unarchive-quote|delete-quote|delete-notice|delete-read-notices|delete-all-notices|syncNoticeChrome/);
  assert.match(noticeController,/const deleteNotice=async\(button,event\)=>/);
  assert.match(noticeController,/const deleteScope=async\(button,event,scope\)=>/);
  assert.match(noticeController,/card\?\.remove\(\)/);
  assert.match(noticeController,/await api\('\/api\/notices\/read',\{deleteId:id\}\)/);
  assert.match(noticeController,/await api\('\/api\/notices\/read',\{deleteScope:scope\}\)/);
  assert.match(noticeController,/parent\.insertBefore\(card/);
+ assert.match(quoteController,/const detachCard=button=>/);
+ assert.match(quoteController,/await api\('\/api\/quotes\/'\+encodeURIComponent\(button\.dataset\.id\)\+'\/archive',\{\}\)/);
+ assert.match(quoteController,/await api\('\/api\/quotes\/'\+encodeURIComponent\(button\.dataset\.id\)\+'\/unarchive',\{\}\)/);
+ assert.match(quoteController,/await api\('\/api\/quotes\/'\+encodeURIComponent\(button\.dataset\.id\)\+'\/delete',\{\}\)/);
+ assert.match(quoteController,/parent\.insertBefore\(card/);
  assert.doesNotMatch(maintenance,/restore-appearance|refreshWithoutReload/);
  assert.match(appearanceController,/action!=='restore-appearance'/);
  assert.match(appearanceController,/await api\('\/api\/appearance\/restore',\{versionAt:button\.dataset\.version\}\)/);
