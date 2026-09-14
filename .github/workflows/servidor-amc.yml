@@ -84,7 +84,7 @@ jobs:
       - name: Contratos reales del shell
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
-        run: python3 tests/browser-shell-contract.py
+        run: python3 tests/browser-shell-contract-8j.py
       - name: Contrato real del chat flotante
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
