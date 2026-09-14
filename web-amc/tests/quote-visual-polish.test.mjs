@@ -35,7 +35,8 @@ test('la fórmula visible puede envolver sin salirse del panel',()=>{
 test('el shell entrega toda su zona útil y oculta el chat únicamente durante el Cotizador',()=>{
  assert.match(chatFeatures,/classList\.toggle\('quote-wizard-route',quotePage\)/);
  assert.match(chatFeatures,/fullPageChat\|\|quotePage\)floating\.close/);
- assert.match(chat,/body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
+ assert.match(chat,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none\}/);
+ assert.doesNotMatch(chat,/!important/);
  assert.match(shell,/body\.quote-wizard-route \.workspace>main\{width:100%;max-width:none;margin:0;padding:0\}/);
 });
 
