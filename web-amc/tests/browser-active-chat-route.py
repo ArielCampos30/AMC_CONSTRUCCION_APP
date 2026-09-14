@@ -70,7 +70,7 @@ try:
           document.body.classList.toggle('admin-v3',kind==='admin');
           const contact={id,name:'Contacto',service:'Obra',kind:kind==='employee'?'employee':'client'};
           const attribute=kind==='client'?'data-client':kind==='admin'?'data-request':'';
-          const thread=()=>`<section class="${kind==='employee'?'floating-staff-message':''}"><div class="message-log"></div><form class="message-form" ${attribute}="${id}"><textarea name="text"></textarea><button type="submit">Enviar</button></form></section>`;
+          const thread=()=>`<section><div class="message-log"></div><form class="message-form ${kind==='employee'?'floating-staff-message':''}" ${attribute}="${id}"><textarea name="text"></textarea><button type="submit">Enviar</button></form></section>`;
           const runtime=createFloatingChat({allowed:()=>true,renderChat:thread,mounted:()=>{},label:()=> 'Chats',contacts:()=>[contact],current:()=>id,select:()=>{},customThread:thread,submitCustom:async()=>({})});
           runtime.sync('u-'+kind);
           runtime.open();
