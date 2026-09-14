@@ -39,18 +39,26 @@ test('estado general conserva placeholders y el índice carga los runtimes ofici
  assert.doesNotMatch(stateSource,/staffMessages:staffMessages\(user\),staffUnread:staffUnread\(user\),staffReadByAdmin:staffReadByAdmin\(user\.id\)/);
  assert.match(viewSource,/fetchImpl\('\/api\/staff-chat\/messages',\{credentials:'same-origin'\}\)/);
  assert.match(runtimeSource,/new MutationObserverRef\(hydrateVisible\)\.observe\(target,\{childList:true\}\)/);
+ assert.match(indexSource,/employee-v4\.css[\s\S]*employee-staff-chat\.css[\s\S]*client-v5\.css/);
  assert.match(indexSource,/app-mobile-runtime\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js[\s\S]*app-shell-back-controller\.js/);
  assert.doesNotMatch(indexSource,/mobile-runtime-fixes\.js|admin-maintenance-ui\.js|employee-staff-chat-lazy\.js/);
 });
 
-test('runtime conserva spinner, borrador, foco y ajustes de teclado móvil',async()=>{
- const runtimeSource=await readFile(new URL('../public/app-employee-staff-chat-runtime.js',import.meta.url),'utf8');
+test('runtime conserva lógica y delega toda la presentación al stylesheet formal',async()=>{
+ const [runtimeSource,cssSource]=await Promise.all([
+  readFile(new URL('../public/app-employee-staff-chat-runtime.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/employee-staff-chat.css',import.meta.url),'utf8')
+ ]);
  assert.match(runtimeSource,/employee-send-spinner/);
  assert.match(runtimeSource,/data-amc-sending/);
- assert.match(runtimeSource,/font-size:16px!important/);
  assert.match(runtimeSource,/visualViewport\?\.addEventListener\('resize'/);
  assert.match(runtimeSource,/textarea\.blur\(\)/);
  assert.match(runtimeSource,/restoreComposer/);
  assert.match(runtimeSource,/focus\(\{preventScroll:true\}\)/);
  assert.match(runtimeSource,/documentRef\.addEventListener\('submit',onSubmit,\{capture:true\}\)/);
+ assert.doesNotMatch(runtimeSource,/createElement\('style'\)|STYLE_TEXT|font-size:16px|!important/);
+ assert.match(cssSource,/@keyframes amc-employee-spin/);
+ assert.match(cssSource,/employee-send-spinner/);
+ assert.match(cssSource,/form\.staff-message textarea\[name="text"\]\{font-size:16px;scroll-margin-bottom:140px\}/);
+ assert.doesNotMatch(cssSource,/!important/);
 });
