@@ -7,7 +7,7 @@ const source=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 test('la ruta activa del chat tiene ownership dedicado y conserva su contrato real',async()=>{
  const [routeRuntime,mobileRuntime,compat,notices,activity]=await Promise.all([
   source('public/active-chat-route-runtime.js'),
-  source('public/mobile-runtime-fixes.js'),
+  source('public/app-mobile-runtime.js'),
   source('public/chat-route-compat.js'),
   source('public/notice-ui.js'),
   source('../app/src/main/java/com/amc/construcciones/MainActivity.java')
