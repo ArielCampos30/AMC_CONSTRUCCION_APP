@@ -5,8 +5,9 @@ import {readFile} from 'node:fs/promises';
 const source=name=>readFile(new URL('../public/'+name,import.meta.url),'utf8');
 
 test('la presentación móvil del chat tiene ownership CSS formal sin !important',async()=>{
- const [runtime,routeRuntime,styles,index,floating]=await Promise.all([
+ const [runtime,viewportRuntime,routeRuntime,styles,index,floating]=await Promise.all([
   source('mobile-runtime-fixes.js'),
+  source('mobile-chat-viewport-runtime.js'),
   source('active-chat-route-runtime.js'),
   source('mobile-chat.css'),
   source('index.html'),
@@ -21,11 +22,14 @@ test('la presentación móvil del chat tiene ownership CSS formal sin !important
  assert.doesNotMatch(styles,/!important/);
  assert.doesNotMatch(runtime,/createElement\(['"]style['"]\)|style\.textContent|document\.head\.append/);
  assert.match(runtime,/import '\.\/active-chat-route-runtime\.js'/);
+ assert.match(runtime,/import '\.\/mobile-chat-viewport-runtime\.js'/);
  assert.match(routeRuntime,/function pageChatRoute\(\)/);
  assert.match(routeRuntime,/function floatingChatRoute\(\)/);
  assert.match(routeRuntime,/window\.AMCNative\?\.setActiveChatRoute/);
- assert.match(runtime,/window\.visualViewport\?\.addEventListener\('resize'/);
+ assert.match(viewportRuntime,/window\.visualViewport\?\.addEventListener\('resize'/);
+ assert.match(viewportRuntime,/function dismissComposerAfterSend\(form\)/);
  assert.match(runtime,/function refreshNativePushRegistration\(\)/);
- assert.match(runtime,/function dismissComposerAfterSend\(form\)/);
+ assert.doesNotMatch(runtime,/window\.visualViewport|dismissComposerAfterSend|amc-keyboard-open/);
+ assert.doesNotMatch(viewportRuntime,/refreshPushToken|AMCNative/);
  assert.match(floating,/document\.addEventListener\('pointerdown',onOutsidePointerDown,true\)/);
 });
