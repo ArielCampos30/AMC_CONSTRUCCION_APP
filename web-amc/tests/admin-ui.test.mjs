@@ -75,7 +75,7 @@ test('chat flotante separa clientes y empleados y envía sin reload',async()=>{
 
 test('chat de pantalla completa no apila el flotante y bloquea doble envío',async()=>{
  const [router,chat,float]=await Promise.all([source('app-page-router.js'),source('chat-features.js'),source('floating-chat.js')]);
- assert.match(router,/page\.startsWith\('chat-admin\/'\)/);assert.match(chat,/fullPageChat/);assert.match(chat,/floating\.close\?\.\(\)/);assert.match(chat,/form\.dataset\.sending==='1'/);assert.match(chat,/sendButton\.disabled=true/);assert.match(chat,/sendButton\.disabled=false/);assert.match(float,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none!important\}/);
+ assert.match(router,/page\.startsWith\('chat-admin\/'\)/);assert.match(chat,/fullPageChat/);assert.match(chat,/floating\.close\?\.\(\)/);assert.match(chat,/form\.dataset\.sending==='1'/);assert.match(chat,/sendButton\.disabled=true/);assert.match(chat,/sendButton\.disabled=false/);assert.match(float,/body\.full-chat-page \.floating-chat-button,body\.quote-wizard-route \.floating-chat-button\{display:none\}/);assert.doesNotMatch(float,/!important/);
 });
 
 test('presupuesto rápido usa datos directos y cuatro etapas nativas',async()=>{
