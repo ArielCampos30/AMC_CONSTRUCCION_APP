@@ -63,13 +63,20 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
 test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la página',()=>{
  const notices=source('notifications.mjs');
  const noticeUI=source('public/notice-ui.js');
+ const noticeController=source('public/app-shell-notice-click-controller.js');
  const quotes=source('quote-work-routes.mjs');
  const quoteUI=source('public/admin-quotes-ui.js');
  const maintenance=source('public/admin-maintenance-ui.js');
+ const index=source('public/index.html');
  assert.match(notices,/deleteNotices/);
  assert.match(notices,/deleteScope/);
  assert.match(noticeUI,/delete-all-notices/);
  assert.match(noticeUI,/delete-read-notices/);
+ assert.match(noticeController,/deleteScope/);
+ assert.match(noticeController,/\{deleteScope:scope\}/);
+ assert.match(noticeController,/syncNoticeCount/);
+ assert.doesNotMatch(maintenance,/delete-read-notices|delete-all-notices|syncNoticeChrome/);
+ assert.match(index,/notice-ui\.css/);
  assert.match(quotes,/\/archive/);
  assert.match(quotes,/\/unarchive/);
  assert.match(quotes,/Archivá primero el presupuesto/);
@@ -77,5 +84,4 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la p
  assert.match(quoteUI,/Eliminar definitivamente/);
  assert.doesNotMatch(maintenance,/location\.reload/);
  assert.match(maintenance,/function detachNodes\(nodes\)/);
- assert.match(maintenance,/syncNoticeChrome/);
 });
