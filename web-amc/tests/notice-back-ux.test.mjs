@@ -37,7 +37,7 @@ test('volver global vive en su controlador, no toca portada y no se duplica con 
  assert.doesNotMatch(controller,/subtree:true/);
  assert.match(controller,/closest\?\.\('\[data-global-back\]'\)/);
  assert.match(controller,/if\(main\.querySelector\('\[data-action="back"\]'\)\)return true;/);
- assert.match(controller,/if\(hasOwnBack\(main\)\{existing\?\.remove\(\);return;\}/);
+ assert.match(controller,/if\(hasOwnBack\(main\)\)\{existing\?\.remove\(\);return;\}/);
  assert.match(controller,/if\(existing\)return;/);
  assert.match(controller,/function fallbackBackRoute/);
 });
