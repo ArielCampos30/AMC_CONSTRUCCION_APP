@@ -16,7 +16,8 @@ export function floatingChatRoute(){
  if(clientForm?.dataset.client)return '/#chat-user/'+encodeURIComponent(clientForm.dataset.client);
  const requestForm=dialog.querySelector('.message-form[data-request]');
  if(requestForm?.dataset.request)return (document.body.classList.contains('admin-v3')?'/#chat-admin/':'/#chat/')+encodeURIComponent(requestForm.dataset.request);
- if(dialog.querySelector('.floating-staff-message')&&selectedFloatingContact)return '/#chat-equipo/'+encodeURIComponent(selectedFloatingContact);
+ const staffForm=dialog.querySelector('.floating-staff-message'),staffId=staffForm?.dataset.employee||selectedFloatingContact;
+ if(staffForm&&staffId)return '/#chat-equipo/'+encodeURIComponent(staffId);
  return '';
 }
 

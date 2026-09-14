@@ -5,7 +5,7 @@ import {getShellNavigation,getShellRoleClasses} from '../public/app-shell-naviga
 
 const values=links=>links.map(({route,label,icon})=>[route,label,icon]);
 const ADMIN=[['inicio','Inicio','⌂'],['solicitudes','Solicitudes','▤'],['presupuestos','Presupuestos','▤'],['obras','Obras','⌂'],['mas-admin','Más','•••']];
-const EMPLOYEE=[['inicio-empleado','Inicio','⌂'],['mis-trabajos','Mis trabajos','▦'],['chat-equipo','Chat','◌'],['perfil','Perfil','○']];
+const EMPLOYEE=[['inicio-empleado','Inicio','⌂'],['mis-trabajos','Mis trabajos','▦'],['perfil','Perfil','○']];
 const CLIENT=[['inicio','Inicio','⌂'],['mis-trabajos-cliente','Mis trabajos','▦'],['chat-cliente','Chat','◌'],['perfil','Perfil','○']];
 const PUBLIC_SIDEBAR=[['inicio','Inicio','⌂'],['servicios','Servicios','▦'],['ideas','Ideas para tu casa','✧'],['favoritos','Guardados','♡'],['presupuestos','Presupuestos','▤'],['obra','Mi obra','⌂'],['resenas','Reseñas','☆'],['perfil','Mi perfil','○'],['mensajes','Mensajes','◌'],['agenda','Agenda','▦'],['adicionales','Adicionales','＋'],['comprobantes','Comprobantes','▤'],['compras','Compras y facturas','▤']];
 const PUBLIC_BOTTOM=[['inicio','Inicio','⌂'],['servicios','Servicios','▦'],['pedir','Pedir','＋'],['obra','Mi obra','▤'],['perfil','Perfil','○']];
@@ -16,10 +16,11 @@ test('Admin conserva exactamente rutas, orden, labels e iconos en ambas navegaci
  assert.deepEqual(values(navigation.bottom),ADMIN);
 });
 
-test('Empleado conserva exactamente rutas, orden, labels e iconos',()=>{
+test('Empleado usa sólo Inicio, Mis trabajos y Perfil; Administración queda en chat flotante',()=>{
  const navigation=getShellNavigation({role:'employee',page:'mis-trabajos'});
  assert.deepEqual(values(navigation.sidebar),EMPLOYEE);
  assert.deepEqual(values(navigation.bottom),EMPLOYEE);
+ assert.equal(navigation.sidebar.some(link=>link.route==='chat-equipo'),false);
 });
 
 test('Cliente conserva exactamente rutas, orden, labels e iconos',()=>{

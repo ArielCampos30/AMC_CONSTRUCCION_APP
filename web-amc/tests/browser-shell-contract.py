@@ -329,10 +329,11 @@ try:
     )
     assert employee.get("id")
 
-    # Empleado: shell acotado y rechazo visual de una herramienta administrativa.
+    # Empleado: shell acotado sin sección Chat y rechazo visual de una herramienta administrativa.
     clear_session()
     login(employee_email, employee_password, "employee-v4")
-    nav_contract(["Inicio", "Mis trabajos", "Chat", "Perfil"])
+    nav_contract(["Inicio", "Mis trabajos", "Perfil"])
+    assert not js("return [...document.querySelectorAll('.sidebar [data-nav],.bottom-nav a')].some(node=>(node.textContent||'').includes('Chat')||node.getAttribute('href')==='#chat-equipo')")
     go(BASE + "/#cotizador")
     wait("return document.body.innerText.includes('Acceso reservado')")
 
