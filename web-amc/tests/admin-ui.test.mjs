@@ -105,8 +105,8 @@ test('PDF pendiente se regenera directamente y permite reintento',async()=>{
 });
 
 test('detalle admin abre presupuesto exacto y mantiene un solo menú de acciones',async()=>{
- const [app,router,quotesUI]=await Promise.all([source('app.js'),source('app-page-router.js'),source('admin-quotes-ui.js')]);
- assert.match(quotesUI,/Trabajos incluidos/);assert.match(quotesUI,/Importe/);assert.match(quotesUI,/Datos internos/);assert.match(router,/page\.startsWith\('presupuesto-admin\/'\)/);assert.match(app,/case'admin-quote-detail':html=adminQuoteDetail\(\)/);assert.match(app,/detail\.removeAttribute\('open'\)/);
+ const [app,router,quotesUI,clickController]=await Promise.all([source('app.js'),source('app-page-router.js'),source('admin-quotes-ui.js'),source('app-shell-click-controller.js')]);
+ assert.match(quotesUI,/Trabajos incluidos/);assert.match(quotesUI,/Importe/);assert.match(quotesUI,/Datos internos/);assert.match(router,/page\.startsWith\('presupuesto-admin\/'\)/);assert.match(app,/case'admin-quote-detail':html=adminQuoteDetail\(\)/);assert.match(clickController,/detail\.removeAttribute\('open'\)/);
 });
 
 test('programación usa etiquetas claras y vuelve a la obra exacta',async()=>{
