@@ -6,7 +6,7 @@ const source=name=>readFile(new URL('../public/'+name,import.meta.url),'utf8');
 
 test('la presentación móvil del chat tiene ownership CSS formal sin !important',async()=>{
  const [runtime,pushRuntime,viewportRuntime,routeRuntime,styles,index,floating]=await Promise.all([
-  source('mobile-runtime-fixes.js'),
+  source('app-mobile-runtime.js'),
   source('native-push-registration-runtime.js'),
   source('mobile-chat-viewport-runtime.js'),
   source('active-chat-route-runtime.js'),
@@ -15,6 +15,8 @@ test('la presentación móvil del chat tiene ownership CSS formal sin !important
   source('floating-chat.js')
  ]);
  assert.match(index,/<link rel="stylesheet" href="\/mobile-chat\.css">/);
+ assert.match(index,/app-mobile-runtime\.js/);
+ assert.doesNotMatch(index,/mobile-runtime-fixes\.js/);
  assert.match(styles,/#amc-chat-dialog \.compact-composer/);
  assert.match(styles,/#amc-chat-dialog\.amc-keyboard-open/);
  assert.match(styles,/--amc-vv-top/);
