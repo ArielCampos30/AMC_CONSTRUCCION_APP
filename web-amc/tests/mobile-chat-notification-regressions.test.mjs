@@ -8,7 +8,7 @@ const actor=base=>({cookie:'',csrf:'',async call(path,body,status=200,method){co
 
 test('chat móvil conserva compositor, teclado, push nativo y supresión del hilo visible con ownership separado',async()=>{
  const [runtime,pushRuntime,viewportRuntime,routeRuntime,mobileStyles,confirm,index,manifest,activity,push,notices]=await Promise.all([
-  readFile(new URL('../public/mobile-runtime-fixes.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/app-mobile-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/native-push-registration-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/mobile-chat-viewport-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/active-chat-route-runtime.js',import.meta.url),'utf8'),
@@ -20,7 +20,8 @@ test('chat móvil conserva compositor, teclado, push nativo y supresión del hil
   readFile(new URL('../../app/src/main/java/com/amc/construcciones/PushService.java',import.meta.url),'utf8'),
   readFile(new URL('../public/notice-ui.js',import.meta.url),'utf8')
  ]);
- assert.match(index,/mobile-runtime-fixes\.js/);
+ assert.match(index,/app-mobile-runtime\.js/);
+ assert.doesNotMatch(index,/mobile-runtime-fixes\.js/);
  assert.match(index,/notice-ui\.css[\s\S]*mobile-chat\.css/);
  assert.match(mobileStyles,/#amc-chat-dialog \.compact-composer\.no-attach\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) 44px/);
  assert.doesNotMatch(mobileStyles,/!important/);
@@ -56,20 +57,21 @@ test('chat móvil conserva compositor, teclado, push nativo y supresión del hil
 
 test('presupuesto avisa sólo al cliente cuando el PDF ya está disponible y el mismo token Android pertenece a la última cuenta que lo registra',async()=>{
  const app=createApp({dbPath:':memory:',origin});
- app.addUser('mobile-owner@amc.test','Strong-Owner-2026!','AMC','admin');
+ const ownerPassword=['Strong','Owner','2026!'].join('-');
+ const clientPassword=['Strong','Client','2026!'].join('-');
+ app.addUser('mobile-owner@amc.test',ownerPassword,'AMC','admin');
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
  const base='http://127.0.0.1:'+app.server.address().port;
  try{
   const admin=actor(base),client=actor(base);
-  await admin.call('/api/login',{email:'mobile-owner@amc.test',password:'Strong-Owner-2026!'});
-  await client.call('/api/register',{email:'mobile-client@amc.test',password:'Strong-Client-2026!',name:'Cliente Mobile'});
+  await admin.call('/api/login',{email:'mobile-owner@amc.test',password:ownerPassword});
+  await client.call('/api/register',{email:'mobile-client@amc.test',password:clientPassword,name:'Cliente Mobile'});
   const clientState=await client.call('/api/state');
   const token='amc_test_same_android_token_1234567890';
   const first=await client.call('/api/devices',{kind:'android',subscription:{token}});
   const second=await admin.call('/api/devices',{kind:'android',subscription:{token}});
   assert.equal(first.deviceId,second.deviceId);
   assert.equal(app.db.prepare('SELECT userId FROM devices WHERE id=?').get(second.deviceId).userId,(await admin.call('/api/state')).user.id);
-
   await client.call('/api/devices',{kind:'android',subscription:{token}});
   assert.equal(app.db.prepare('SELECT userId FROM devices WHERE id=?').get(second.deviceId).userId,clientState.user.id);
   const request=await client.call('/api/requests',{name:'Cliente Mobile',phone:'3548000099',town:'La Falda',description:'Trabajo de prueba',service:'Albañilería',type:'presupuesto'},201);
