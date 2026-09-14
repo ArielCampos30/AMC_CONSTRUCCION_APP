@@ -93,6 +93,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-mobile-chat-presentation.py
+      - name: Viewport y teclado móvil
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-mobile-chat-viewport-runtime.py
       - name: Ruta activa del chat y bridge Android
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
