@@ -8,7 +8,7 @@ export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  const scheduleLoad=()=>queueMicrotask(load);
  // Compatibilidad de cobertura histórica: ['Gestión' 'Chat' 'Clientes' 'Empleados']. Chat ahora se usa sólo desde el botón flotante.
  const more=()=>{scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
-   [['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['resenas','Reseñas']]],
+   [['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
     ['Sitio público',[['portada','Portada pública']]],
     ['Herramientas',[['tarifario','Tarifario'],['cotizador','Cotizador'],['resumen-diario','Resumen diario']]],
     ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]]
