@@ -3,15 +3,21 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createApp} from '../server.mjs';
 
-test('employee v4 has isolated mobile navigation, filters and native camera contracts',async()=>{
- const [app,navigation,team,css,sw]=await Promise.all([
+test('employee v4 usa navegación sin Chat y conserva cámara de obra con Administración en flotante',async()=>{
+ const [app,navigation,team,chat,css,sw]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
   readFile(new URL('../public/app-shell-navigation.js',import.meta.url),'utf8'),
   readFile(new URL('../public/team-ui.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/chat-features.js',import.meta.url),'utf8'),
   readFile(new URL('../public/employee-v4.css',import.meta.url),'utf8'),
   readFile(new URL('../public/sw.js',import.meta.url),'utf8')
  ]);
- assert.match(navigation,/\['inicio-empleado','Inicio'.*\['mis-trabajos','Mis trabajos'.*\['chat-equipo','Chat'.*\['perfil','Perfil'/s);assert.match(app,/getShellNavigation/);
+ assert.match(navigation,/\['inicio-empleado','Inicio'.*\['mis-trabajos','Mis trabajos'.*\['perfil','Perfil'/s);
+ assert.doesNotMatch(navigation,/EMPLOYEE_LINKS=.*chat-equipo/);
+ assert.match(app,/getShellNavigation/);
+ assert.match(chat,/name:'AMC \/ Administración'/);
+ assert.match(chat,/openEmployeeAdminChat/);
+ assert.match(chat,/floating-staff-message/);
  assert.match(team,/¿Qué tengo que hacer hoy\?/);
  assert.match(team,/Hoy','Pendientes','En curso','Finalizados/);
  assert.match(team,/Elegir de galería/);
@@ -43,4 +49,3 @@ test('employee staff unread badge clears only when that employee reads the chat'
   assert.equal((await employee.call('/api/state')).staffUnread,1);
  }finally{await new Promise(resolve=>service.server.close(resolve));}
 });
-
