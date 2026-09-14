@@ -98,6 +98,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-lifecycle.py
+      - name: Contrato real del chat interno del empleado
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-employee-staff-chat-runtime.py
       - name: Mostrar logs si falla
         if: failure()
         run: |
