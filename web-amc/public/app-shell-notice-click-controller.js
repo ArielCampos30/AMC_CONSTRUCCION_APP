@@ -4,6 +4,8 @@ export function createAppShellNoticeClickController({
  api=async()=>({}),
  applyNoticeRead=()=>{},
  onError=()=>{},
+ onSuccess=text=>{const el=documentRef?.querySelector?.('#toast');if(!el)return;el.textContent=text;el.classList.add('show');},
+ confirmAction=(message,title,confirmLabel)=>globalThis.window?.AMCConfirm?globalThis.window.AMCConfirm(message,{title,confirmLabel}):Promise.resolve(globalThis.window?.confirm?.(message)),
  createUrl=(value,base)=>new URL(value,base),
  createMutationObserver=callback=>typeof globalThis.MutationObserver==='function'?new globalThis.MutationObserver(callback):null,
  setTimeoutRef=globalThis.setTimeout,
@@ -20,6 +22,11 @@ export function createAppShellNoticeClickController({
  const pruneDeletedNotices=()=>{
   for(const id of deletedNoticeIds)documentRef.querySelector?.('[data-notice-card="'+cssEscape(id)+'"]')?.remove();
   syncNoticeCount();
+ };
+ const detachNodes=nodes=>{
+  const snapshots=[...new Set(nodes.filter(Boolean))].map(node=>({node,parent:node.parentNode,next:node.nextSibling}));
+  snapshots.forEach(({node})=>node.remove());
+  return ()=>{for(const {node,parent,next} of snapshots){if(node.isConnected||!parent?.isConnected)continue;parent.insertBefore(node,next?.parentNode===parent?next:null);}};
  };
  const deleteNotice=async(button,event)=>{
   event.preventDefault();
@@ -44,9 +51,41 @@ export function createAppShellNoticeClickController({
    if(button.isConnected)button.disabled=false;
   }
  };
+ const deleteScope=async(button,event,scope)=>{
+  event.preventDefault();
+  event.stopPropagation?.();
+  event.stopImmediatePropagation?.();
+  if(button.disabled)return;
+  button.disabled=true;
+  let restoreOptimistic=()=>{};
+  try{
+   const readOnly=scope==='read';
+   const confirmed=await confirmAction(
+    readOnly?'¿Borrar todos los avisos que ya están leídos?':'¿Borrar toda la bandeja de avisos? Esta acción no elimina presupuestos, obras ni mensajes.',
+    readOnly?'Limpiar avisos':'Vaciar bandeja',
+    readOnly?'Borrar leídos':'Borrar todos'
+   );
+   if(!confirmed)return;
+   const selector=readOnly?'[data-notice-card]:not(.unread)':'[data-notice-card]';
+   restoreOptimistic=detachNodes([...(documentRef.querySelectorAll?.(selector)||[])]);
+   syncNoticeCount();
+   await api('/api/notices/read',{deleteScope:scope});
+   onSuccess(readOnly?'Avisos leídos borrados.':'Bandeja de avisos vaciada.');
+  }catch(error){
+   restoreOptimistic();
+   syncNoticeCount();
+   onError(error);
+  }finally{
+   if(button.isConnected)button.disabled=false;
+  }
+ };
  const handleClick=async event=>{
   const deleteButton=event.target.closest?.('[data-maintenance-action="delete-notice"]');
   if(deleteButton){await deleteNotice(deleteButton,event);return;}
+  const deleteReadButton=event.target.closest?.('[data-maintenance-action="delete-read-notices"]');
+  if(deleteReadButton){await deleteScope(deleteReadButton,event,'read');return;}
+  const deleteAllButton=event.target.closest?.('[data-maintenance-action="delete-all-notices"]');
+  if(deleteAllButton){await deleteScope(deleteAllButton,event,'all');return;}
   const link=event.target.closest?.('[data-notice]');
   if(!link)return;
   event.preventDefault();
