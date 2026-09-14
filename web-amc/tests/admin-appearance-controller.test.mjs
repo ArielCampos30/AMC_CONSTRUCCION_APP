@@ -49,10 +49,9 @@ test('acciones locales reordenan, quitan y limpian fotos sin llamar API',async()
  assert.equal(secondBadge.textContent,'Galería');
 });
 
-test('Apariencia tiene ownership dedicado y mantenimiento deja de conocerla',async()=>{
- const [controller,maintenance,planning,index,styles]=await Promise.all([
+test('Apariencia tiene ownership dedicado y no depende de mantenimiento legacy',async()=>{
+ const [controller,planning,index,styles]=await Promise.all([
   source('public/app-admin-appearance-controller.js'),
-  source('public/admin-maintenance-ui.js'),
   source('public/planning-ui.js'),
   source('public/index.html'),
   source('public/admin-appearance.css'),
@@ -68,8 +67,7 @@ test('Apariencia tiene ownership dedicado y mantenimiento deja de conocerla',asy
  assert.doesNotMatch(controller,/subtree:true/);
  assert.doesNotMatch(controller,/X-CSRF-Token/);
  assert.doesNotMatch(controller,/setTimeout\(\(\)=>el\.classList\.remove/);
- assert.doesNotMatch(maintenance,/appearance-remove-photo|appearance-main-photo|appearance-clear-photos|restore-appearance|refreshAppearanceLabels|appearanceSyncPending/);
- assert.doesNotMatch(maintenance,/\.appearance-photo-list|\.appearance-preview|\.appearance-history/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
  assert.match(index,/admin-appearance\.css/);
  assert.match(styles,/\.appearance-photo-list/);
  assert.match(styles,/\.appearance-preview/);
