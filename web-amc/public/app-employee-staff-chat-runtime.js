@@ -1,13 +1,5 @@
 import {hydrateEmployeeStaffChat} from './employee-staff-chat-view.js';
 
-const STYLE_TEXT=`
- @keyframes amc-employee-spin{to{transform:rotate(360deg)}}
- .employee-staff-chat[data-staff-chat-loading="1"] .employee-message-log::before{content:"";width:22px;height:22px;align-self:center;flex:0 0 auto;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:amc-employee-spin .7s linear infinite;opacity:.65;margin:.4rem}
- .employee-staff-chat .staff-message button[data-amc-sending="1"]{display:inline-flex;align-items:center;justify-content:center;gap:.5rem}
- .employee-send-spinner{display:inline-block;width:18px;height:18px;flex:0 0 18px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:amc-employee-spin .7s linear infinite}
- @media(max-width:560px){.employee-staff-chat .staff-message textarea{font-size:16px!important;scroll-margin-bottom:140px}.employee-staff-chat .staff-message{scroll-margin-bottom:120px}}
-`;
-
 export function createEmployeeStaffChatRuntime({
  documentRef=globalThis.document,
  windowRef=globalThis.window,
@@ -49,7 +41,6 @@ export function createEmployeeStaffChatRuntime({
  };
  const onViewportResize=()=>{const textarea=documentRef.activeElement?.closest?.('.employee-staff-chat .staff-message textarea[name="text"]');if(textarea)reveal(textarea);};
  function attach(){
-  const style=documentRef.createElement('style');style.textContent=STYLE_TEXT;documentRef.head.append(style);
   const target=documentRef.getElementById('app')||documentRef.body;
   new MutationObserverRef(hydrateVisible).observe(target,{childList:true});
   documentRef.addEventListener('input',onInput);
