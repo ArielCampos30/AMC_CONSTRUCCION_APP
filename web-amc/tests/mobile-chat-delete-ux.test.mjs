@@ -34,12 +34,14 @@ test('borrar avisos y archivar presupuesto conservan respuestas optimistas sin r
  assert.match(maintenance,/let csrfValue='',csrfPending=null/);
  assert.match(maintenance,/queueMicrotask\(\(\)=>csrf\(\)\.catch/);
  assert.match(maintenance,/function detachNodes\(nodes\)/);
- assert.match(maintenance,/optimisticTargets\(action,button\)/);
+ assert.match(maintenance,/optimisticTargets\(button\)/);
  assert.match(maintenance,/action==='archive-quote'[\s\S]*detachNodes/);
- assert.doesNotMatch(maintenance,/action==='delete-notice'/);
+ assert.doesNotMatch(maintenance,/delete-notice|delete-read-notices|delete-all-notices|syncNoticeChrome/);
  assert.match(noticeController,/const deleteNotice=async\(button,event\)=>/);
+ assert.match(noticeController,/const deleteScope=async\(button,event,scope\)=>/);
  assert.match(noticeController,/card\?\.remove\(\)/);
  assert.match(noticeController,/await api\('\/api\/notices\/read',\{deleteId:id\}\)/);
+ assert.match(noticeController,/await api\('\/api\/notices\/read',\{deleteScope:scope\}\)/);
  assert.match(noticeController,/parent\.insertBefore\(card/);
  assert.doesNotMatch(maintenance,/restore-appearance|refreshWithoutReload/);
  assert.match(appearanceController,/action!=='restore-appearance'/);
