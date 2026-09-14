@@ -96,8 +96,8 @@ try:
     for kind, identity, expected in cases:
         published = js("return window.__createRouteChat(%s,%s);" % (json.dumps(kind), json.dumps(identity)))
         assert published == {"route": expected, "dataset": expected, "native": expected, "event": expected}, {"kind": kind, "published": published}
-        closed = js("document.querySelector('#amc-chat-dialog .chat-icon-button[aria-label=\"Cerrar conversación\"]').click();return !('amcActiveChatRoute' in document.documentElement.dataset) && window.__routeCalls.at(-1)==='' && window.__routeEvents.at(-1)==='';")
-        assert closed is True, {"kind": kind, "closed": closed}
+        js("document.querySelector('#amc-chat-dialog .chat-icon-button[aria-label=\"Cerrar conversación\"]').click();return true;")
+        wait("return !('amcActiveChatRoute' in document.documentElement.dataset) && window.__routeCalls.at(-1)==='' && window.__routeEvents.at(-1)==='' ")
 
     safe = js_async("""
       const done=arguments[arguments.length-1];
