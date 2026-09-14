@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {renderAppShell} from '../public/app-shell-renderer.js';
 import {getShellNavigation,getShellRoleClasses} from '../public/app-shell-navigation.js';
 
@@ -56,4 +57,15 @@ test('escapa nombre completo y nombre corto exactamente mediante el helper recib
  renderAppShell({root:host,body,config:{},state:{user:{role,name:'Ana <AMC>'}},esc,...shell(role,'inicio')});
  assert.match(host.innerHTML,/Ana &lt;AMC&gt;/);
  assert.match(host.innerHTML,/>Ana<\/a>/);
+});
+
+test('app.js delega el DOM del shell y el renderer no asume navegación ni listeners',async()=>{
+ const [app,renderer]=await Promise.all([readFile(new URL('../public/app.js',import.meta.url),'utf8'),readFile(new URL('../public/app-shell-renderer.js',import.meta.url),'utf8')]);
+ assert.match(app,/renderAppShell\(\{root:\$\('#app'\),body:document\.body/);
+ assert.doesNotMatch(app,/<aside class="sidebar">/);
+ assert.doesNotMatch(app,/<nav class="bottom-nav">/);
+ assert.doesNotMatch(app,/classList\.toggle\('admin-v3'/);
+ assert.doesNotMatch(renderer,/addEventListener|\bfetch\(|\blocation\b|\bhistory\b/);
+ assert.match(renderer,/navigation\.sidebar/);
+ assert.match(renderer,/Object\.entries\(roleClasses\)/);
 });
