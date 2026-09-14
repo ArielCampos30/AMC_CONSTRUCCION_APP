@@ -78,8 +78,9 @@ try:
           const rect=row.getBoundingClientRect();
           row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2}));
           row.click();
-          routeRuntime.publishActiveChatRoute();
-          return runtime;
+          window.__currentRouteChat=runtime;
+          const route=routeRuntime.publishActiveChatRoute();
+          return {route,dataset:document.documentElement.dataset.amcActiveChatRoute,native:window.__routeCalls.at(-1),event:window.__routeEvents.at(-1)};
         };
         return true;
       })().then(done).catch(error=>done({error:String(error&&error.message||error)}));
@@ -93,12 +94,10 @@ try:
         ("employee", "employee-1", "/#chat-equipo/employee-1"),
     ]
     for kind, identity, expected in cases:
-        js("window.__currentRouteChat=window.__createRouteChat(%s,%s);return true;" % (json.dumps(kind), json.dumps(identity)))
-        wait("return document.documentElement.dataset.amcActiveChatRoute===%s" % json.dumps(expected))
-        state = js("return {dataset:document.documentElement.dataset.amcActiveChatRoute,native:window.__routeCalls.at(-1),event:window.__routeEvents.at(-1)}")
-        assert state == {"dataset": expected, "native": expected, "event": expected}, state
-        js("document.querySelector('#amc-chat-dialog .chat-icon-button[aria-label=\"Cerrar conversación\"]').click();return true;")
-        wait("return !('amcActiveChatRoute' in document.documentElement.dataset) && window.__routeCalls.at(-1)==='' && window.__routeEvents.at(-1)==='' ")
+        published = js("return window.__createRouteChat(%s,%s);" % (json.dumps(kind), json.dumps(identity)))
+        assert published == {"route": expected, "dataset": expected, "native": expected, "event": expected}, {"kind": kind, "published": published}
+        closed = js("document.querySelector('#amc-chat-dialog .chat-icon-button[aria-label=\"Cerrar conversación\"]').click();return !('amcActiveChatRoute' in document.documentElement.dataset) && window.__routeCalls.at(-1)==='' && window.__routeEvents.at(-1)==='';")
+        assert closed is True, {"kind": kind, "closed": closed}
 
     safe = js_async("""
       const done=arguments[arguments.length-1];
