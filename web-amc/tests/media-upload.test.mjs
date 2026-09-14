@@ -65,11 +65,12 @@ test('acceso y serving de media quedan modularizados sin duplicar reglas en serv
   readFile(new URL('../media-access.mjs',import.meta.url),'utf8')
  ]);
  assert.match(server,/from '.\/media-access\.mjs'/);
- assert.match(server,/mediaAccessFeatures\(\{db,all,objectStore,appearance,team,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail\}\)/);
+ assert.match(server,/mediaAccessFeatures\(\{db,all,objectStore,appearance,team,purchases,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail\}\)/);
  assert.match(server,/mediaAccess\.serve\(\{user,p,method,req,res\}\)/);
  assert.match(access,/const canAccessPrivateFile=/);
  assert.match(access,/const serve=async/);
  assert.match(access,/appearance\.publicMedia\(p\)/);
+ assert.match(access,/purchases\.media\(user,p\)/);
  assert.doesNotMatch(access,/planning\.publicMedia\(p\)/);
  assert.match(access,/objectStore\.download/);
  assert.match(access,/if-none-match/);
