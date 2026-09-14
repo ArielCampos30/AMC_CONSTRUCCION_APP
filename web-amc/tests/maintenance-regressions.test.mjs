@@ -11,6 +11,7 @@ test('chat flotante conserva ancho útil, cierre exterior y supresión por ruta 
  assert.match(maintenance,/compact-composer>textarea/);
  assert.match(maintenance,/getBoundingClientRect\(\)/);
  assert.match(maintenance,/dialog\.close\(\)/);
+ assert.doesNotMatch(maintenance,/fetch\(|csrfValue|archive-quote|delete-read-notices|restore-appearance/);
  assert.match(mobile,/matchMedia\('\(max-width:560px\)'\)\.matches/);
  assert.match(mobile,/@media\(max-width:560px\)[\s\S]*amc-keyboard-open/);
  assert.match(notices,/pageChatRoute/);
@@ -64,8 +65,10 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la p
  const notices=source('notifications.mjs');
  const noticeUI=source('public/notice-ui.js');
  const noticeController=source('public/app-shell-notice-click-controller.js');
+ const quoteController=source('public/app-admin-quote-maintenance-controller.js');
  const quotes=source('quote-work-routes.mjs');
  const quoteUI=source('public/admin-quotes-ui.js');
+ const shell=source('public/app-shell-click-controller.js');
  const maintenance=source('public/admin-maintenance-ui.js');
  const index=source('public/index.html');
  assert.match(notices,/deleteNotices/);
@@ -82,6 +85,11 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin recargar la p
  assert.match(quotes,/Archivá primero el presupuesto/);
  assert.match(quoteUI,/Archivados/);
  assert.match(quoteUI,/Eliminar definitivamente/);
- assert.doesNotMatch(maintenance,/location\.reload/);
- assert.match(maintenance,/function detachNodes\(nodes\)/);
+ assert.match(quoteController,/archive-quote/);
+ assert.match(quoteController,/unarchive-quote/);
+ assert.match(quoteController,/delete-quote/);
+ assert.match(quoteController,/const detachCard=button=>/);
+ assert.match(shell,/createAdminQuoteMaintenanceController/);
+ assert.match(shell,/quoteMaintenanceController\.attach\(\)/);
+ assert.doesNotMatch(maintenance,/archive-quote|unarchive-quote|delete-quote|location\.reload|function detachNodes|csrfValue|fetch\(/);
 });
