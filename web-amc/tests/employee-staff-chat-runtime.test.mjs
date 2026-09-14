@@ -50,7 +50,7 @@ test('runtime conserva lógica y delega toda la presentación al stylesheet form
   readFile(new URL('../public/employee-staff-chat.css',import.meta.url),'utf8')
  ]);
  assert.match(runtimeSource,/employee-send-spinner/);
- assert.match(runtimeSource,/data-amc-sending/);
+ assert.match(runtimeSource,/dataset\.amcSending='1'/);
  assert.match(runtimeSource,/visualViewport\?\.addEventListener\('resize'/);
  assert.match(runtimeSource,/textarea\.blur\(\)/);
  assert.match(runtimeSource,/restoreComposer/);
