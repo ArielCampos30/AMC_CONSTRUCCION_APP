@@ -94,6 +94,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-toast-contract.py
+      - name: Contrato real de mantenimiento de Avisos
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-notice-maintenance-controller.py
       - name: Contrato real del controlador Admin Apariencia
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
