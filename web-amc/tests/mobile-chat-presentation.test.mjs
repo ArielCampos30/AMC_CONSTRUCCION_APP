@@ -5,8 +5,9 @@ import {readFile} from 'node:fs/promises';
 const source=name=>readFile(new URL('../public/'+name,import.meta.url),'utf8');
 
 test('la presentación móvil del chat tiene ownership CSS formal sin !important',async()=>{
- const [runtime,styles,index,floating]=await Promise.all([
+ const [runtime,routeRuntime,styles,index,floating]=await Promise.all([
   source('mobile-runtime-fixes.js'),
+  source('active-chat-route-runtime.js'),
   source('mobile-chat.css'),
   source('index.html'),
   source('floating-chat.js')
@@ -19,9 +20,10 @@ test('la presentación móvil del chat tiene ownership CSS formal sin !important
  assert.match(styles,/\.upload-state \.message-upload-spinner/);
  assert.doesNotMatch(styles,/!important/);
  assert.doesNotMatch(runtime,/createElement\(['"]style['"]\)|style\.textContent|document\.head\.append/);
- assert.match(runtime,/function pageChatRoute\(\)/);
- assert.match(runtime,/function floatingChatRoute\(\)/);
- assert.match(runtime,/window\.AMCNative\?\.setActiveChatRoute/);
+ assert.match(runtime,/import '\.\/active-chat-route-runtime\.js'/);
+ assert.match(routeRuntime,/function pageChatRoute\(\)/);
+ assert.match(routeRuntime,/function floatingChatRoute\(\)/);
+ assert.match(routeRuntime,/window\.AMCNative\?\.setActiveChatRoute/);
  assert.match(runtime,/window\.visualViewport\?\.addEventListener\('resize'/);
  assert.match(runtime,/function refreshNativePushRegistration\(\)/);
  assert.match(runtime,/function dismissComposerAfterSend\(form\)/);
