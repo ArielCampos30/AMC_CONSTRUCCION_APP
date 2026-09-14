@@ -39,8 +39,8 @@ test('estado general conserva placeholders y el índice carga los runtimes ofici
  assert.doesNotMatch(stateSource,/staffMessages:staffMessages\(user\),staffUnread:staffUnread\(user\),staffReadByAdmin:staffReadByAdmin\(user\.id\)/);
  assert.match(viewSource,/fetchImpl\('\/api\/staff-chat\/messages',\{credentials:'same-origin'\}\)/);
  assert.match(runtimeSource,/new MutationObserverRef\(hydrateVisible\)\.observe\(target,\{childList:true\}\)/);
- assert.match(indexSource,/mobile-runtime-fixes\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js[\s\S]*app-shell-back-controller\.js/);
- assert.doesNotMatch(indexSource,/admin-maintenance-ui\.js|employee-staff-chat-lazy\.js/);
+ assert.match(indexSource,/app-mobile-runtime\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js[\s\S]*app-shell-back-controller\.js/);
+ assert.doesNotMatch(indexSource,/mobile-runtime-fixes\.js|admin-maintenance-ui\.js|employee-staff-chat-lazy\.js/);
 });
 
 test('runtime conserva spinner, borrador, foco y ajustes de teclado móvil',async()=>{
