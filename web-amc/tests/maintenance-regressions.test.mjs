@@ -18,13 +18,18 @@ test('chat flotante conserva ancho útil, cierre exterior y supresión por ruta 
  assert.match(notices,/amc-live-alert/);
 });
 
-test('chat flotante de empleado hidrata historial y abre mostrando el final',()=>{
+test('chat flotante de empleado hidrata historial desde runtime dedicado y abre mostrando el final',()=>{
  const maintenance=source('public/admin-maintenance-ui.js');
- assert.match(maintenance,/staff-chat\/messages\?employeeId=/);
- assert.match(maintenance,/credentials:'same-origin'/);
- assert.match(maintenance,/scrollTop=log\.scrollHeight/);
- assert.match(maintenance,/empty-conversation/);
- assert.match(maintenance,/floating-staff-message/);
+ const runtime=source('public/app-admin-staff-chat-runtime.js');
+ const index=source('public/index.html');
+ assert.doesNotMatch(maintenance,/staff-chat\/messages\?employeeId=/);
+ assert.doesNotMatch(maintenance,/renderFloatingStaffMessages/);
+ assert.match(runtime,/staff-chat\/messages\?employeeId=/);
+ assert.match(runtime,/credentials:'same-origin'/);
+ assert.match(runtime,/scrollTop=log\.scrollHeight/);
+ assert.match(runtime,/empty-conversation/);
+ assert.match(runtime,/floating-staff-message/);
+ assert.match(index,/admin-maintenance-ui\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
 });
 
 test('portada pública expone una sola entrada y gestión comprensible con historial',()=>{
