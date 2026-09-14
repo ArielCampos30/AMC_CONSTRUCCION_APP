@@ -63,6 +63,7 @@ try:
       const done=arguments[arguments.length-1];
       (async()=>{
         const {createFloatingChat}=await import('/floating-chat.js');
+        const routeRuntime=await import('/active-chat-route-runtime.js');
         window.__createRouteChat=(kind,id)=>{
           document.querySelector('#amc-chat-dialog')?.remove();
           document.querySelectorAll('.floating-chat-button').forEach(node=>node.remove());
@@ -77,6 +78,7 @@ try:
           const rect=row.getBoundingClientRect();
           row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2}));
           row.click();
+          routeRuntime.publishActiveChatRoute();
           return runtime;
         };
         return true;
