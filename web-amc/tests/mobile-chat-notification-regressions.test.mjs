@@ -7,8 +7,9 @@ const origin='http://localhost:4180';
 const actor=base=>({cookie:'',csrf:'',async call(path,body,status=200,method){const actual=method||(body===undefined?'GET':'POST'),response=await fetch(base+path,{method:actual,headers:{Origin:origin,'Content-Type':'application/json',Cookie:this.cookie,'X-CSRF-Token':this.csrf},...(actual==='GET'?{}:{body:JSON.stringify(body||{})})});const data=await response.json();assert.equal(response.status,status,JSON.stringify(data));const cookie=response.headers.get('set-cookie');if(cookie)this.cookie=cookie.split(';')[0];if(data.csrf)this.csrf=data.csrf;return data;}});
 
 test('chat móvil conserva el compositor, sigue al teclado y evita avisos del hilo visible',async()=>{
- const [runtime,mobileStyles,confirm,index,manifest,activity,push,notices]=await Promise.all([
+ const [runtime,routeRuntime,mobileStyles,confirm,index,manifest,activity,push,notices]=await Promise.all([
   readFile(new URL('../public/mobile-runtime-fixes.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/active-chat-route-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/mobile-chat.css',import.meta.url),'utf8'),
   readFile(new URL('../public/amc-confirm.js',import.meta.url),'utf8'),
   readFile(new URL('../public/index.html',import.meta.url),'utf8'),
@@ -25,7 +26,7 @@ test('chat móvil conserva el compositor, sigue al teclado y evita avisos del hi
  assert.match(runtime,/window\.visualViewport/);
  assert.match(runtime,/amc-keyboard-open/);
  assert.match(runtime,/refreshPushToken/);
- assert.match(runtime,/amcActiveChatRoute/);
+ assert.match(routeRuntime,/amcActiveChatRoute/);
  assert.match(confirm,/position:fixed;inset:0;margin:auto/);
  assert.match(confirm,/@media\(max-width:560px\)/);
  assert.match(manifest,/android:windowSoftInputMode="adjustResize"/);

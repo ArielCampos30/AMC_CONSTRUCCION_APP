@@ -93,6 +93,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-mobile-chat-presentation.py
+      - name: Ruta activa del chat y bridge Android
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-active-chat-route.py
       - name: Contrato real de Volver global
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
