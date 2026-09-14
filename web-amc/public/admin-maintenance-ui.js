@@ -5,7 +5,6 @@ maintenanceStyle.textContent=`
 #amc-chat-dialog .compact-composer>.chat-icon-button:not(.chat-send-icon){grid-column:1!important}
 #amc-chat-dialog .compact-composer>.chat-send-icon{grid-column:3!important}
 #amc-chat-dialog .compact-composer input[type=file][hidden]{display:none!important}
-.notice-card-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}.notice-card-actions button{min-height:34px;padding:5px 10px}
 .danger{border-color:#b94c4c!important;color:#8c2f2f!important}
 `;
 document.head.append(maintenanceStyle);
@@ -35,16 +34,7 @@ function detachNodes(nodes){
  snapshots.forEach(({node})=>node.remove());
  return ()=>{for(const {node,parent,next} of snapshots){if(node.isConnected||!parent?.isConnected)continue;parent.insertBefore(node,next?.parentNode===parent?next:null);}};
 }
-function syncNoticeChrome(){
- const cards=[...document.querySelectorAll('[data-notice-card]')],unread=cards.filter(card=>card.classList.contains('unread')).length,count=document.querySelector('#notice-count');
- if(count){count.textContent=String(unread);count.hidden=!unread;}
-}
-function optimisticTargets(action,button){
- if(action==='delete-read-notices')return [...document.querySelectorAll('[data-notice-card]:not(.unread)')];
- if(action==='delete-all-notices')return [...document.querySelectorAll('[data-notice-card]')];
- if(['archive-quote','unarchive-quote','delete-quote'].includes(action))return [button.closest('.admin-v3-card')];
- return [];
-}
+function optimisticTargets(button){return [button.closest('.admin-v3-card')];}
 
 document.addEventListener('pointerdown',event=>{
  const dialog=document.querySelector('#amc-chat-dialog[open]');if(!dialog)return;
@@ -55,33 +45,23 @@ document.addEventListener('pointerdown',event=>{
 document.addEventListener('click',async event=>{
  const button=event.target.closest('[data-maintenance-action]');if(!button)return;
  const action=button.dataset.maintenanceAction;
- if(!['delete-read-notices','delete-all-notices','archive-quote','unarchive-quote','delete-quote'].includes(action))return;
+ if(!['archive-quote','unarchive-quote','delete-quote'].includes(action))return;
  event.preventDefault();event.stopImmediatePropagation();if(button.disabled)return;button.disabled=true;
  let restoreOptimistic=()=>{};
  try{
-  if(action==='delete-read-notices'){
-   if(!await confirmAction('¿Borrar todos los avisos que ya están leídos?','Limpiar avisos','Borrar leídos'))return;
-   restoreOptimistic=detachNodes(optimisticTargets(action,button));syncNoticeChrome();
-   await post('/api/notices/read',{deleteScope:'read'});toast('Avisos leídos borrados.');
-  }
-  if(action==='delete-all-notices'){
-   if(!await confirmAction('¿Borrar toda la bandeja de avisos? Esta acción no elimina presupuestos, obras ni mensajes.','Vaciar bandeja','Borrar todos'))return;
-   restoreOptimistic=detachNodes(optimisticTargets(action,button));syncNoticeChrome();
-   await post('/api/notices/read',{deleteScope:'all'});toast('Bandeja de avisos vaciada.');
-  }
   if(action==='archive-quote'){
    if(!await confirmAction('El presupuesto saldrá de Pendientes y quedará disponible en Archivados.','Archivar presupuesto','Archivar'))return;
-   restoreOptimistic=detachNodes(optimisticTargets(action,button));
+   restoreOptimistic=detachNodes(optimisticTargets(button));
    await post('/api/quotes/'+encodeURIComponent(button.dataset.id)+'/archive');toast('Presupuesto archivado.');
   }
   if(action==='unarchive-quote'){
-   restoreOptimistic=detachNodes(optimisticTargets(action,button));
+   restoreOptimistic=detachNodes(optimisticTargets(button));
    await post('/api/quotes/'+encodeURIComponent(button.dataset.id)+'/unarchive');toast('Presupuesto recuperado.');
   }
   if(action==='delete-quote'){
    if(!await confirmAction('¿Eliminar definitivamente este presupuesto archivado? Sólo se permite si no creó una obra.','Eliminar presupuesto','Eliminar definitivamente'))return;
-   restoreOptimistic=detachNodes(optimisticTargets(action,button));
+   restoreOptimistic=detachNodes(optimisticTargets(button));
    await post('/api/quotes/'+encodeURIComponent(button.dataset.id)+'/delete');toast('Presupuesto eliminado.');
   }
- }catch(error){restoreOptimistic();syncNoticeChrome();toast(error.message);}finally{button.disabled=false;}
+ }catch(error){restoreOptimistic();toast(error.message);}finally{button.disabled=false;}
 },true);
