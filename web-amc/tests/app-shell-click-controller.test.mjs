@@ -122,10 +122,10 @@ test('acciones normales se delegan una vez y los errores mantienen el filtro Abo
 });
 
 test('app.js delega el listener principal sin absorber clicks especializados',async()=>{
- const [app,shell,maintenance]=await Promise.all([
+ const [app,shell,index]=await Promise.all([
   readFile(new URL('../public/app.js',import.meta.url),'utf8'),
   readFile(new URL('../public/app-shell-click-controller.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/admin-maintenance-ui.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/index.html',import.meta.url),'utf8'),
  ]);
  assert.match(app,/createAppShellClickController/);
  assert.match(app,/shellClickController\.attach\(\)/);
@@ -136,5 +136,5 @@ test('app.js delega el listener principal sin absorber clicks especializados',as
  assert.match(app,/share-quote-whatsapp/);
  assert.match(shell,/createAdminQuoteMaintenanceController/);
  assert.match(shell,/quoteMaintenanceController\.attach\(\)/);
- assert.doesNotMatch(maintenance,/archive-quote|unarchive-quote|delete-quote|csrfValue|fetch\('\/api\/state'/);
+ assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
 });
