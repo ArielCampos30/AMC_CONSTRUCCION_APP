@@ -74,7 +74,8 @@ try:
           runtime.sync('u-'+kind);
           runtime.open();
           const row=document.querySelector('#amc-chat-dialog .chat-contact');
-          row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+          const rect=row.getBoundingClientRect();
+          row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2}));
           row.click();
           return runtime;
         };
