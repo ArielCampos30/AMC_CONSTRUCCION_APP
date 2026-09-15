@@ -36,9 +36,10 @@ test('chat flotante de equipo permite texto, galería, cámara y hasta cuatro fo
  assert.match(backend,/p==='\/api\/staff-chat\/messages'.*photos=.*slice\(0,4\).*safeFile/s);
 });
 
-test('fotos de chat usan thumbnails y el visor abre preview antes de precargar original',async()=>{
- const [viewer,employeeView,adminRuntime,adminUI,app]=await Promise.all([
+test('fotos de chat usan thumbnails y visor con transición compartida, zoom focal y controles claros',async()=>{
+ const [viewer,viewerCss,employeeView,adminRuntime,adminUI,app]=await Promise.all([
   readFile(new URL('../public/media-viewer.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/media-viewer.css',import.meta.url),'utf8'),
   readFile(new URL('../public/employee-staff-chat-view.js',import.meta.url),'utf8'),
   readFile(new URL('../public/app-admin-staff-chat-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/admin-chat-ui.js',import.meta.url),'utf8'),
@@ -53,6 +54,15 @@ test('fotos de chat usan thumbnails y el visor abre preview antes de precargar o
  assert.match(viewer,/img\.src=preview/);
  assert.match(viewer,/const original=new Image\(\)/);
  assert.match(viewer,/original\.src=source/);
+ assert.match(viewer,/animateFlight\(preview,from,to,\{opening:true\}\)/);
+ assert.match(viewer,/animateFlight\(src,from,to,\{opening:false\}\)/);
+ assert.match(viewer,/zoomAround\(clientX,clientY,2\.6\)/);
  assert.match(viewer,/pointermove/);
  assert.match(viewer,/dblclick/);
+ assert.match(viewer,/wheel/);
+ assert.match(viewer,/Compartir<\/span>/);
+ assert.match(viewer,/Guardar<\/span>/);
+ assert.match(viewer,/aria-label','Cerrar foto'/);
+ assert.match(viewerCss,/\.amc-viewer-flight\{/);
+ assert.match(viewerCss,/\.amc-photo-viewer\.amc-controls-hidden/);
 });
