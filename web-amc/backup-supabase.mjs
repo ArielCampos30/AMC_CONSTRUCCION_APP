@@ -95,12 +95,14 @@ function withLocalRecoveryApp(dbPath,run){
  }
 }
 
-export function verifyRestoredCopy({sourceDb,file,password,target}){
- const source=databaseSnapshot(sourceDb),expectedRecords=source.users+source.docs+source.files+source.config;
+export function verifyRestoredCopy({file,password,target}){
+ const expected=verifyBackup(file,password);
  return withLocalRecoveryApp(target,recoveryApp=>{
   const restored=restoreBackup(recoveryApp.db,file,password),recovered=databaseSnapshot(recoveryApp.db);
-  if(Number(restored.records)!==expectedRecords)throw Error('La restauración de prueba no recuperó la cantidad esperada de registros.');
-  for(const key of ['users','docs','files','config','storageBytes'])if(recovered[key]!==source[key])throw Error('La restauración de prueba no coincide con el origen en '+key+'.');
+  if(Number(restored.records)!==Number(expected.records))throw Error('La restauración de prueba no recuperó la cantidad esperada de registros.');
+  for(const key of ['users','docs','files','config','storageBytes']){
+   if(Number(restored.stats?.[key])!==Number(expected.stats?.[key])||recovered[key]!==Number(expected.stats?.[key]))throw Error('La restauración de prueba no coincide con el respaldo en '+key+'.');
+  }
   return {records:Number(restored.records),...recovered};
  });
 }
@@ -116,7 +118,7 @@ export async function runExternalBackup({env=process.env,date=new Date()}={}){
   const encodedObject=object.split('/').map(safeSegment).join('/'),headers={Authorization:'Bearer '+config.key,apikey:config.key},target=config.base+'/storage/v1/object/'+safeSegment(config.bucket)+'/'+encodedObject;
   await uploadFile(target,headers,file);
   await downloadFile(config.base+'/storage/v1/object/authenticated/'+safeSegment(config.bucket)+'/'+encodedObject,headers,downloaded);
-  const recovery=verifyRestoredCopy({sourceDb:app.db,file:downloaded,password:config.password,target:restoreTarget}),restoreVerifiedAt=new Date().toISOString();
+  const recovery=verifyRestoredCopy({file:downloaded,password:config.password,target:restoreTarget}),restoreVerifiedAt=new Date().toISOString();
   const cutoff=date.getTime()-config.retentionDays*86400000,old=(await listObjects(config,'daily')).filter(x=>backupDate(x.name)<cutoff).map(x=>'daily/'+x.name);
   const removed=await deleteObjects(config,old),bytes=statSync(file).size;
   writeBackupMonitor(app.db,{status:'ok',lastAttemptAt:attemptAt,lastSuccessAt:new Date().toISOString(),records:result.records,bytes,removed,error:'',restoreStatus:'ok',lastRestoreAttemptAt:attemptAt,lastRestoreVerifiedAt:restoreVerifiedAt,restoreRecords:recovery.records,restoreStorageBytes:recovery.storageBytes});
