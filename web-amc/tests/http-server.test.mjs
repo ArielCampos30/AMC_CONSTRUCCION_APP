@@ -7,9 +7,9 @@ const send=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application
 const listen=server=>new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const close=server=>new Promise(resolve=>server.close(resolve));
 
-test('servidor HTTP conserva request id y timeouts',async()=>{
- const recent=[];
- const server=createHttpServer({handle:async(_req,res)=>res.end('ok'),send,recentServerErrors:recent,recentErrorCount:()=>recent.length});
+test('servidor HTTP conserva request id, timeouts y registra latencia',async()=>{
+ const recent=[],samples=[];
+ const server=createHttpServer({handle:async(_req,res)=>res.end('ok'),send,recentServerErrors:recent,recentErrorCount:()=>recent.length,recordPerformance:(path,duration,status)=>samples.push({path,duration,status})});
  assert.equal(server.requestTimeout,30000);
  assert.equal(server.headersTimeout,10000);
  await listen(server);
@@ -18,6 +18,7 @@ test('servidor HTTP conserva request id y timeouts',async()=>{
   assert.equal(response.status,200);
   assert.equal(await response.text(),'ok');
   assert.match(response.headers.get('x-request-id')||'',/^[0-9a-f]{16}$/);
+  assert.equal(samples.length,1);assert.equal(samples[0].path,'/demo');assert.equal(samples[0].status,200);assert.ok(samples[0].duration>=0);
  }finally{await close(server);}
 });
 
@@ -38,12 +39,13 @@ test('server delega bootstrap HTTP sin duplicarlo',async()=>{
  const runtime=await readFile(new URL('../http-server.mjs',import.meta.url),'utf8');
  const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
  assert.match(composition,/from '.\/http-server\.mjs'/);
- assert.match(composition,/createHttpServer\(\{handle,send,recentServerErrors,recentErrorCount\}\)/);
+ assert.match(composition,/createHttpServer\(\{handle,send,recentServerErrors,recentErrorCount,recordPerformance:performance\.record\}\)/);
  assert.doesNotMatch(server,/from 'node:http'/);
  assert.doesNotMatch(server,/randomBytes/);
  assert.doesNotMatch(server,/http\.createServer/);
  assert.doesNotMatch(server,/requestTimeout=30000/);
  assert.match(runtime,/X-Request-ID/);
  assert.match(runtime,/durationMs/);
+ assert.match(runtime,/recordPerformance\(pathname,durationMs,res\.statusCode\)/);
  assert.match(runtime,/status:503/);
 });

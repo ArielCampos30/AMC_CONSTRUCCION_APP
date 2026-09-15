@@ -6,6 +6,7 @@ import {createInputValues} from './input-values.mjs';
 import {now,id,sha,fail} from './server-primitives.mjs';
 import {createBackgroundRuntime} from './background-runtime.mjs';
 import {createHttpServer} from './http-server.mjs';
+import {createPerformanceMonitor} from './performance-monitor.mjs';
 import {createRequestDispatcher} from './server-request-dispatcher.mjs';
 import {appearanceFeatures} from './appearance.mjs';
 import {planningFeatures} from './planning.mjs';
@@ -46,9 +47,10 @@ const {text,amount,optionalAmount,validDate}=createInputValues({fail});
 export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,origin='http://localhost:4180',clock=Date.now,sendRecovery,twoFactorKey=process.env.AMC_2FA_KEY,fileStore}={}){
  const version=(process.env.RENDER_GIT_COMMIT||process.env.GITHUB_SHA||process.env.AMC_VERSION||'dev').slice(0,7),startedAt=Date.now();
  const recentServerErrors=[];const recentErrorCount=()=>{const cutoff=Date.now()-15*60*1000;while(recentServerErrors.length&&recentServerErrors[0]<cutoff)recentServerErrors.shift();return recentServerErrors.length;};
+ const performance=createPerformanceMonitor();
  const {db,remoteUrl,all,allEntries,activeUsers,docPosition,get,put,transaction,beginStateSnapshot,endStateSnapshot}=createDatabaseCore({dbPath,id,sha,now,fail});
  const objectStore=fileStore||createSupabaseFileStore();
- const {backupHealth,systemStatus}=createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt});
+ const {backupHealth,systemStatus}=createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt,performanceHealth:performance.health});
  const {userView,passwordHash,addUser,own,requireAdmin,canAccessRequest,canAccessQuote,canAccessWork,requireResource,createAdminVerifier}=createAuthCore({db,all,id,fail});
  const {publicWork,publicQuote,employeeWork}=createResourceViews();
  const keys=pushKeys(db);
@@ -89,9 +91,9 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const handleProfile=profileRoutes({db,put,send,fail,text});
  const handleMediaUpload=mediaUploadRoutes({mediaStorage,send});
  const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
- const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,startedAt,demo,keys,services,send});
+ const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,performanceHealth:performance.health,startedAt,demo,keys,services,send});
  const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
  const staticFiles=staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fail});
  const handle=createRequestDispatcher({origin,staticFiles,authentication,fail,checkRate,readBody,recovery,handlePublicSystem,handleState,mediaAccess,readMultipart,twoFactor,chat,planning,handleAdminUtility,appearance,closure,fieldwork,team,purchases,handleFeature,clientRequests,handleProfile,handleMediaUpload,handleQuoteWork,handleCommunity,notificationRoutes,handleDevices,handleEstimatorPage,send});
- const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
+ const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount,recordPerformance:performance.record});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
 }
