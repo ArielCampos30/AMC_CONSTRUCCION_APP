@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import https from 'node:https';
 import {createApp} from './server.mjs';
 import {exportBackup,verifyBackup,restoreBackup} from './secure-backup.mjs';
+import {createR2BackupStore,r2StorageConfig} from './r2-backup-store.mjs';
 
 const required=(name,value)=>{if(!value)throw Error('Falta '+name+'.');return value;};
 const cleanBase=value=>String(value||'').replace(/\/$/,'');
@@ -14,7 +15,7 @@ const safeSegment=value=>encodeURIComponent(String(value||'').replace(/^\/+|\/+$
 export const backupObjectPath=(date=new Date())=>'daily/amc-'+date.toISOString().replace(/[:.]/g,'-')+'.amcbak';
 
 function writeBackupMonitor(db,patch){
- let previous={id:'backup-status',status:'unknown',lastSuccessAt:null,lastAttemptAt:null,restoreStatus:'unknown',lastRestoreVerifiedAt:null,lastRestoreAttemptAt:null};
+ let previous={id:'backup-status',status:'unknown',lastSuccessAt:null,lastAttemptAt:null,restoreStatus:'unknown',lastRestoreVerifiedAt:null,lastRestoreAttemptAt:null,secondaryStatus:'unknown',secondaryLastSuccessAt:null,secondaryLastAttemptAt:null,secondaryRestoreStatus:'unknown',secondaryLastRestoreVerifiedAt:null,secondaryLastRestoreAttemptAt:null};
  try{const row=db.prepare("SELECT body FROM docs WHERE kind='monitor' AND id='backup-status'").get();if(row)previous={...previous,...JSON.parse(row.body)};}catch{}
  const body={...previous,...patch,id:'backup-status'};
  db.prepare("INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body,owner=excluded.owner").run(body.id,'monitor','',JSON.stringify(body));
@@ -107,24 +108,58 @@ export function verifyRestoredCopy({file,password,target}){
  });
 }
 
+async function verifySupabaseCopy({config,file,downloaded,restoreTarget,object,date}){
+ const encodedObject=object.split('/').map(safeSegment).join('/'),headers={Authorization:'Bearer '+config.key,apikey:config.key},target=config.base+'/storage/v1/object/'+safeSegment(config.bucket)+'/'+encodedObject;
+ await uploadFile(target,headers,file);
+ await downloadFile(config.base+'/storage/v1/object/authenticated/'+safeSegment(config.bucket)+'/'+encodedObject,headers,downloaded);
+ const recovery=verifyRestoredCopy({file:downloaded,password:config.password,target:restoreTarget}),restoreVerifiedAt=new Date().toISOString();
+ const cutoff=date.getTime()-config.retentionDays*86400000,old=(await listObjects(config,'daily')).filter(x=>backupDate(x.name)<cutoff).map(x=>'daily/'+x.name);
+ const removed=await deleteObjects(config,old);
+ return {recovery,restoreVerifiedAt,removed};
+}
+
+async function verifyR2Copy({env,file,downloaded,restoreTarget,object,date,password}){
+ const config=r2StorageConfig(env),store=createR2BackupStore({config}),cutoff=date.getTime()-config.retentionDays*86400000;
+ await store.uploadFile(object,file);
+ await store.downloadFile(object,downloaded);
+ const recovery=verifyRestoredCopy({file:downloaded,password,target:restoreTarget}),restoreVerifiedAt=new Date().toISOString();
+ const old=(await store.listKeys('daily/')).filter(key=>backupDate(key)<cutoff);
+ const removed=await store.deleteKeys(old);
+ return {recovery,restoreVerifiedAt,removed};
+}
+
 export async function runExternalBackup({env=process.env,date=new Date()}={}){
- const dir=mkdtempSync(path.join(tmpdir(),'amc-external-backup-')),file=path.join(dir,'backup.amcbak'),downloaded=path.join(dir,'downloaded.amcbak'),restoreTarget=path.join(dir,'restore-check.sqlite'),object=backupObjectPath(date),attemptAt=date.toISOString();
+ const dir=mkdtempSync(path.join(tmpdir(),'amc-external-backup-')),file=path.join(dir,'backup.amcbak'),primaryDownloaded=path.join(dir,'supabase.amcbak'),secondaryDownloaded=path.join(dir,'r2.amcbak'),primaryRestoreTarget=path.join(dir,'restore-supabase.sqlite'),secondaryRestoreTarget=path.join(dir,'restore-r2.sqlite'),object=backupObjectPath(date),attemptAt=date.toISOString();
  let app;
  try{
   const localSource=env.AMC_DB_PATH||fileURLToPath(new URL('./data/amc.sqlite',import.meta.url));if(!env.AMC_DATABASE_URL&&!existsSync(localSource))throw Error('No se encontró la base de origen. No se creó ningún respaldo externo.');
   app=createApp({dbPath:localSource});
-  writeBackupMonitor(app.db,{status:'running',lastAttemptAt:attemptAt,restoreStatus:'running',lastRestoreAttemptAt:attemptAt});
+  writeBackupMonitor(app.db,{status:'running',lastAttemptAt:attemptAt,restoreStatus:'running',lastRestoreAttemptAt:attemptAt,secondaryStatus:'running',secondaryLastAttemptAt:attemptAt,secondaryRestoreStatus:'running',secondaryLastRestoreAttemptAt:attemptAt});
   const config=storageConfig(env),result=exportBackup(app.db,file,config.password);verifyBackup(file,config.password);
-  const encodedObject=object.split('/').map(safeSegment).join('/'),headers={Authorization:'Bearer '+config.key,apikey:config.key},target=config.base+'/storage/v1/object/'+safeSegment(config.bucket)+'/'+encodedObject;
-  await uploadFile(target,headers,file);
-  await downloadFile(config.base+'/storage/v1/object/authenticated/'+safeSegment(config.bucket)+'/'+encodedObject,headers,downloaded);
-  const recovery=verifyRestoredCopy({file:downloaded,password:config.password,target:restoreTarget}),restoreVerifiedAt=new Date().toISOString();
-  const cutoff=date.getTime()-config.retentionDays*86400000,old=(await listObjects(config,'daily')).filter(x=>backupDate(x.name)<cutoff).map(x=>'daily/'+x.name);
-  const removed=await deleteObjects(config,old),bytes=statSync(file).size;
-  writeBackupMonitor(app.db,{status:'ok',lastAttemptAt:attemptAt,lastSuccessAt:new Date().toISOString(),records:result.records,bytes,removed,error:'',restoreStatus:'ok',lastRestoreAttemptAt:attemptAt,lastRestoreVerifiedAt:restoreVerifiedAt,restoreRecords:recovery.records,restoreStorageBytes:recovery.storageBytes});
-  return {records:result.records,object,bytes,removed,restoreVerifiedAt,restoreRecords:recovery.records,restoreStorageBytes:recovery.storageBytes};
+  const bytes=statSync(file).size;
+  let primary=null,secondary=null,primaryError=null,secondaryError=null;
+
+  try{primary=await verifySupabaseCopy({config,file,downloaded:primaryDownloaded,restoreTarget:primaryRestoreTarget,object,date});}
+  catch(error){primaryError=error;}
+  try{secondary=await verifyR2Copy({env,file,downloaded:secondaryDownloaded,restoreTarget:secondaryRestoreTarget,object,date,password:config.password});}
+  catch(error){secondaryError=error;}
+
+  const now=new Date().toISOString(),patch={records:result.records,bytes,error:[primaryError&&'Supabase: '+primaryError.message,secondaryError&&'R2: '+secondaryError.message].filter(Boolean).join(' | ').slice(0,360)};
+  if(primaryError){Object.assign(patch,{status:'failed',lastAttemptAt:attemptAt,lastFailureAt:now,restoreStatus:'failed',lastRestoreAttemptAt:attemptAt});}
+  else{Object.assign(patch,{status:'ok',lastAttemptAt:attemptAt,lastSuccessAt:now,removed:primary.removed,restoreStatus:'ok',lastRestoreAttemptAt:attemptAt,lastRestoreVerifiedAt:primary.restoreVerifiedAt,restoreRecords:primary.recovery.records,restoreStorageBytes:primary.recovery.storageBytes});}
+  if(secondaryError){Object.assign(patch,{secondaryStatus:'failed',secondaryLastAttemptAt:attemptAt,secondaryLastFailureAt:now,secondaryRestoreStatus:'failed',secondaryLastRestoreAttemptAt:attemptAt,secondaryError:String(secondaryError.message||'Error').slice(0,180)});}
+  else{Object.assign(patch,{secondaryStatus:'ok',secondaryLastAttemptAt:attemptAt,secondaryLastSuccessAt:now,secondaryBytes:bytes,secondaryRemoved:secondary.removed,secondaryError:'',secondaryRestoreStatus:'ok',secondaryLastRestoreAttemptAt:attemptAt,secondaryLastRestoreVerifiedAt:secondary.restoreVerifiedAt,secondaryRestoreRecords:secondary.recovery.records,secondaryRestoreStorageBytes:secondary.recovery.storageBytes});}
+  writeBackupMonitor(app.db,patch);
+
+  if(primaryError||secondaryError)throw Error(patch.error||'Falló una copia externa del respaldo.');
+  return {records:result.records,object,bytes,removed:primary.removed,restoreVerifiedAt:primary.restoreVerifiedAt,restoreRecords:primary.recovery.records,restoreStorageBytes:primary.recovery.storageBytes,secondaryRemoved:secondary.removed,secondaryRestoreVerifiedAt:secondary.restoreVerifiedAt,secondaryRestoreRecords:secondary.recovery.records,secondaryRestoreStorageBytes:secondary.recovery.storageBytes};
  }catch(error){
-  try{if(app)writeBackupMonitor(app.db,{status:'failed',lastAttemptAt:attemptAt,lastFailureAt:new Date().toISOString(),restoreStatus:'failed',lastRestoreAttemptAt:attemptAt,error:String(error?.message||'Error').slice(0,180)});}catch{}
+  try{
+   if(app){
+    const row=app.db.prepare("SELECT body FROM docs WHERE kind='monitor' AND id='backup-status'").get(),current=row?JSON.parse(row.body):{};
+    if(current.status==='running'||current.secondaryStatus==='running')writeBackupMonitor(app.db,{status:current.status==='running'?'failed':current.status,restoreStatus:current.restoreStatus==='running'?'failed':current.restoreStatus,secondaryStatus:current.secondaryStatus==='running'?'failed':current.secondaryStatus,secondaryRestoreStatus:current.secondaryRestoreStatus==='running'?'failed':current.secondaryRestoreStatus,lastAttemptAt:attemptAt,lastRestoreAttemptAt:attemptAt,secondaryLastAttemptAt:attemptAt,secondaryLastRestoreAttemptAt:attemptAt,lastFailureAt:new Date().toISOString(),error:String(error?.message||'Error').slice(0,360)});
+   }
+  }catch{}
   throw error;
  }finally{
   try{app?.server.close();}catch{}
@@ -133,5 +168,5 @@ export async function runExternalBackup({env=process.env,date=new Date()}={}){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- runExternalBackup().then(result=>console.log('Respaldo externo y restauración verificados:',result.records,'registros ·',result.bytes,'bytes ·',result.object,'· restaurados:',result.restoreRecords,'· antiguos eliminados:',result.removed)).catch(error=>{console.error(error.message);process.exitCode=1;});
+ runExternalBackup().then(result=>console.log('Respaldos Supabase + R2 y restauraciones verificados:',result.records,'registros ·',result.bytes,'bytes ·',result.object,'· Supabase restaurados:',result.restoreRecords,'· R2 restaurados:',result.secondaryRestoreRecords,'· antiguos eliminados:',result.removed+'/'+result.secondaryRemoved)).catch(error=>{console.error(error.message);process.exitCode=1;});
 }

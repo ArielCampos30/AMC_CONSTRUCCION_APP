@@ -31,7 +31,7 @@ test('PWA release metadata, safe cache and iPhone install help are present',()=>
 
 test('health checks the database and exposes only operational metadata',async()=>{
  const app=createApp({dbPath:':memory:',origin:'http://localhost'});await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
- try{const response=await fetch('http://127.0.0.1:'+app.server.address().port+'/health');assert.equal(response.status,200);const body=await response.json();assert.equal(body.ok,true);assert.equal(body.database,'available');assert.ok(['sqlite','postgresql'].includes(body.driver));assert.equal(typeof body.databaseMs,'number');assert.equal(typeof body.version,'string');assert.equal(typeof body.uptimeSeconds,'number');assert.equal(typeof body.errors5xx15m,'number');assert.equal(body.backupStatus,'unknown');assert.equal(body.backupAgeHours,null);assert.equal(body.backupRestoreStatus,'unknown');assert.equal(body.backupRestoreAgeHours,null);assert.ok(response.headers.get('x-request-id'));}finally{await new Promise(resolve=>app.server.close(resolve));}
+ try{const response=await fetch('http://127.0.0.1:'+app.server.address().port+'/health');assert.equal(response.status,200);const body=await response.json();assert.equal(body.ok,true);assert.equal(body.database,'available');assert.ok(['sqlite','postgresql'].includes(body.driver));assert.equal(typeof body.databaseMs,'number');assert.equal(typeof body.version,'string');assert.equal(typeof body.uptimeSeconds,'number');assert.equal(typeof body.errors5xx15m,'number');assert.equal(body.backupStatus,'unknown');assert.equal(body.backupAgeHours,null);assert.equal(body.backupRestoreStatus,'unknown');assert.equal(body.backupRestoreAgeHours,null);assert.equal(body.backupSecondaryStatus,'unknown');assert.equal(body.backupSecondaryAgeHours,null);assert.equal(body.backupSecondaryRestoreStatus,'unknown');assert.equal(body.backupSecondaryRestoreAgeHours,null);assert.ok(response.headers.get('x-request-id'));}finally{await new Promise(resolve=>app.server.close(resolve));}
 });
 
 
@@ -44,6 +44,10 @@ test('production monitor runs every 15 minutes and manages one persistent alert 
  assert.match(workflow,/backupAgeHours>30/);
  assert.match(workflow,/backupRestoreStatus/);
  assert.match(workflow,/backupRestoreAgeHours>30/);
+ assert.match(workflow,/backupSecondaryStatus/);
+ assert.match(workflow,/backupSecondaryAgeHours>30/);
+ assert.match(workflow,/backupSecondaryRestoreStatus/);
+ assert.match(workflow,/backupSecondaryRestoreAgeHours>30/);
  assert.match(workflow,/AMC Producción - alerta de monitor/);
  assert.match(workflow,/gh issue create/);
  assert.match(workflow,/gh issue close/);
