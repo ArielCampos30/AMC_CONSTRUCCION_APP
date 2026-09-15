@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import pg from 'pg';
 
 const TABLES=[
@@ -15,6 +16,7 @@ const TABLES=[
 
 const q=name=>'"'+String(name).replaceAll('"','""')+'"';
 const tableName=name=>'amc_data.'+q(name);
+const tlsConfig=caFile=>({rejectUnauthorized:true,...(caFile?{ca:readFileSync(caFile,'utf8')}:{})});
 const digestRows=rows=>{
  const hash=createHash('sha256');
  for(const row of rows){
@@ -49,11 +51,11 @@ async function insertRows(client,table,rows){
  }
 }
 
-export async function migrateRegionDatabase({sourceUrl,targetUrl,logger=()=>{}}={}){
+export async function migrateRegionDatabase({sourceUrl,targetUrl,caFile,sourceCaFile=caFile,targetCaFile=caFile,logger=()=>{}}={}){
  if(!sourceUrl||!targetUrl)throw Error('Faltan conexiones para la migración regional.');
  if(sourceUrl===targetUrl)throw Error('Origen y destino no pueden ser la misma base.');
- const source=new pg.Client({connectionString:sourceUrl,ssl:{rejectUnauthorized:true},connectionTimeoutMillis:10000,application_name:'AMC region source'});
- const target=new pg.Client({connectionString:targetUrl,ssl:{rejectUnauthorized:true},connectionTimeoutMillis:10000,application_name:'AMC region target'});
+ const source=new pg.Client({connectionString:sourceUrl,ssl:tlsConfig(sourceCaFile),connectionTimeoutMillis:10000,application_name:'AMC region source'});
+ const target=new pg.Client({connectionString:targetUrl,ssl:tlsConfig(targetCaFile),connectionTimeoutMillis:10000,application_name:'AMC region target'});
  const copied={};
  try{
   await source.connect();await target.connect();await assertTargetSchema(target);
