@@ -43,7 +43,7 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
     [key,user.id,mime,bytes],
     ...(miniature?[[key+'-thumb',user.id,'image/jpeg',miniature]]:[]),
     ...(viewer?[[key+'-view',user.id,'image/jpeg',viewer]]:[])
-   ],values=rows.map(()=>'(?,?,?,?)').join(','),params=[user.id,storedSize,storedSize,...rows.flat(),meta.id,user.id,JSON.stringify(meta)];
+   ],values=rows.map(()=>'(?,?,?,CAST(? AS bytea))').join(','),params=[user.id,storedSize,storedSize,...rows.flat(),meta.id,user.id,JSON.stringify(meta)];
    const result=db.prepare(`WITH usage AS (SELECT coalesce(sum(length(body)),0) AS total, coalesce(sum(CASE WHEN owner=? THEN length(body) ELSE 0 END),0) AS used FROM files), quota_state AS (SELECT CASE WHEN total+?>${GLOBAL_LIMIT} THEN 'global' WHEN used+?>${USER_LIMIT} THEN 'user' ELSE 'ok' END AS state FROM usage), incoming(id,owner,mime,body) AS (VALUES ${values}), inserted AS (INSERT INTO files(id,owner,mime,body) SELECT incoming.id,incoming.owner,incoming.mime,incoming.body FROM incoming WHERE (SELECT state FROM quota_state)='ok' RETURNING id), stored_meta AS (INSERT INTO docs(id,kind,owner,body) SELECT ?,'fileUpload',?,? WHERE (SELECT state FROM quota_state)='ok' AND EXISTS (SELECT 1 FROM inserted) ON CONFLICT(id) DO UPDATE SET body=excluded.body,owner=excluded.owner RETURNING id) SELECT state,(SELECT count(*) FROM inserted) AS inserted,(SELECT count(*) FROM stored_meta) AS metadata FROM quota_state`).get(...params);
    if(result?.state==='global')fail(413,'El almacenamiento de archivos de la prueba está completo. AMC debe ampliar o revisar el espacio.');
    if(result?.state==='user')fail(413,'Alcanzaste el límite de archivos de esta versión.');
