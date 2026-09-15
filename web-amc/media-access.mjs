@@ -35,9 +35,11 @@ export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchase
   if(!(p==='/media/'+p.split('/')[2]&&p.startsWith('/media/')&&method==='GET'))return false;
   const key=p.split('/')[2],file=db.prepare('SELECT id,owner,mime FROM files WHERE id=?').get(key);
   if(!file)fail(404,'Archivo no encontrado.');
-  const publicFile=appearance.publicMedia(p)||all('post').filter(post=>!post.demo).some(post=>post.image===p||post.before===p);
   const authorized=canAccessPrivateFile(user,p,file);
-  if(!publicFile&&!authorized)fail(404,'Archivo no encontrado.');
+  if(!authorized){
+   const publicFile=appearance.publicMedia(p)||all('post').filter(post=>!post.demo).some(post=>post.image===p||post.before===p);
+   if(!publicFile)fail(404,'Archivo no encontrado.');
+  }
   const wantsThumb=new URL(req.url,'http://localhost').searchParams.has('thumb')&&file.mime.startsWith('image/');
   const localThumb=wantsThumb?db.prepare('SELECT body FROM files WHERE id=?').get(key+'-thumb'):null;
   if(!wantsThumb||localThumb?.body){
