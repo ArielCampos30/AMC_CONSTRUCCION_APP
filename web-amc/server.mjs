@@ -1,5 +1,6 @@
 import {composeApp} from './app-composition.mjs';
 import {startServer} from './server-bootstrap.mjs';
+import {migrateRegionDatabase} from './region-migration.mjs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const ROOT=path.dirname(fileURLToPath(import.meta.url));
@@ -8,4 +9,13 @@ export const serviceCatalog={Albañilería:['Revoque fino','Revoque completo','P
 export function createApp({dbPath,demo,origin,clock,sendRecovery,twoFactorKey,fileStore}={}){
  return composeApp({services,serviceCatalog,dbPath,demo,origin,clock,sendRecovery,twoFactorKey,fileStore});
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))startServer({createApp,root:ROOT});
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ if(process.env.AMC_REGION_MIGRATION_PREPARE==='1'){
+  await migrateRegionDatabase({
+   sourceUrl:process.env.AMC_DATABASE_URL,
+   targetUrl:process.env.AMC_REGION_MIGRATION_TARGET_URL,
+   logger:value=>console.log(JSON.stringify(value))
+  });
+ }
+ startServer({createApp,root:ROOT});
+}
