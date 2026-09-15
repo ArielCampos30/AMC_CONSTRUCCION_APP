@@ -9,8 +9,9 @@ test('salud y configuración pública quedan fuera del router principal',async()
   readFile(new URL('../public-system-routes.mjs',import.meta.url),'utf8')
  ]);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/import \{publicSystemRoutes\} from '\.\/public-system-routes\.mjs'/);
- assert.match(server,/const handlePublicSystem=publicSystemRoutes\(/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/import \{publicSystemRoutes\} from '\.\/public-system-routes\.mjs'/);
+ assert.match(composition,/const handlePublicSystem=publicSystemRoutes\(/);
  assert.match(dispatcher,/if\(handlePublicSystem\(\{p,method,res\}\)\)return/);
  assert.doesNotMatch(server,/p==='\/healthz'/);
  assert.doesNotMatch(server,/p==='\/api\/config'/);

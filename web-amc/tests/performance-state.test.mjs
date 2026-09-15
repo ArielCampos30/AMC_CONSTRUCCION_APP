@@ -27,9 +27,10 @@ test('estado agrupa lecturas remotas y chat reutiliza el snapshot',async()=>{
  assert.doesNotMatch(chat,/SELECT owner,body FROM docs WHERE kind='clientChatRead'/);
  assert.doesNotMatch(chat,/SELECT id FROM users WHERE role='client'/);
  assert.match(auth,/FROM sessions s JOIN users u ON u\.id=s\.userId/);
- assert.match(server,/chatFeatures\(\{db,all,allEntries,activeUsers,docPosition/);
- assert.match(server,/stateRoutes\(\{all,activeUsers/);
- assert.match(server,/twoFactor,lifecycle,beginStateSnapshot/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/chatFeatures\(\{db,all,allEntries,activeUsers,docPosition/);
+ assert.match(composition,/stateRoutes\(\{all,activeUsers/);
+ assert.match(composition,/twoFactor,lifecycle,beginStateSnapshot/);
 });
 
 test('sondeo de estado limita vencimientos pero ejecución explícita sigue inmediata',()=>{

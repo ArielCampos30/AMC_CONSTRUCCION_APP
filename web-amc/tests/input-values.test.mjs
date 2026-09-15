@@ -42,8 +42,9 @@ test('validDate exige fecha ISO real y no acepta desbordes de calendario',()=>{
 
 test('server delega normalización y validación sin duplicar implementaciones',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/input-values\.mjs'/);
- assert.match(server,/const \{text,amount,optionalAmount,validDate\}=createInputValues\(\{fail\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/input-values\.mjs'/);
+ assert.match(composition,/const \{text,amount,optionalAmount,validDate\}=createInputValues\(\{fail\}\)/);
  assert.doesNotMatch(server,/const text=\(v,max=200\)=>/);
  assert.doesNotMatch(server,/const amount=v=>/);
  assert.doesNotMatch(server,/const optionalAmount=v=>/);

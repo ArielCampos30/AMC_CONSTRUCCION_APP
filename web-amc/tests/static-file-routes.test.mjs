@@ -51,7 +51,8 @@ test('server delega la entrega pública sin duplicar resolución ni MIME',async(
   readFile(new URL('../static-file-routes.mjs',import.meta.url),'utf8')
  ]);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/static-file-routes\.mjs'/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/static-file-routes\.mjs'/);
  assert.match(dispatcher,/staticFiles\.serveEarly\(\{req,res,p,method\}\)/);
  assert.match(dispatcher,/staticFiles\.requirePageMethod\(method\)/);
  assert.match(dispatcher,/staticFiles\.serveFallback\(\{res,p,method\}\)/);

@@ -36,8 +36,9 @@ test('servidor HTTP conserva respuesta 503 ante rechazo no manejado',async()=>{
 test('server delega bootstrap HTTP sin duplicarlo',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
  const runtime=await readFile(new URL('../http-server.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/http-server\.mjs'/);
- assert.match(server,/createHttpServer\(\{handle,send,recentServerErrors,recentErrorCount\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/http-server\.mjs'/);
+ assert.match(composition,/createHttpServer\(\{handle,send,recentServerErrors,recentErrorCount\}\)/);
  assert.doesNotMatch(server,/from 'node:http'/);
  assert.doesNotMatch(server,/randomBytes/);
  assert.doesNotMatch(server,/http\.createServer/);

@@ -25,7 +25,8 @@ test('fail conserva status y mensaje',()=>{
 
 test('server delega primitivas base sin duplicarlas',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/server-primitives\.mjs'/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/server-primitives\.mjs'/);
  assert.doesNotMatch(server,/const now=\(\)=>new Date\(\)\.toISOString\(\)/);
  assert.doesNotMatch(server,/id=\(\)=>randomUUID\(\)/);
  assert.doesNotMatch(server,/createHash\('sha256'\)/);

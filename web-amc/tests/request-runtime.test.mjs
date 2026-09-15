@@ -39,9 +39,10 @@ test('rate limiter mantiene contador por clave y mensaje 429',()=>{
 
 test('server delega utilidades HTTP sin duplicarlas',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/request-runtime\.mjs'/);
- assert.match(server,/createRequestRuntime\(\{fail\}\)/);
- assert.match(server,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/request-runtime\.mjs'/);
+ assert.match(composition,/createRequestRuntime\(\{fail\}\)/);
+ assert.match(composition,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
  assert.doesNotMatch(server,/const readRaw=async/);
  assert.doesNotMatch(server,/const readBody=async/);
  assert.doesNotMatch(server,/const rate=new Map\(\)/);

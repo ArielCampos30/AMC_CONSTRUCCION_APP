@@ -79,8 +79,9 @@ test('backend de avisos queda modularizado sin duplicar reglas en server',async(
   readFile(new URL('../notifications.mjs',import.meta.url),'utf8')
  ]);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/notifications\.mjs'/);
- assert.match(server,/notificationFeatures\(\{db,all,put,origin,now,id/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/notifications\.mjs'/);
+ assert.match(composition,/notificationFeatures\(\{db,all,put,origin,now,id/);
  assert.match(dispatcher,/notificationRoutes\(\{p,method,b,user,res\}\)/);
  assert.match(notifications,/const notify=\(userId,title,body,url='\/#avisos',priority='normal'\)/);
  assert.match(notifications,/const notifyAdmins=/);

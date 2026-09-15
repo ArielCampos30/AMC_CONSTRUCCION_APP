@@ -31,6 +31,7 @@ test('security hardening keeps account throttling and a bounded session count in
  assert.match(stateRoutes,/finally\{if\(snapshot\)endStateSnapshot\(\);\}/);
  assert.match(httpServer,/X-Request-ID/);
  assert.match(httpServer,/durationMs/);
- assert.match(source,/systemStatus/);
- assert.match(source,/RENDER_GIT_COMMIT/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/systemStatus/);
+ assert.match(composition,/RENDER_GIT_COMMIT/);
 });

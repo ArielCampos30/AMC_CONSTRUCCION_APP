@@ -8,8 +8,9 @@ test('actualización de perfil queda fuera del router principal',async()=>{
   readFile(new URL('../profile-routes.mjs',import.meta.url),'utf8')
  ]);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/import \{profileRoutes\} from '\.\/profile-routes\.mjs'/);
- assert.match(server,/const handleProfile=profileRoutes\(/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/import \{profileRoutes\} from '\.\/profile-routes\.mjs'/);
+ assert.match(composition,/const handleProfile=profileRoutes\(/);
  assert.match(dispatcher,/if\(handleProfile\(\{p,method,b,user,res\}\)\)return/);
  assert.doesNotMatch(server,/p==='\/api\/profile'/);
  assert.match(profile,/p!=='\/api\/profile'/);
