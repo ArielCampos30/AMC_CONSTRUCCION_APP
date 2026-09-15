@@ -16,9 +16,9 @@ const setup=(overrides={})=>{
  return {runtime,windowTarget,documentTarget,get timer(){return timer;},get counts(){return {renders,reloads,polls,chatSyncs};},setState:value=>state=value,setPage:value=>page=value,setDirty:value=>dirty=value,setHidden:value=>hidden=value,setLoggingOut:value=>loggingOut=value,setClock:value=>clock=value};
 };
 
-test('polling conserva tick de 5000 ms y cada tick ejecuta como máximo un refresh',async()=>{
+test('chat conserva tick efectivo de 5000 ms y cada tick ejecuta como máximo un refresh',async()=>{
  const gate=deferred();let polls=0;
- const context=setup({pollState:async()=>{polls++;await gate.promise;}}),timer=context.runtime.startPolling();
+ const context=setup({page:'chat-admin',pollState:async()=>{polls++;await gate.promise;}}),timer=context.runtime.startPolling();
  assert.equal(timer.delay,5000);
  const first=timer.handler(),second=timer.handler();
  assert.equal(polls,1);
@@ -30,14 +30,25 @@ test('polling conserva tick de 5000 ms y cada tick ejecuta como máximo un refre
  assert.equal(polls,2);
 });
 
-test('Cliente fuera del chat conserva umbral de 12000 ms sobre el tick de 5000 ms',async()=>{
- const context=setup({state:{user:{role:'client'}},page:'inicio'}),timer=context.runtime.startPolling();
- await timer.handler();
- context.setClock(105000);await timer.handler();
- context.setClock(110000);await timer.handler();
- assert.equal(context.counts.polls,1);
- context.setClock(115000);await timer.handler();
- assert.equal(context.counts.polls,2);
+test('pantallas fuera del chat usan umbral de 15000 ms para admin, cliente y empleado',async()=>{
+ for(const role of ['admin','client','employee']){
+  const context=setup({state:{user:{role}},page:role==='employee'?'mis-trabajos':'inicio'}),timer=context.runtime.startPolling();
+  await timer.handler();
+  context.setClock(105000);await timer.handler();
+  context.setClock(110000);await timer.handler();
+  assert.equal(context.counts.polls,1,role+' no debe consultar cada cinco segundos fuera del chat');
+  context.setClock(115000);await timer.handler();
+  assert.equal(context.counts.polls,2,role+' debe refrescar al llegar a quince segundos');
+ }
+});
+
+test('rutas dinámicas de chat conservan actualización cada 5000 ms',async()=>{
+ for(const page of ['chat/solicitud-1','chat-admin/solicitud-1','chat-equipo/empleado-1']){
+  const context=setup({page}),timer=context.runtime.startPolling();
+  await timer.handler();
+  context.setClock(105000);await timer.handler();
+  assert.equal(context.counts.polls,2,page+' debe conservar polling de chat');
+ }
 });
 
 test('focus y volver a visible disparan el mismo refresh; oculto no agrega trabajo',async()=>{
@@ -101,7 +112,7 @@ test('pestaña oculta, sesión cerrándose y polling fallido no alteran epoch ni
  context.setHidden(false);context.setLoggingOut(true);await timer.handler();
  assert.equal(attempts,0);
  context.setLoggingOut(false);await timer.handler();
- context.setClock(105000);await timer.handler();
+ context.setClock(115000);await timer.handler();
  assert.equal(attempts,2);
  assert.equal(epoch,7);
 });
