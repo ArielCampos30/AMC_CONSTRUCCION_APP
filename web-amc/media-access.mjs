@@ -25,6 +25,10 @@ export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchase
    storageDurationMs:Number.isFinite(error?.storageDurationMs)?error.storageDurationMs:null,circuitOpen:!!diagnostics?.readCircuitOpen
   }));
  };
+ const logReadPerformance=metrics=>{
+  if(process.env.NODE_ENV==='test')return;
+  console.info(JSON.stringify({level:'info',event:'media-read-performance',...metrics}));
+ };
  const writeMediaHeaders=(res,file,tag,variant)=>{
   res.setHeader('Cache-Control','private, no-cache');
   res.setHeader('ETag','"'+tag+'"');
@@ -33,32 +37,38 @@ export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchase
  };
  const serve=async({user,p,method,req,res})=>{
   if(!(p==='/media/'+p.split('/')[2]&&p.startsWith('/media/')&&method==='GET'))return false;
-  const key=p.split('/')[2],file=db.prepare('SELECT id,owner,mime FROM files WHERE id=?').get(key);
+  const started=Date.now(),key=p.split('/')[2],params=new URL(req.url,'http://localhost').searchParams,
+   candidateVariant=params.has('thumb')?'thumb':params.has('view')?'view':null,
+   candidateKey=candidateVariant?key+'-'+candidateVariant:key,
+   metadataStarted=Date.now(),file=db.prepare('SELECT id,owner,mime,EXISTS(SELECT 1 FROM files variant WHERE variant.id=?) AS variantExists FROM files WHERE id=?').get(candidateKey,key),metadataMs=Date.now()-metadataStarted;
   if(!file)fail(404,'Archivo no encontrado.');
-  const authorized=canAccessPrivateFile(user,p,file);
+  const authStarted=Date.now(),authorized=canAccessPrivateFile(user,p,file),authMs=Date.now()-authStarted;
   if(!authorized){
    const publicFile=appearance.publicMedia(p)||all('post').filter(post=>!post.demo).some(post=>post.image===p||post.before===p);
    if(!publicFile)fail(404,'Archivo no encontrado.');
   }
-  const params=new URL(req.url,'http://localhost').searchParams,
-   requestedVariant=file.mime.startsWith('image/')?(params.has('thumb')?'thumb':params.has('view')?'view':null):null,
-   requestedKey=requestedVariant?key+'-'+requestedVariant:key,
-   variantExists=requestedVariant?!!db.prepare('SELECT 1 AS ok FROM files WHERE id=?').get(requestedKey):false,
-   servedVariant=variantExists?requestedVariant:null,
-   storageKey=servedVariant?requestedKey:key,
+  const requestedVariant=file.mime.startsWith('image/')?candidateVariant:null,
+   servedVariant=requestedVariant&&file.variantExists?requestedVariant:null,
+   storageKey=servedVariant?candidateKey:key,
    knownTag=storageKey;
   writeMediaHeaders(res,file,knownTag,servedVariant);
-  if(req.headers['if-none-match']==='"'+knownTag+'"'){res.writeHead(304);res.end();return true;}
-  let mediaBody=null;
+  if(req.headers['if-none-match']==='"'+knownTag+'"'){
+   logReadPerformance({variant:servedVariant||'original',metadataMs,authMs,storageMs:0,fallbackDbMs:0,totalMs:Date.now()-started,source:'cache-validation',status:304});
+   res.writeHead(304);res.end();return true;
+  }
+  let mediaBody=null,storageMs=0,fallbackDbMs=0,source='database';
   if(objectStore.preferStorage){
-   try{mediaBody=await objectStore.download(storageKey);}
+   const storageStarted=Date.now();
+   try{mediaBody=await objectStore.download(storageKey);if(mediaBody)source='storage';}
    catch(error){if(error.status!==404)logStorageFallback(key,error);}
+   storageMs=Date.now()-storageStarted;
   }
   if(!mediaBody){
-   const local=db.prepare('SELECT body FROM files WHERE id=?').get(storageKey);
+   const fallbackDbStarted=Date.now(),local=db.prepare('SELECT body FROM files WHERE id=?').get(storageKey);fallbackDbMs=Date.now()-fallbackDbStarted;
    if(!local?.body)fail(404,'Archivo no encontrado.');
-   mediaBody=local.body;
+   mediaBody=local.body;source='database';
   }
+  logReadPerformance({variant:servedVariant||'original',metadataMs,authMs,storageMs,fallbackDbMs,totalMs:Date.now()-started,source,status:200});
   res.end(mediaBody);
   return true;
  };
