@@ -36,7 +36,7 @@ test('chat flotante de equipo permite texto, galería, cámara y hasta cuatro fo
  assert.match(backend,/p==='\/api\/staff-chat\/messages'.*photos=.*slice\(0,4\).*safeFile/s);
 });
 
-test('fotos de chat usan thumbnails y visor con transición compartida, zoom focal y controles claros',async()=>{
+test('fotos de chat usan thumbnails y visor con transición compartida, zoom focal y mejora de calidad sin salto',async()=>{
  const [viewer,viewerCss,employeeView,adminRuntime,adminUI,app]=await Promise.all([
   readFile(new URL('../public/media-viewer.js',import.meta.url),'utf8'),
   readFile(new URL('../public/media-viewer.css',import.meta.url),'utf8'),
@@ -51,9 +51,12 @@ test('fotos de chat usan thumbnails y visor con transición compartida, zoom foc
  assert.match(adminRuntime,/url\+'\?thumb=1'/);
  assert.match(adminUI,/\?thumb=1/);
  assert.match(viewer,/currentSrc\|\|thumb\?\.src\|\|source/);
- assert.match(viewer,/img\.src=preview/);
- assert.match(viewer,/const original=new Image\(\)/);
- assert.match(viewer,/original\.src=source/);
+ assert.match(viewer,/previewImg\.src=preview/);
+ assert.match(viewer,/const qualityImg=new Image\(\)/);
+ assert.match(viewer,/qualityImg\.src=source/);
+ assert.match(viewer,/frame\.style\.width=target\.width\+'px';frame\.style\.height=target\.height\+'px'/);
+ assert.match(viewer,/qualityImg\.classList\.add\('amc-quality-ready'\)/);
+ assert.doesNotMatch(viewer,/previewImg\.src=source/);
  assert.match(viewer,/animateFlight\(preview,from,to,\{opening:true\}\)/);
  assert.match(viewer,/animateFlight\(src,from,to,\{opening:false\}\)/);
  assert.match(viewer,/zoomAround\(clientX,clientY,2\.6\)/);
@@ -64,5 +67,7 @@ test('fotos de chat usan thumbnails y visor con transición compartida, zoom foc
  assert.match(viewer,/Guardar<\/span>/);
  assert.match(viewer,/aria-label','Cerrar foto'/);
  assert.match(viewerCss,/\.amc-viewer-flight\{/);
+ assert.match(viewerCss,/\.amc-viewer-quality\.amc-quality-ready\{opacity:1\}/);
  assert.match(viewerCss,/\.amc-photo-viewer\.amc-controls-hidden/);
+ assert.doesNotMatch(viewerCss,/!important/);
 });
