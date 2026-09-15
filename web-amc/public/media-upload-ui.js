@@ -26,12 +26,13 @@ export function createMediaUploadUI({getCsrf}){
  async function prepareImage(file){
   const started=performance.now(),decoded=await decodeImageSource(file);
   if(!decoded){
-   if(file.size<=6*1024*1024)return {output:file,thumbnail:null,viewer:null,metrics:{originalBytes:file.size,uploadedBytes:file.size,viewerBytes:0,width:0,outputWidth:0,compressed:false,mime:file.type,prepareMs:Math.round(performance.now()-started),decodeFallback:true}};
+   if(file.size<=6*1024*1024)return {output:file,thumbnail:null,viewer:null,metrics:{originalBytes:file.size,uploadedBytes:file.size,viewerBytes:0,payloadBytes:file.size,width:0,outputWidth:0,compressed:false,mime:file.type,prepareMs:Math.round(performance.now()-started),decodeFallback:true}};
    throw Error('No pudimos preparar esta foto. Probá con otra imagen o sacala nuevamente.');
   }
   const {source,width,height,cleanup}=decoded,long=Math.max(width,height),target=1440,smallEnough=file.size<=500*1024&&long<=target;
   let output=file,outputLong=long;
   try{
+   let outputPromise=Promise.resolve(file);
    if(!smallEnough){
     await new Promise(requestAnimationFrame);
     const ratio=Math.min(1,target/long),canvas=document.createElement('canvas');
@@ -39,23 +40,23 @@ export function createMediaUploadUI({getCsrf}){
     canvas.height=Math.max(1,Math.round(height*ratio));
     outputLong=Math.max(canvas.width,canvas.height);
     canvas.getContext('2d',{alpha:false}).drawImage(source,0,0,canvas.width,canvas.height);
-    output=await canvasBlob(canvas,'image/webp',.74)||await canvasBlob(canvas,'image/jpeg',.76);
+    outputPromise=(async()=>await canvasBlob(canvas,'image/webp',.74)||await canvasBlob(canvas,'image/jpeg',.76))();
    }
-   const [viewer,thumbnail]=await Promise.all([
-    renderJpegVariant(source,width,height,long,1080,.78),
+   const [preparedOutput,thumbnail]=await Promise.all([
+    outputPromise,
     renderJpegVariant(source,width,height,long,320,.62)
    ]);
-   return {output,thumbnail,viewer,metrics:{originalBytes:file.size,uploadedBytes:output.size,viewerBytes:viewer?.size||0,width:Math.round(long),outputWidth:Math.round(outputLong),compressed:output!==file,mime:output.type,prepareMs:Math.round(performance.now()-started)}};
+   output=preparedOutput||file;
+   return {output,thumbnail,viewer:null,metrics:{originalBytes:file.size,uploadedBytes:output.size,viewerBytes:0,payloadBytes:output.size+(thumbnail?.size||0),width:Math.round(long),outputWidth:Math.round(outputLong),compressed:output!==file,mime:output.type,prepareMs:Math.round(performance.now()-started)}};
   }finally{
    cleanup();
   }
  }
- function uploadWithProgress(file,thumbnail,viewer,onProgress){
+ function uploadWithProgress(file,thumbnail,onProgress){
   return new Promise((resolve,reject)=>{
    const xhr=new XMLHttpRequest(),started=performance.now(),data=new FormData();
    data.append('file',file,file.name||'foto');
    if(thumbnail?.size)data.append('thumbnail',thumbnail,'miniatura.jpg');
-   if(viewer?.size)data.append('viewer',viewer,'vista.jpg');
    xhr.open('POST','/api/upload');
    xhr.timeout=90000;
    xhr.setRequestHeader('X-CSRF-Token',getCsrf()||'');
@@ -77,7 +78,7 @@ export function createMediaUploadUI({getCsrf}){
   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>15*1024*1024)throw Error('Usá JPG, PNG o WebP de hasta 15 MB.');
   if(showBusy)window.AMCBusy?.start();
   try{
-   const prepared=await prepareImage(file),result=await uploadWithProgress(prepared.output,prepared.thumbnail,prepared.viewer,onProgress),metric={date:new Date().toISOString(),...prepared.metrics,uploadMs:result.uploadMs,totalMs:prepared.metrics.prepareMs+result.uploadMs};
+   const prepared=await prepareImage(file),result=await uploadWithProgress(prepared.output,prepared.thumbnail,onProgress),metric={date:new Date().toISOString(),...prepared.metrics,uploadMs:result.uploadMs,totalMs:prepared.metrics.prepareMs+result.uploadMs};
    window.AMCMediaMetrics.push(metric);
    if(window.AMCMediaMetrics.length>30)window.AMCMediaMetrics.shift();
    return {...result,metric};
