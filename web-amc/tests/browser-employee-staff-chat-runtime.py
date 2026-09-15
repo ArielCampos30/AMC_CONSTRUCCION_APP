@@ -2,6 +2,7 @@ import ast
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -19,7 +20,11 @@ def lifecycle_credentials():
 
 def call(method,path,payload=None):
     data=None if payload is None else json.dumps(payload).encode();request=urllib.request.Request(DRIVER+path,data=data,method=method,headers={"Content-Type":"application/json"})
-    with urllib.request.urlopen(request,timeout=30) as response: body=json.loads(response.read().decode() or "{}")
+    try:
+        with urllib.request.urlopen(request,timeout=30) as response: body=json.loads(response.read().decode() or "{}")
+    except urllib.error.HTTPError as exc:
+        detail=exc.read().decode(errors='replace')
+        raise RuntimeError(f"WebDriver {method} {path} -> HTTP {exc.code}: {detail}") from exc
     return body.get("value",body)
 
 binary=os.environ.get("AMC_CHROME_BINARY");options={"args":["--headless=new","--no-sandbox","--disable-dev-shm-usage","--window-size=390,844"]}
@@ -88,7 +93,8 @@ try:
     wait("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform.includes('scale(2.6)')")
     transform=js("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform")
     assert 'translate3d(0px,0px,0)' not in transform,transform
-    pointer_result=js("""const button=document.querySelector('.amc-photo-viewer[open] button[aria-label='Cerrar foto']'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',clientX:r.left+r.width/2,clientY:r.top+r.height/2}));return {chatOpen:!!document.querySelector('#amc-chat-dialog[open] .floating-staff-message'),viewerOpen:!!document.querySelector('.amc-photo-viewer[open]')};""")
+    assert js("return !!document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]')")
+    pointer_result=js("""const button=document.querySelector('.amc-photo-viewer[open] button[aria-label='Cerrar foto']'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2}));return {chatOpen:!!document.querySelector('#amc-chat-dialog[open] .floating-staff-message'),viewerOpen:!!document.querySelector('.amc-photo-viewer[open]')};""")
     assert pointer_result['chatOpen'] and pointer_result['viewerOpen'],pointer_result
     js("document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]').click();return true;")
     wait("return window.__amcViewerFlightAdds>=2",3)
