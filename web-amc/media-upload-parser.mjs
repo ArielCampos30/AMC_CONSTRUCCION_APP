@@ -2,7 +2,7 @@ export function createMediaUploadParser({readRaw,text,fail}){
  return async function readMultipart(req){
   const type=req.headers['content-type']||'',match=/boundary=(?:"([^"]+)"|([^;]+))/i.exec(type);
   if(!match)fail(400,'Formulario de archivo inválido.');
-  const boundary=Buffer.from('--'+(match[1]||match[2])),raw=await readRaw(req,7*1024*1024),parts={};
+  const boundary=Buffer.from('--'+(match[1]||match[2])),raw=await readRaw(req,9*1024*1024),parts={};
   let start=raw.indexOf(boundary)+boundary.length;
   while(start>=boundary.length){
    if(raw[start]===45&&raw[start+1]===45)break;
@@ -20,6 +20,6 @@ export function createMediaUploadParser({readRaw,text,fail}){
    start=next+boundary.length;
   }
   if(!parts.file?.body?.length)fail(400,'No se recibió la foto.');
-  return {mime:text(parts.file.mime),bytes:parts.file.body,thumbnail:parts.thumbnail?.body||null};
+  return {mime:text(parts.file.mime),bytes:parts.file.body,thumbnail:parts.thumbnail?.body||null,viewer:parts.viewer?.body||null};
  };
 }
