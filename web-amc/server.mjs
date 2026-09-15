@@ -6,6 +6,7 @@ import {createInputValues} from './input-values.mjs';
 import {now,id,sha,fail} from './server-primitives.mjs';
 import {createBackgroundRuntime} from './background-runtime.mjs';
 import {createHttpServer} from './http-server.mjs';
+import {startServer} from './server-bootstrap.mjs';
 import {applyHttpSecurity} from './http-security.mjs';
 import {appearanceFeatures} from './appearance.mjs';
 import {planningFeatures} from './planning.mjs';
@@ -139,9 +140,4 @@ export function createApp({dbPath=path.join(ROOT,'data/amc.sqlite'),demo=false,o
  }
  const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const demo=process.argv.includes('--demo'),port=Number(process.env.PORT||4180),origin=process.env.AMC_ORIGIN||process.env.RENDER_EXTERNAL_URL||`http://localhost:${port}`;
- if(!demo&&(!origin.startsWith('https:'))){console.error('Producción requiere AMC_ORIGIN=https://tu-dominio. Para prueba local usá node server.mjs --demo.');process.exit(1);}
- if(process.env.RENDER&&!process.env.AMC_DATABASE_URL&&!demo){console.error('Render producción requiere AMC_DATABASE_URL: no se permite guardar en disco temporal.');process.exit(1);}
- const app=createApp({demo,origin,dbPath:process.env.AMC_DB_PATH||path.join(ROOT,'data',demo?'demo.sqlite':'amc.sqlite')});app.server.listen(port,demo&&!process.env.RENDER?'127.0.0.1':'0.0.0.0',()=>console.log('AMC conectado: '+origin+(demo?' · entorno de prueba, cuentas de ejemplo':' ')));
-}
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))startServer({createApp,root:ROOT});
