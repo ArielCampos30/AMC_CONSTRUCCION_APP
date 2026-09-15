@@ -67,3 +67,21 @@ test('9.3E resuelve metadata y variante del visor con una sola consulta',async()
  assert.equal(headers['Content-Type'],'image/jpeg');
  assert.equal(String(res.body),'image');
 });
+
+test('11.1 modo mirror evita la espera de Storage y sirve el blob persistido en base',async()=>{
+ const dbCalls=[],downloads=[];
+ const db={prepare(sql){return {get:(...params)=>{
+  dbCalls.push({sql,params});
+  if(sql.includes('SELECT id,owner,mime,EXISTS'))return {id:'photo-1',owner:'admin-1',mime:'image/jpeg',variantExists:false};
+  if(sql==='SELECT body FROM files WHERE id=?')return {body:Buffer.from('db-image')};
+  throw Error('Consulta inesperada: '+sql);
+ }};}};
+ const objectStore={preferStorage:false,download:async key=>{downloads.push(key);return Buffer.from('storage-image');},diagnostics:()=>({})};
+ const access=mediaAccessFeatures({db,all:()=>[],objectStore,appearance:{publicMedia:()=>false},team:{media:()=>false},purchases:{media:()=>false},fieldwork:{media:()=>false},closure:{media:()=>false},staffMessages:()=>[],canAccessRequest:()=>false,canAccessWork:()=>false,clientChatIds:()=>new Set(),fail});
+ const res={setHeader:()=>{},writeHead:()=>{},end:body=>{res.body=body;}};
+ const handled=await access.serve({user:{id:'admin-1',role:'admin'},p:'/media/photo-1',method:'GET',req:{url:'/media/photo-1',headers:{}},res});
+ assert.equal(handled,true);
+ assert.equal(downloads.length,0,'mirror no debe esperar una lectura remota de Storage');
+ assert.equal(dbCalls.length,2);
+ assert.equal(String(res.body),'db-image');
+});
