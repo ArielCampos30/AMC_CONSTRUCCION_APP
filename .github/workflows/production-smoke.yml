@@ -58,10 +58,14 @@ jobs:
           if(h.ok!==true)problems.push('El servidor no informa estado saludable.');
           if(h.database!=='available')problems.push('La base de datos no está disponible.');
           if(Number(h.errors5xx15m||0)>=5)problems.push('Se detectaron '+Number(h.errors5xx15m)+' errores 5xx en los últimos 15 minutos.');
-          if(h.backupStatus==='failed')problems.push('El último intento de respaldo automático falló.');
-          if(typeof h.backupAgeHours==='number'&&h.backupAgeHours>30)problems.push('El último respaldo correcto tiene '+h.backupAgeHours+' horas.');
-          if(h.backupRestoreStatus==='failed')problems.push('La verificación de restauración del respaldo falló.');
-          if(typeof h.backupRestoreAgeHours==='number'&&h.backupRestoreAgeHours>30)problems.push('La última restauración verificada tiene '+h.backupRestoreAgeHours+' horas.');
+          if(h.backupStatus==='failed')problems.push('El último intento de respaldo automático en Supabase falló.');
+          if(typeof h.backupAgeHours==='number'&&h.backupAgeHours>30)problems.push('El último respaldo correcto en Supabase tiene '+h.backupAgeHours+' horas.');
+          if(h.backupRestoreStatus==='failed')problems.push('La verificación de restauración del respaldo de Supabase falló.');
+          if(typeof h.backupRestoreAgeHours==='number'&&h.backupRestoreAgeHours>30)problems.push('La última restauración verificada desde Supabase tiene '+h.backupRestoreAgeHours+' horas.');
+          if(h.backupSecondaryStatus==='failed')problems.push('La segunda copia automática en Cloudflare R2 falló.');
+          if(typeof h.backupSecondaryAgeHours==='number'&&h.backupSecondaryAgeHours>30)problems.push('La última copia correcta en Cloudflare R2 tiene '+h.backupSecondaryAgeHours+' horas.');
+          if(h.backupSecondaryRestoreStatus==='failed')problems.push('La verificación de restauración desde Cloudflare R2 falló.');
+          if(typeof h.backupSecondaryRestoreAgeHours==='number'&&h.backupSecondaryRestoreAgeHours>30)problems.push('La última restauración verificada desde Cloudflare R2 tiene '+h.backupSecondaryRestoreAgeHours+' horas.');
           if(problems.length){
             fs.writeFileSync('/tmp/amc-monitor.txt',problems.join('\n'));
             process.exit(1);
