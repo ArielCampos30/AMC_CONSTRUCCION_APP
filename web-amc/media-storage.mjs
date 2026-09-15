@@ -49,12 +49,10 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
   const key=id(),mirrored=[];
   try{
    if(objectStore.writeEnabled){
-    await objectStore.upload(key,mime,bytes);
-    mirrored.push(key);
-    if(miniature){
-     await objectStore.upload(key+'-thumb','image/jpeg',miniature);
-     mirrored.push(key+'-thumb');
-    }
+    const jobs=[{key,mime,body:bytes},...(miniature?[{key:key+'-thumb',mime:'image/jpeg',body:miniature}]:[])];
+    const results=await Promise.allSettled(jobs.map(job=>objectStore.upload(job.key,job.mime,job.body)));
+    results.forEach((result,i)=>{if(result.status==='fulfilled')mirrored.push(jobs[i].key);});
+    const failed=results.find(result=>result.status==='rejected');if(failed)throw failed.reason;
    }
    transaction(()=>{
     db.prepare('INSERT INTO files VALUES(?,?,?,?)').run(key,user.id,mime,bytes);
