@@ -60,6 +60,8 @@ jobs:
           if(Number(h.errors5xx15m||0)>=5)problems.push('Se detectaron '+Number(h.errors5xx15m)+' errores 5xx en los últimos 15 minutos.');
           if(h.backupStatus==='failed')problems.push('El último intento de respaldo automático falló.');
           if(typeof h.backupAgeHours==='number'&&h.backupAgeHours>30)problems.push('El último respaldo correcto tiene '+h.backupAgeHours+' horas.');
+          if(h.backupRestoreStatus==='failed')problems.push('La verificación de restauración del respaldo falló.');
+          if(typeof h.backupRestoreAgeHours==='number'&&h.backupRestoreAgeHours>30)problems.push('La última restauración verificada tiene '+h.backupRestoreAgeHours+' horas.');
           if(problems.length){
             fs.writeFileSync('/tmp/amc-monitor.txt',problems.join('\n'));
             process.exit(1);
