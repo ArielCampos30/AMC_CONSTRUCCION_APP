@@ -32,17 +32,29 @@ test('database core initializes schema, storage helpers, snapshots and migration
   assert.deepEqual(request.obraIds,['w1']);
   assert.equal(booking.status,'Finalizada');
   core.db.prepare('INSERT INTO users(id,email,name,phone,town,role,password,active) VALUES(?,?,?,?,?,?,?,1)').run('client-snapshot','snapshot@amc.test','Cliente snapshot','','La Falda','client','salt:hash');
+  core.db.prepare('INSERT INTO users(id,email,name,phone,town,role,password,active) VALUES(?,?,?,?,?,?,?,0)').run('employee-inactive','inactive@amc.test','Empleado inactivo','','Valle Hermoso','employee','salt:hash');
   core.put('message','client-snapshot',{id:'m-snapshot',userId:'client-snapshot',requestId:'r1',senderId:'admin',date:'2026-09-12T20:00:00.000Z'});
   core.put('chatRead','client-snapshot',{id:'read-snapshot',requestId:'r1',lastMessageId:'m-snapshot'});
   core.put('post','',{id:'p1',title:'Uno'});
   core.beginStateSnapshot();
   assert.equal(core.activeUsers('client').some(user=>user.id==='client-snapshot'),true);
+  assert.equal(core.activeUsers('employee').some(user=>user.id==='employee-inactive'),false);
+  assert.equal(core.usersByRoles(['employee']).some(user=>user.id==='employee-inactive'&&!user.active),true);
   assert.ok(core.docPosition('m-snapshot')>0);
   assert.equal(core.allEntries('chatRead').find(entry=>entry.value.id==='read-snapshot')?.owner,'client-snapshot');
+  core.db.prepare('UPDATE users SET name=? WHERE id=?').run('Cliente cambiado','client-snapshot');
   core.put('post','',{id:'p2',title:'Dos'});
+  core.put('request','u1',{...core.get('request','r1'),status:'Cambiada fuera del snapshot'});
   assert.deepEqual(core.all('post').map(p=>p.id),['p1']);
+  assert.equal(core.get('request','r1').status,'Cerrada');
+  assert.equal(core.userById('client-snapshot').name,'Cliente snapshot');
+  assert.equal(core.db.prepare('SELECT name FROM users WHERE id=?').get('client-snapshot').name,'Cliente snapshot');
+  const staff=core.db.prepare("SELECT id,name,email,phone,active,role FROM users WHERE role IN ('employee','admin') ORDER BY name").all();
+  assert.equal(staff.find(user=>user.id==='employee-inactive')?.active,0);
   core.endStateSnapshot();
   assert.deepEqual(new Set(core.all('post').map(p=>p.id)),new Set(['p1','p2']));
+  assert.equal(core.get('request','r1').status,'Cambiada fuera del snapshot');
+  assert.equal(core.userById('client-snapshot').name,'Cliente cambiado');
  }finally{core.db.close();}
 });
 
