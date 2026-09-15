@@ -1,4 +1,5 @@
-const POLL_TICK_MS=5000,CLIENT_BACKGROUND_POLL_MS=12000;
+const POLL_TICK_MS=5000,CHAT_POLL_MS=5000,BACKGROUND_POLL_MS=15000;
+const isChatPage=page=>['mensajes','chat-admin','chat-cliente','chat-equipo'].includes(page)||page.startsWith('chat/')||page.startsWith('chat-admin/')||page.startsWith('chat-equipo/');
 
 export function createAppSyncRuntime({reload,getState,getPage,isDirty,isLoggingOut,isHidden,hasEstimator,stateSignature,syncChatAccess,render,pollState,windowTarget=globalThis.window,documentTarget=globalThis.document,schedule=(handler,delay)=>globalThis.setInterval(handler,delay),now=()=>Date.now()}){
  let refreshing=false,polling=false,lastBackgroundPoll=0;
@@ -16,7 +17,7 @@ export function createAppSyncRuntime({reload,getState,getPage,isDirty,isLoggingO
  async function poll(){
   const current=getState();
   if(!current.user||isLoggingOut()||isHidden()||polling)return;
-  const page=getPage(),chatPage=['mensajes','chat-admin','chat-cliente','chat-equipo'].includes(page)||page.startsWith('chat/'),minimum=current.user.role==='client'&&!chatPage?CLIENT_BACKGROUND_POLL_MS:POLL_TICK_MS,stamp=now();
+  const page=getPage(),minimum=isChatPage(page)?CHAT_POLL_MS:BACKGROUND_POLL_MS,stamp=now();
   if(stamp-lastBackgroundPoll<minimum)return;
   lastBackgroundPoll=stamp;polling=true;
   try{await pollState();}catch{}finally{polling=false;}
