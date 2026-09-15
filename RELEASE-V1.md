@@ -28,8 +28,10 @@ Nunca guardar valores de secretos en Git, logs, documentación o screenshots.
 
 - `GET /healthz` valida proceso y consulta a la base.
 - Las respuestas incluyen `X-Request-ID`.
+- `/healthz` expone estado y antigüedad del último backup y de la última restauración verificada.
 - Los logs del servidor registran método, ruta, estado y duración, sin cuerpo privado.
 - Administración → Más → Estado de AMC muestra versión desplegada, motor, cantidad de registros/archivos y dispositivos.
+- Render producción debe configurar `/healthz` como Health Check Path nativo.
 
 ## Android release
 
@@ -41,17 +43,26 @@ La WebView release sólo carga `BuildConfig.AMC_BACKEND_URL`; enlaces HTTP exter
 
 `secure-backup.mjs` usa AES-256-GCM y valida cada frame. El backup contiene cuentas, documentos, configuración y archivos, pero no restaura sesiones ni dispositivos.
 
-`backup-supabase.mjs` crea primero un backup cifrado, lo verifica y recién después lo sube a un bucket privado de Supabase Storage. Por defecto conserva 30 días; el valor se controla con `AMC_BACKUP_RETENTION_DAYS`.
+El cron **AMC Backup** ejecuta `backup-supabase.mjs` diariamente a las 06:00 UTC. Crea el archivo cifrado, lo verifica, lo sube al bucket privado y después vuelve a descargar esa misma copia. La copia descargada se restaura en una base temporal vacía y se comparan usuarios, documentos, archivos, configuración y bytes multimedia con el origen. Sólo una ejecución que supera esa prueba deja `backupRestoreStatus=ok`.
 
-Nunca restaurar sobre producción con datos. La herramienta de restauración exige una base vacía. Para rollback de código, volver al commit anterior; restaurar base solamente si una migración de datos realmente lo requiere.
+Por defecto se conservan 30 días; el valor se controla con `AMC_BACKUP_RETENTION_DAYS`. El monitor de producción alerta si el último backup correcto o la última restauración verificada superan 30 horas, o si una ejecución falla.
+
+Nunca restaurar sobre producción con datos. La herramienta de restauración exige una base vacía. Para rollback de código, volver al commit anterior; restaurar base solamente si los datos están dañados o se perdió información y se aceptó el punto de recuperación elegido.
+
+El bucket de backup está actualmente en el mismo proyecto Supabase que la base. Para pérdida total del proyecto/proveedor todavía hace falta una segunda copia cifrada independiente. Ver `web-amc/RECUPERACION-ANTE-DESASTRE.md`.
+
+## Protección de la rama principal
+
+`main` debe operar con branch protection/ruleset: cambios mediante PR, checks de CI requeridos, sin force-push y sin borrado. Si la plataforma no permite aplicar esta configuración por automatización, debe verificarse en GitHub antes de considerar cerrado el control operativo.
 
 ## Publicación
 
 Después de CI verde:
 
-1. disparar manualmente el deploy de Render;
+1. disparar manualmente el deploy de Render del SHA exacto de `main`;
 2. esperar estado `live`;
 3. comprobar `/healthz`;
 4. abrir producción en Chrome y verificar ingreso, navegación y versión;
 5. probar un flujo de negocio breve;
-6. si Android cambió, instalar el APK release generado y verificar notificación, deep-link, cámara y PDF.
+6. revisar logs y ausencia de nuevos 5xx;
+7. si Android cambió, instalar el APK release generado y verificar notificación, deep-link, cámara y PDF.
