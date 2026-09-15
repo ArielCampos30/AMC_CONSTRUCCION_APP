@@ -71,20 +71,30 @@ try:
     wait("return !!document.querySelector('#amc-chat-dialog .message[data-message-id] .mini-photos img[src*=\"?thumb=1\"]')",30)
     messages=api('/api/staff-chat/messages',None,'GET');sent=[m for m in messages.get('messages',[]) if m.get('text')==EMPLOYEE_MESSAGE]
     assert sent and len(sent[-1].get('photos') or [])==1,messages
+    js("""window.__amcViewerFlightAdds=0;window.__amcViewerFlightObserver?.disconnect?.();window.__amcViewerFlightObserver=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.nodeType===1&&(node.matches?.('.amc-viewer-flight')||node.querySelector?.('.amc-viewer-flight')))window.__amcViewerFlightAdds++;});window.__amcViewerFlightObserver.observe(document.body,{childList:true,subtree:true});return true;""")
     shared_open=js_async("""const done=arguments[arguments.length-1],thumb=document.querySelector('#amc-chat-dialog .message[data-message-id] .mini-photos img');thumb.click();const started=performance.now(),timer=setInterval(()=>{if(document.querySelector('.amc-photo-viewer[open] .amc-viewer-flight')){clearInterval(timer);done(true);}else if(performance.now()-started>700){clearInterval(timer);done(false);}},10);""")
     assert shared_open,'No se observó la transición compartida miniatura→visor'
     wait("return !!document.querySelector('.amc-photo-viewer[open] .amc-viewer-stage img.amc-viewer-image')")
+    time.sleep(.45)
+    assert js("return window.__amcViewerFlightAdds===1"),js("return window.__amcViewerFlightAdds")
     assert js("return !!document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"] svg')")
     assert js("return !!document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Compartir foto\"]')")
     assert js("return !!document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Guardar foto\"]')")
+    responsive=js("""const dialog=document.querySelector('.amc-photo-viewer[open]'),bar=dialog.querySelector('.amc-viewer-bar'),r=dialog.getBoundingClientRect();return {width:r.width,height:r.height,top:r.top,left:r.left,viewportWidth:innerWidth,viewportHeight:innerHeight,barHeight:bar.getBoundingClientRect().height};""")
+    assert responsive['width']<responsive['viewportWidth'] and responsive['height']<responsive['viewportHeight'],responsive
+    assert responsive['top']>0 and responsive['left']>0,responsive
+    assert responsive['barHeight']<=58,responsive
     js("""const stage=document.querySelector('.amc-photo-viewer[open] .amc-viewer-stage'),r=stage.getBoundingClientRect();stage.dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true,clientX:r.left+r.width*.72,clientY:r.top+r.height*.35}));return true;""")
     wait("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform.includes('scale(2.6)')")
     transform=js("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform")
     assert 'translate3d(0px,0px,0)' not in transform,transform
-    shared_close=js_async("""const done=arguments[arguments.length-1],button=document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]');button.click();const started=performance.now(),timer=setInterval(()=>{if(document.querySelector('.amc-photo-viewer[open] .amc-viewer-flight')){clearInterval(timer);done(true);}else if(performance.now()-started>900){clearInterval(timer);done(false);}},10);""")
+    shared_close=js_async("""const done=arguments[arguments.length-1],button=document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',clientX:r.left+r.width/2,clientY:r.top+r.height/2}));button.click();const started=performance.now(),timer=setInterval(()=>{if(document.querySelector('.amc-photo-viewer[open] .amc-viewer-flight')){clearInterval(timer);done(true);}else if(performance.now()-started>900){clearInterval(timer);done(false);}},10);""")
     assert shared_close,'No se observó la transición compartida visor→miniatura'
     wait("return !document.querySelector('.amc-photo-viewer[open]')")
-    print('CHAT EMPLEADO FLOTANTE MULTIMEDIA OK:',json.dumps({'messages':len(messages.get('messages',[])),'photos':len(sent[-1].get('photos') or []),'sharedTransition':True,'zoomTransform':transform}))
+    assert js("return !!document.querySelector('#amc-chat-dialog[open] .floating-staff-message')"),'Cerrar la foto no debe cerrar el chat flotante'
+    assert js("return window.__amcViewerFlightAdds===2"),js("return window.__amcViewerFlightAdds")
+    js("window.__amcViewerFlightObserver?.disconnect?.();return true;")
+    print('CHAT EMPLEADO FLOTANTE MULTIMEDIA OK:',json.dumps({'messages':len(messages.get('messages',[])),'photos':len(sent[-1].get('photos') or []),'sharedTransition':True,'singleOpenTransition':True,'chatStaysOpen':True,'responsive':responsive,'zoomTransform':transform}))
 finally:
     try: call('DELETE',prefix)
     except Exception: pass
