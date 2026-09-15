@@ -26,7 +26,7 @@ test('9.3D/9.3E reduce payload multimedia y round-trips PostgreSQL sin cambiar e
  assert.match(storage,/event:'media-upload-performance'/);
  assert.match(storage,/quotaMs,storageMs,dbMs,totalMs/);
  assert.match(access,/candidateVariant=params\.has\('thumb'\)\?'thumb':params\.has\('view'\)\?'view'/);
- assert.match(access,/EXISTS\(SELECT 1 FROM files variant WHERE variant\.id=\?\) AS variantExists/);
+ assert.match(access,/EXISTS\(SELECT 1 FROM files variant WHERE variant\.id=\?\) AS "variantExists"/);
  assert.doesNotMatch(access,/SELECT 1 AS ok FROM files WHERE id=\?/);
  assert.match(viewer,/url\.searchParams\.set\('view','1'\)/);
  assert.doesNotMatch(viewer,/Mejorando calidad/);
