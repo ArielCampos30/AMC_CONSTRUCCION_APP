@@ -58,6 +58,9 @@ jobs:
           if(h.ok!==true)problems.push('El servidor no informa estado saludable.');
           if(h.database!=='available')problems.push('La base de datos no está disponible.');
           if(Number(h.errors5xx15m||0)>=5)problems.push('Se detectaron '+Number(h.errors5xx15m)+' errores 5xx en los últimos 15 minutos.');
+          if(Number(h.stateRequests15m||0)>=3&&typeof h.stateP95Ms==='number'&&h.stateP95Ms>2500)problems.push('/api/state tiene P95 de '+h.stateP95Ms+' ms en los últimos 15 minutos.');
+          if(Number(h.mediaRequests15m||0)>=2&&typeof h.mediaP95Ms==='number'&&h.mediaP95Ms>5000)problems.push('Las lecturas multimedia tienen P95 de '+h.mediaP95Ms+' ms en los últimos 15 minutos.');
+          if(typeof h.mediaMaxMs==='number'&&h.mediaMaxMs>15000)problems.push('Se detectó una lectura multimedia extrema de '+h.mediaMaxMs+' ms en los últimos 15 minutos.');
           if(h.backupStatus==='failed')problems.push('El último intento de respaldo automático en Supabase falló.');
           if(typeof h.backupAgeHours==='number'&&h.backupAgeHours>30)problems.push('El último respaldo correcto en Supabase tiene '+h.backupAgeHours+' horas.');
           if(h.backupRestoreStatus==='failed')problems.push('La verificación de restauración del respaldo de Supabase falló.');
