@@ -40,7 +40,7 @@ export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchase
   const started=Date.now(),key=p.split('/')[2],params=new URL(req.url,'http://localhost').searchParams,
    candidateVariant=params.has('thumb')?'thumb':params.has('view')?'view':null,
    candidateKey=candidateVariant?key+'-'+candidateVariant:key,
-   metadataStarted=Date.now(),file=db.prepare('SELECT id,owner,mime,EXISTS(SELECT 1 FROM files variant WHERE variant.id=?) AS variantExists FROM files WHERE id=?').get(candidateKey,key),metadataMs=Date.now()-metadataStarted;
+   metadataStarted=Date.now(),file=db.prepare('SELECT id,owner,mime,EXISTS(SELECT 1 FROM files variant WHERE variant.id=?) AS "variantExists" FROM files WHERE id=?').get(candidateKey,key),metadataMs=Date.now()-metadataStarted;
   if(!file)fail(404,'Archivo no encontrado.');
   const authStarted=Date.now(),authorized=canAccessPrivateFile(user,p,file),authMs=Date.now()-authStarted;
   if(!authorized){
