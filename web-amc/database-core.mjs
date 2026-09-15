@@ -17,10 +17,22 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
  if(dbPath!==':memory:')mkdirSync(path.dirname(dbPath),{recursive:true});
  const testUrl=process.env.NODE_ENV==='test'?process.env.AMC_TEST_DATABASE_URL:null;
  const remoteUrl=testUrl||process.env.AMC_DATABASE_URL;
- const db=remoteUrl?new PostgresDatabase(remoteUrl,{schema:testUrl?'amc_test_'+(dbPath===':memory:'?id().replaceAll('-',''):sha(dbPath).slice(0,24)):'amc_data',test:!!testUrl,caFile:process.env.AMC_DATABASE_CA_FILE}):new DatabaseSync(dbPath);
+ let stateRows=null,statePositions=null,stateUsers=null,stateUsersById=null;
+ const rawDb=remoteUrl?new PostgresDatabase(remoteUrl,{schema:testUrl?'amc_test_'+(dbPath===':memory:'?id().replaceAll('-',''):sha(dbPath).slice(0,24)):'amc_data',test:!!testUrl,caFile:process.env.AMC_DATABASE_CA_FILE}):new DatabaseSync(dbPath);
+ const normalizeSql=sql=>String(sql||'').replace(/\s+/g,' ').trim();
+ const db=new Proxy(rawDb,{get(target,prop){
+  if(prop==='prepare')return sql=>{
+   if(stateUsers){
+    const normalized=normalizeSql(sql);
+    if(normalized==="SELECT id,name,email,phone,active,role FROM users WHERE role IN ('employee','admin') ORDER BY name")return {all:()=>stateUsers.filter(user=>user.role==='employee'||user.role==='admin').sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es')).map(({id,name,email,phone,active,role})=>({id,name,email,phone,active:active?1:0,role}))};
+    if(normalized==='SELECT name FROM users WHERE id=?')return {get:key=>{const user=stateUsersById.get(key);return user?{name:user.name}:undefined;}};
+   }
+   return target.prepare(sql);
+  };
+  const value=Reflect.get(target,prop,target);return typeof value==='function'?value.bind(target):value;
+ }});
  db.exec(schema);
  if(!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='active'))db.exec('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
- let stateRows=null,statePositions=null,stateUsers=null,stateUsersById=null;
  const all=(kind,owner)=>stateRows?(stateRows.get(kind)||[]).filter(r=>owner===undefined||r.owner===owner).map(r=>r.value):db.prepare('SELECT body FROM docs WHERE kind=?'+(owner===undefined?'':' AND owner=?')+' ORDER BY rowid DESC').all(...(owner===undefined?[kind]:[kind,owner])).map(r=>JSON.parse(r.body));
  const allEntries=(kind,owner)=>stateRows?(stateRows.get(kind)||[]).filter(r=>owner===undefined||r.owner===owner).map(r=>({owner:r.owner,value:r.value})):db.prepare('SELECT owner,body FROM docs WHERE kind=?'+(owner===undefined?'':' AND owner=?')+' ORDER BY rowid DESC').all(...(owner===undefined?[kind]:[kind,owner])).map(r=>({owner:r.owner,value:JSON.parse(r.body)}));
  const activeUsers=role=>stateUsers?stateUsers.filter(user=>user.active&&(!role||user.role===role)):db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE active=1'+(role?' AND role=?':'')+' ORDER BY name').all(...(role?[role]:[]));
