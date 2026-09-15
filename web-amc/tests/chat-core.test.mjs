@@ -99,9 +99,16 @@ test('client chat is permanent by user and works without any request',()=>{
 });
 
 test('staff chat keeps idempotency, unread state and read markers',()=>{
- const {database,chat,sent,notices}=setup();
+ const {database,chat,sent,notices,all}=setup();
  try{
   const admin={id:'admin',role:'admin',name:'AMC'},employee={id:'employee',role:'employee',name:'Operario'};
+  const tooMany={employeeId:'employee',text:'Fotos',photos:['f1','f2','f3','f4','f5'],idempotencyKey:'staff-core-too-many'};
+  assert.throws(
+   ()=>chat.routeAfterBody({p:'/api/staff-chat/messages',method:'POST',b:tooMany,user:admin,url:new URL('http://localhost/api/staff-chat/messages'),res:{}}),
+   error=>error.status===400&&error.message==='Podés adjuntar hasta cuatro fotos por mensaje.'
+  );
+  assert.equal(all('staffMessage','employee').length,0);
+
   const payload={employeeId:'employee',text:'Nuevo destino',idempotencyKey:'staff-core-001'};
   assert.equal(chat.routeAfterBody({p:'/api/staff-chat/messages',method:'POST',b:payload,user:admin,url:new URL('http://localhost/api/staff-chat/messages'),res:{}}),true);
   const first=sent.at(-1);
