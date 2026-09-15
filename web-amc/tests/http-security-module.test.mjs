@@ -36,8 +36,9 @@ test('server delega la política HTTP sin duplicar sus cabeceras',async()=>{
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../http-security.mjs',import.meta.url),'utf8')
  ]);
- assert.match(server,/from '.\/http-security\.mjs'/);
- assert.match(server,/applyHttpSecurity\(\{res,origin,pathname:p\}\)/);
+ const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
+ assert.match(dispatcher,/from '.\/http-security\.mjs'/);
+ assert.match(dispatcher,/applyHttpSecurity\(\{res,origin,pathname:p\}\)/);
  assert.doesNotMatch(server,/setHeader\('Content-Security-Policy'/);
  assert.match(module,/Strict-Transport-Security/);
  assert.match(module,/Content-Security-Policy/);

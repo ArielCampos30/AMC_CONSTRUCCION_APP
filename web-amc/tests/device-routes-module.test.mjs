@@ -7,9 +7,10 @@ test('registro de dispositivos queda fuera del router principal',async()=>{
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../device-routes.mjs',import.meta.url),'utf8')
  ]);
+ const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
  assert.match(server,/import \{deviceRoutes\} from '\.\/device-routes\.mjs'/);
  assert.match(server,/const handleDevices=deviceRoutes\(/);
- assert.match(server,/if\(handleDevices\(\{p,method,b,user,res\}\)\)return/);
+ assert.match(dispatcher,/if\(handleDevices\(\{p,method,b,user,res\}\)\)return/);
  assert.doesNotMatch(server,/method==='POST'&&p==='\/api\/devices'/);
  assert.match(devices,/p!=='\/api\/devices'/);
  assert.match(devices,/validSubscription/);

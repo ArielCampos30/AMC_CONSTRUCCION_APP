@@ -9,6 +9,7 @@ test('Compras tiene dominio propio y no vuelve a Team',async()=>{
  const [team,purchases,server,state,media]=await Promise.all([
   source('team.mjs'),source('purchases.mjs'),source('server.mjs'),source('state-routes.mjs'),source('media-access.mjs')
  ]);
+ const dispatcher=await source('server-request-dispatcher.mjs');
  assert.doesNotMatch(team,/\/api\/purchases/);
  assert.doesNotMatch(team,/purchaseView/);
  assert.doesNotMatch(team,/purchases:/);
@@ -16,7 +17,7 @@ test('Compras tiene dominio propio y no vuelve a Team',async()=>{
  assert.match(purchases,/\/api\/purchases/);
  assert.match(purchases,/purchases:purchaseView\(user\)/);
  assert.match(server,/const purchases=purchaseFeatures/);
- assert.match(server,/await purchases\.route/);
+ assert.match(dispatcher,/await purchases\.route/);
  assert.match(state,/\.\.\.purchases\.state\(user\)/);
  assert.match(media,/purchases\.media\(user,p\)/);
 });

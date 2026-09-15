@@ -7,9 +7,10 @@ test('presupuestos y obras quedan fuera del router principal',async()=>{
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../quote-work-routes.mjs',import.meta.url),'utf8')
  ]);
+ const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
  assert.match(server,/import \{quoteWorkRoutes\} from '\.\/quote-work-routes\.mjs'/);
  assert.match(server,/const handleQuoteWork=quoteWorkRoutes\(/);
- assert.match(server,/if\(await handleQuoteWork\(\{p,method,b,user,res\}\)\)return/);
+ assert.match(dispatcher,/if\(await handleQuoteWork\(\{p,method,b,user,res\}\)\)return/);
  assert.doesNotMatch(server,/if\(method==='POST'&&p==='\/api\/quotes'\)/);
  assert.match(module,/p==='\/api\/quotes'/);
  assert.match(module,/\/accept-manual\$/);
