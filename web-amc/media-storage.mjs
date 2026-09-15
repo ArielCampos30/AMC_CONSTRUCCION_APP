@@ -1,4 +1,12 @@
 export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fail,id,now}){
+ const logStorageError=(event,key,error)=>{
+  if(process.env.NODE_ENV==='test')return;
+  console.error(JSON.stringify({
+   level:'error',event,fileId:key,error:error?.code||error?.name||'Error',operation:error?.storageOperation||'',
+   reason:error?.storageReason||'',storageStatus:error?.storageHttpStatus??null,
+   storageDurationMs:Number.isFinite(error?.storageDurationMs)?error.storageDurationMs:null
+  }));
+ };
  const safeFile=(user,key,mime)=>{
   const file=db.prepare('SELECT owner,mime FROM files WHERE id=?').get(key);
   if(!file||file.owner!==user.id||(mime&&!file.mime.startsWith(mime)))fail(400,'Archivo inválido o sin acceso.');
@@ -14,10 +22,7 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
    if(used)continue;
    if(objectStore.writeEnabled){
     try{await objectStore.remove([key,key+'-thumb']);}
-    catch(error){
-     if(process.env.NODE_ENV!=='test')console.error(JSON.stringify({level:'error',event:'file-storage-cleanup',fileId:key,error:error.code||error.name||'Error'}));
-     continue;
-    }
+    catch(error){logStorageError('file-storage-cleanup',key,error);continue;}
    }
    transaction(()=>{
     db.prepare('DELETE FROM files WHERE id=? OR id=?').run(key,key+'-thumb');
@@ -57,10 +62,9 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
     put('fileUpload',user.id,{id:'upload-'+key,fileId:key,date:now()});
    });
   }catch(error){
+   if(error?.code==='AMC_STORAGE')logStorageError('file-storage-upload',key,error);
    if(mirrored.length)try{await objectStore.remove(mirrored);}
-   catch(cleanupError){
-    if(process.env.NODE_ENV!=='test')console.error(JSON.stringify({level:'error',event:'file-storage-rollback',fileId:key,error:cleanupError.code||cleanupError.name||'Error'}));
-   }
+   catch(cleanupError){logStorageError('file-storage-rollback',key,cleanupError);}
    throw error;
   }
   return {id:key,url:'/media/'+key,mime,size:bytes.length};

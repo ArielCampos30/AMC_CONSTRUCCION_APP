@@ -19,10 +19,11 @@ test('unused uploads are collected after seven days while referenced media is ke
 
 
 test('dual-write mirrors accepted uploads and prefer-storage serves the external copy',async()=>{
- const stored=new Map(),fileStore={
+ const stored=new Map();let downloads=0;
+ const fileStore={
   mode:'prefer-storage',writeEnabled:true,preferStorage:true,
   async upload(id,mime,body){stored.set(id,{mime,body:Buffer.from(body)});return true;},
-  async download(id){const row=stored.get(id);if(!row)throw Object.assign(Error('missing'),{status:404});return Buffer.from(row.body);},
+  async download(id){downloads++;const row=stored.get(id);if(!row)throw Object.assign(Error('missing'),{status:404});return Buffer.from(row.body);},
   async remove(ids){for(const id of ids)stored.delete(id);return ids.length;}
  };
  const app=createApp({dbPath:':memory:',origin,fileStore});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';
@@ -32,6 +33,8 @@ test('dual-write mirrors accepted uploads and prefer-storage serves the external
   r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:form});data=await r.json();assert.equal(r.status,201,JSON.stringify(data));assert.deepEqual(stored.get(data.id).body,jpeg);
   app.db.prepare('UPDATE files SET body=? WHERE id=?').run(Buffer.from([255,216,255,224,9,9,9,255,217]),data.id);
   r=await fetch(base+data.url,{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),jpeg);
+  const etag=r.headers.get('etag'),downloadsBefore=downloads;assert.equal(etag,'"'+data.id+'"');
+  r=await fetch(base+data.url,{headers:{Cookie:cookie,'If-None-Match':etag}});assert.equal(r.status,304);assert.equal(downloads,downloadsBefore,'un 304 válido no debe descargar nuevamente desde Object Storage');
  }finally{await new Promise(r=>app.server.close(r));}
 });
 
