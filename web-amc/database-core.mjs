@@ -42,7 +42,7 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
   if(stateUsers)return stateUsers.filter(user=>list.includes(user.role)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es'));
   return db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE role IN ('+list.map(()=>'?').join(',')+') ORDER BY name').all(...list).map(user=>({...user,active:Number(user.active)!==0}));
  };
- const userById=key=>stateUsersById?.get(key)||(()=>{const user=db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE id=?').get(key);return user?{...user,active:Number(user.active)!==0}:undefined;})();
+ const userById=key=>stateUsersById?stateUsersById.get(key):(()=>{const user=db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE id=?').get(key);return user?{...user,active:Number(user.active)!==0}:undefined;})();
  const docPosition=key=>statePositions?.get(key)||db.prepare('SELECT rowid FROM docs WHERE id=?').get(key)?.rowid||0;
  const get=(kind,key)=>{if(stateRows){const row=(stateRows.get(kind)||[]).find(item=>item.id===key);if(!row)fail(404,'No encontrado.');return row.value;}const r=db.prepare('SELECT body FROM docs WHERE kind=? AND id=?').get(kind,key);if(!r)fail(404,'No encontrado.');return JSON.parse(r.body);};
  const put=(kind,owner,body)=>{db.prepare('INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body,owner=excluded.owner').run(body.id,kind,owner,JSON.stringify(body));return body;};
