@@ -36,43 +36,48 @@ document.addEventListener('click',e=>{
  const share=document.createElement('button');share.type='button';share.className='amc-viewer-control';share.innerHTML=svg('share')+'<span class="amc-viewer-action-label">Compartir</span>';share.setAttribute('aria-label','Compartir foto');share.title='Compartir foto';
  const save=document.createElement('button');save.type='button';save.className='amc-viewer-control';save.innerHTML=svg('save')+'<span class="amc-viewer-action-label">Guardar</span>';save.setAttribute('aria-label','Guardar foto');save.title='Guardar foto';
  const stage=document.createElement('div');stage.className='amc-viewer-stage';
- const img=new Image();img.className='amc-viewer-image';img.draggable=false;img.alt='Foto ampliada';
+ const frame=document.createElement('div');frame.className='amc-viewer-frame';
+ const previewImg=new Image();previewImg.className='amc-viewer-image amc-viewer-preview';previewImg.draggable=false;previewImg.alt='Foto ampliada';
+ const qualityImg=new Image();qualityImg.className='amc-viewer-image amc-viewer-quality';qualityImg.draggable=false;qualityImg.alt='';qualityImg.setAttribute('aria-hidden','true');
  const status=document.createElement('span');status.className='amc-viewer-status';
- stage.append(img,status);bar.append(close,title,share,save);dialog.append(bar,stage);document.body.append(dialog);
+ frame.append(previewImg,qualityImg);stage.append(frame,status);bar.append(close,title,share,save);dialog.append(bar,stage);document.body.append(dialog);
 
  const currentLink=()=>links[index];
  const currentThumb=()=>currentLink()?.querySelector('img');
  const currentSource=()=>currentLink()?.href||'';
  const updateZoomClass=()=>dialog.classList.toggle('amc-zoomed',scale>1.01);
- const bounds=()=>{const iw=img.clientWidth||1,ih=img.clientHeight||1,s=stage.getBoundingClientRect();return {x:Math.max(0,(iw*scale-s.width)/2+16),y:Math.max(0,(ih*scale-s.height)/2+16)};};
+ const bounds=()=>{const iw=frame.clientWidth||1,ih=frame.clientHeight||1,s=stage.getBoundingClientRect();return {x:Math.max(0,(iw*scale-s.width)/2+16),y:Math.max(0,(ih*scale-s.height)/2+16)};};
  const constrain=()=>{if(scale<=1){x=0;y=0;return;}const b=bounds();x=clamp(x,-b.x,b.x);y=clamp(y,-b.y,b.y);};
- const transform=(animate=false)=>{constrain();img.style.transition=animate?'transform .18s cubic-bezier(.2,.8,.2,1)':'';img.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`;updateZoomClass();if(animate)setTimeout(()=>{img.style.transition='';},190);};
+ const transform=(animate=false)=>{constrain();const transition=animate?'transform .18s cubic-bezier(.2,.8,.2,1)':'';const value=`translate3d(${x}px,${y}px,0) scale(${scale})`;for(const image of [previewImg,qualityImg]){image.style.transition=transition;image.style.transform=value;}updateZoomClass();if(animate)setTimeout(()=>{for(const image of [previewImg,qualityImg])image.style.transition='';},190);};
  const reset=(animate=false)=>{scale=1;x=0;y=0;transform(animate);};
  const setControls=hidden=>{controlsHidden=!!hidden;dialog.classList.toggle('amc-controls-hidden',controlsHidden);};
  const toggleControls=()=>setControls(!controlsHidden);
  const zoomAround=(clientX,clientY,nextScale)=>{const rect=stage.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,oldScale=scale||1,ratio=nextScale/oldScale;x=(clientX-cx)*(1-ratio)+x*ratio;y=(clientY-cy)*(1-ratio)+y*ratio;scale=nextScale;transform(true);};
  const toggleZoomAt=(clientX,clientY)=>{if(scale>1.05)reset(true);else zoomAround(clientX,clientY,2.6);};
+ const displayedSrc=()=>qualityImg.classList.contains('amc-quality-ready')?(qualityImg.currentSrc||qualityImg.src):(previewImg.currentSrc||previewImg.src||currentThumb()?.currentSrc||currentThumb()?.src||currentSource());
 
  const show=(n,{animateFrom=null}={})=>{
   index=(n+links.length)%links.length;reset();setControls(false);const token=++loadToken,a=currentLink(),source=a.href,thumb=currentThumb(),preview=thumb?.currentSrc||thumb?.src||source,label=(index+1)+' de '+links.length;
+  const thumbRatio=(thumb?.naturalWidth&&thumb?.naturalHeight)?thumb.naturalWidth/thumb.naturalHeight:Math.max(.01,(thumb?.getBoundingClientRect().width||1)/(thumb?.getBoundingClientRect().height||1)),target=fittedRect(stage,thumbRatio);
+  frame.style.width=target.width+'px';frame.style.height=target.height+'px';frame.classList.toggle('amc-image-transitioning',!!animateFrom&&!prefersReducedMotion());
+  qualityImg.classList.remove('amc-quality-ready');qualityImg.removeAttribute('src');
   let openingStarted=false,openingPromise=Promise.resolve();
   who.textContent=a.dataset.sender||thumb?.alt||'Foto AMC';when.textContent=a.dataset.date?new Date(a.dataset.date).toLocaleString('es-AR'):label;status.textContent=preview!==source?'Mejorando calidad…':label;
-  img.classList.toggle('amc-image-transitioning',!!animateFrom&&!prefersReducedMotion());
   const revealOnce=()=>{
    if(!animateFrom||openingStarted||token!==loadToken)return openingPromise;
    openingStarted=true;
-   openingPromise=(async()=>{const ratio=(thumb?.naturalWidth||img.naturalWidth||1)/(thumb?.naturalHeight||img.naturalHeight||1),from=visibleRect(animateFrom),to=fittedRect(stage,ratio);if(from)await animateFlight(preview,from,to,{opening:true});if(token===loadToken)img.classList.remove('amc-image-transitioning');})();
+   openingPromise=(async()=>{const from=visibleRect(animateFrom),to=frame.getBoundingClientRect();if(from)await animateFlight(preview,from,to,{opening:true});if(token===loadToken)frame.classList.remove('amc-image-transitioning');})();
    return openingPromise;
   };
-  img.onerror=()=>{if(token===loadToken){status.textContent='No se pudo cargar. Reintentá.';img.classList.remove('amc-image-transitioning');}};
-  img.onload=()=>{if(token===loadToken&&img.src===source)status.textContent=label;void revealOnce();};
-  img.src=preview;if(img.complete&&img.naturalWidth)queueMicrotask(()=>void revealOnce());
-  if(preview!==source){const original=new Image();original.onload=async()=>{if(token!==loadToken)return;try{await original.decode?.();}catch{}await revealOnce();if(token!==loadToken)return;img.src=source;status.textContent=label;};original.onerror=()=>{if(token===loadToken){void revealOnce();status.textContent=label;}};original.src=source;}else status.textContent=label;
+  previewImg.onerror=()=>{if(token===loadToken){status.textContent='No se pudo cargar. Reintentá.';frame.classList.remove('amc-image-transitioning');}};
+  previewImg.onload=()=>{void revealOnce();};
+  previewImg.src=preview;if(previewImg.complete&&previewImg.naturalWidth)queueMicrotask(()=>void revealOnce());
+  if(preview!==source){qualityImg.onload=async()=>{if(token!==loadToken)return;try{await qualityImg.decode?.();}catch{}await revealOnce();if(token!==loadToken)return;qualityImg.classList.add('amc-quality-ready');status.textContent=label;};qualityImg.onerror=()=>{if(token===loadToken){void revealOnce();status.textContent=label;}};qualityImg.src=source;}else status.textContent=label;
   const before=links[(index-1+links.length)%links.length]?.href,after=links[(index+1)%links.length]?.href;for(const candidate of new Set([before,after]))if(candidate&&candidate!==source){const preload=new Image();preload.src=candidate;}
  };
 
  const finish=()=>{loadToken++;clearTimeout(tapTimer);removeBack?.();dialog.remove();currentLink()?.focus?.({preventScroll:true});};
- const closeViewer=async()=>{if(closing)return;closing=true;clearTimeout(tapTimer);if(scale>1.01){reset(true);await sleep(prefersReducedMotion()?0:150);}const thumb=currentThumb(),to=visibleRect(thumb),from=img.getBoundingClientRect(),src=img.currentSrc||img.src||thumb?.currentSrc||thumb?.src;setControls(true);img.classList.add('amc-image-transitioning');if(to&&src)await animateFlight(src,from,to,{opening:false});dialog.close();};
+ const closeViewer=async()=>{if(closing)return;closing=true;clearTimeout(tapTimer);if(scale>1.01){reset(true);await sleep(prefersReducedMotion()?0:150);}const thumb=currentThumb(),to=visibleRect(thumb),from=frame.getBoundingClientRect(),src=displayedSrc();setControls(true);frame.classList.add('amc-image-transitioning');if(to&&src)await animateFlight(src,from,to,{opening:false});dialog.close();};
  close.onclick=closeViewer;dialog.addEventListener('cancel',ev=>{ev.preventDefault();closeViewer();});dialog.addEventListener('close',finish,{once:true});removeBack=window.AMCRegisterBackHandler(()=>{closeViewer();return true;});
 
  share.onclick=async()=>{const response=await fetch(currentSource()),blob=await response.blob(),file=new File([blob],'Foto-AMC.'+(blob.type.split('/')[1]||'jpg'),{type:blob.type});if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})))await navigator.share({title:'Foto de AMC',files:[file]});else download(currentSource());};
