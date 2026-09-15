@@ -79,7 +79,13 @@ try:
     js("""window.__amcViewerFlightAdds=0;window.__amcViewerFlightObserver?.disconnect?.();window.__amcViewerFlightObserver=new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes)if(node.nodeType===1&&(node.matches?.('.amc-viewer-flight')||node.querySelector?.('.amc-viewer-flight')))window.__amcViewerFlightAdds++;});window.__amcViewerFlightObserver.observe(document.body,{childList:true,subtree:true});return true;""")
     shared_open=js_async("""const done=arguments[arguments.length-1],thumb=document.querySelector('#amc-chat-dialog .message[data-message-id] .mini-photos img');thumb.click();const started=performance.now(),timer=setInterval(()=>{if(document.querySelector('.amc-photo-viewer[open] .amc-viewer-flight')){clearInterval(timer);done(true);}else if(performance.now()-started>700){clearInterval(timer);done(false);}},10);""")
     assert shared_open,'No se observó la transición compartida miniatura→visor'
-    wait("return !!document.querySelector('.amc-photo-viewer[open] .amc-viewer-stage img.amc-viewer-image')")
+    wait("return !!document.querySelector('.amc-photo-viewer[open] .amc-viewer-frame .amc-viewer-preview')")
+    geometry_before=js("""const f=document.querySelector('.amc-photo-viewer[open] .amc-viewer-frame'),r=f.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,styleWidth:f.style.width,styleHeight:f.style.height};""")
+    wait("return !!document.querySelector('.amc-photo-viewer[open] .amc-viewer-quality.amc-quality-ready')",3)
+    geometry_after=js("""const f=document.querySelector('.amc-photo-viewer[open] .amc-viewer-frame'),r=f.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,styleWidth:f.style.width,styleHeight:f.style.height};""")
+    for key in ('left','top','width','height'):
+        assert abs(geometry_before[key]-geometry_after[key])<0.5,(key,geometry_before,geometry_after)
+    assert geometry_before['styleWidth']==geometry_after['styleWidth'] and geometry_before['styleHeight']==geometry_after['styleHeight'],(geometry_before,geometry_after)
     time.sleep(.45)
     assert js("return window.__amcViewerFlightAdds===1"),js("return window.__amcViewerFlightAdds")
     assert js("return !!document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"] svg')")
@@ -102,7 +108,7 @@ try:
     assert js("return !!document.querySelector('#amc-chat-dialog[open] .floating-staff-message')"),'Cerrar la foto no debe cerrar el chat flotante'
     assert js("return window.__amcViewerFlightAdds===2"),js("return window.__amcViewerFlightAdds")
     js("window.__amcViewerFlightObserver?.disconnect?.();return true;")
-    print('CHAT EMPLEADO FLOTANTE MULTIMEDIA OK:',json.dumps({'messages':len(messages.get('messages',[])),'photos':len(sent[-1].get('photos') or []),'sharedTransition':True,'singleOpenTransition':True,'chatStaysOpen':True,'responsive':responsive,'zoomTransform':transform}))
+    print('CHAT EMPLEADO FLOTANTE MULTIMEDIA OK:',json.dumps({'messages':len(messages.get('messages',[])),'photos':len(sent[-1].get('photos') or []),'sharedTransition':True,'singleOpenTransition':True,'qualityGeometryStable':True,'chatStaysOpen':True,'responsive':responsive,'qualityGeometryBefore':geometry_before,'qualityGeometryAfter':geometry_after,'zoomTransform':transform}))
 finally:
     try: call('DELETE',prefix)
     except Exception: pass
