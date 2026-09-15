@@ -21,11 +21,11 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
    const used=Number(db.prepare("SELECT count(*) AS n FROM docs WHERE kind!='fileUpload' AND body LIKE ?").get('%/media/'+key+'%').n||0);
    if(used)continue;
    if(objectStore.writeEnabled){
-    try{await objectStore.remove([key,key+'-thumb']);}
+    try{await objectStore.remove([key,key+'-thumb',key+'-view']);}
     catch(error){logStorageError('file-storage-cleanup',key,error);continue;}
    }
    transaction(()=>{
-    db.prepare('DELETE FROM files WHERE id=? OR id=?').run(key,key+'-thumb');
+    db.prepare('DELETE FROM files WHERE id=? OR id=? OR id=?').run(key,key+'-thumb',key+'-view');
     db.prepare("DELETE FROM docs WHERE kind='fileUpload' AND id=?").run(meta.id);
    });
    removed++;
@@ -41,7 +41,9 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
   if(!valid||bytes.length>5*1024*1024)fail(400,'Usá una foto o un PDF válido de hasta 5 MB.');
   const miniature=Buffer.isBuffer(b.thumbnail)?b.thumbnail:b.thumbnail?Buffer.from(text(b.thumbnail,180000),'base64'):null;
   if(miniature&&(!mime.startsWith('image/')||miniature.length>128000||miniature[0]!==255||miniature[1]!==216||miniature[2]!==255))fail(400,'Miniatura inválida.');
-  const storedSize=bytes.length+(miniature?.length||0);
+  const viewer=Buffer.isBuffer(b.viewer)?b.viewer:b.viewer?Buffer.from(text(b.viewer,2100000),'base64'):null;
+  if(viewer&&(!mime.startsWith('image/')||viewer.length>1536*1024||viewer[0]!==255||viewer[1]!==216||viewer[2]!==255))fail(400,'Vista de imagen inválida.');
+  const storedSize=bytes.length+(miniature?.length||0)+(viewer?.length||0);
   const totalStored=db.prepare('SELECT coalesce(sum(length(body)),0) AS total FROM files').get().total;
   if(totalStored+storedSize>150*1024*1024)fail(413,'El almacenamiento de archivos de la prueba está completo. AMC debe ampliar o revisar el espacio.');
   const used=db.prepare('SELECT coalesce(sum(length(body)),0) AS total FROM files WHERE owner=?').get(user.id).total;
@@ -49,7 +51,11 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
   const key=id(),mirrored=[];
   try{
    if(objectStore.writeEnabled){
-    const jobs=[{key,mime,body:bytes},...(miniature?[{key:key+'-thumb',mime:'image/jpeg',body:miniature}]:[])];
+    const jobs=[
+     {key,mime,body:bytes},
+     ...(miniature?[{key:key+'-thumb',mime:'image/jpeg',body:miniature}]:[]),
+     ...(viewer?[{key:key+'-view',mime:'image/jpeg',body:viewer}]:[])
+    ];
     const results=await Promise.allSettled(jobs.map(job=>objectStore.upload(job.key,job.mime,job.body)));
     results.forEach((result,i)=>{if(result.status==='fulfilled')mirrored.push(jobs[i].key);});
     const failed=results.find(result=>result.status==='rejected');if(failed)throw failed.reason;
@@ -57,6 +63,7 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
    transaction(()=>{
     db.prepare('INSERT INTO files VALUES(?,?,?,?)').run(key,user.id,mime,bytes);
     if(miniature)db.prepare('INSERT INTO files VALUES(?,?,?,?)').run(key+'-thumb',user.id,'image/jpeg',miniature);
+    if(viewer)db.prepare('INSERT INTO files VALUES(?,?,?,?)').run(key+'-view',user.id,'image/jpeg',viewer);
     put('fileUpload',user.id,{id:'upload-'+key,fileId:key,date:now()});
    });
   }catch(error){

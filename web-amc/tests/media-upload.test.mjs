@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';import test from 'node:test';import assert from 'node:assert/strict';import {createApp} from '../server.mjs';
 const origin='http://localhost:4180';
-test('multipart image upload stores binary and thumbnail while legacy JSON remains compatible',async()=>{const app=createApp({dbPath:':memory:',origin});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';try{let r=await fetch(base+'/api/register',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:'media@test.test',name:'Media',password:'Client-Test-2026!'})});let data=await r.json();assert.equal(r.status,200);cookie=r.headers.get('set-cookie').split(';')[0];csrf=data.csrf;const jpeg=Buffer.from([255,216,255,224,0,1,2,3,255,217]),thumb=Buffer.from([255,216,255,224,9,8,7,255,217]),form=new FormData();form.append('file',new Blob([jpeg],{type:'image/jpeg'}),'foto.jpg');form.append('thumbnail',new Blob([thumb],{type:'image/jpeg'}),'miniatura.jpg');r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:form});data=await r.json();assert.equal(r.status,201,JSON.stringify(data));assert.equal(data.mime,'image/jpeg');assert.equal(data.size,jpeg.length);r=await fetch(base+data.url+'?thumb=1',{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),thumb);r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,'Content-Type':'application/json'},body:JSON.stringify({mime:'image/jpeg',base64:jpeg.toString('base64')})});assert.equal(r.status,201); }finally{await new Promise(r=>app.server.close(r));}});
+test('multipart image upload stores binary, thumbnail and viewer while legacy JSON remains compatible',async()=>{const app=createApp({dbPath:':memory:',origin});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';try{let r=await fetch(base+'/api/register',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({email:'media@test.test',name:'Media',password:'Client-Test-2026!'})});let data=await r.json();assert.equal(r.status,200);cookie=r.headers.get('set-cookie').split(';')[0];csrf=data.csrf;const jpeg=Buffer.from([255,216,255,224,0,1,2,3,255,217]),thumb=Buffer.from([255,216,255,224,9,8,7,255,217]),viewer=Buffer.from([255,216,255,224,6,5,4,255,217]),form=new FormData();form.append('file',new Blob([jpeg],{type:'image/jpeg'}),'foto.jpg');form.append('thumbnail',new Blob([thumb],{type:'image/jpeg'}),'miniatura.jpg');form.append('viewer',new Blob([viewer],{type:'image/jpeg'}),'vista.jpg');r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:form});data=await r.json();assert.equal(r.status,201,JSON.stringify(data));assert.equal(data.mime,'image/jpeg');assert.equal(data.size,jpeg.length);r=await fetch(base+data.url+'?thumb=1',{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),thumb);r=await fetch(base+data.url+'?view=1',{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),viewer);r=await fetch(base+'/api/upload',{method:'POST',headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,'Content-Type':'application/json'},body:JSON.stringify({mime:'image/jpeg',base64:jpeg.toString('base64')})});data=await r.json();assert.equal(r.status,201);r=await fetch(base+data.url+'?view=1',{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.deepEqual(Buffer.from(await r.arrayBuffer()),jpeg); }finally{await new Promise(r=>app.server.close(r));}});
 
 
 test('unused uploads are collected after seven days while referenced media is kept',async()=>{
@@ -55,6 +55,7 @@ test('almacenamiento de media queda modularizado sin duplicar upload y GC en ser
  assert.match(storage,/const safeFile=/);
  assert.match(storage,/const cleanupOrphanFiles=async/);
  assert.match(storage,/const upload=async\(user,b\)/);
+ assert.match(storage,/key\+'-view'/);
  assert.match(storage,/objectStore\.upload/);
  assert.match(storage,/fileUpload/);
  assert.doesNotMatch(server,/const safeFile=\(user,key,mime\)=>/);
@@ -75,6 +76,7 @@ test('acceso y serving de media quedan modularizados sin duplicar reglas en serv
  assert.match(access,/appearance\.publicMedia\(p\)/);
  assert.match(access,/purchases\.media\(user,p\)/);
  assert.doesNotMatch(access,/planning\.publicMedia\(p\)/);
+ assert.match(access,/params\.has\('view'\)\?'view'/);
  assert.match(access,/objectStore\.download/);
  assert.match(access,/if-none-match/);
  assert.match(access,/Content-Disposition/);
@@ -93,8 +95,9 @@ test('parser multipart queda modularizado sin duplicar implementación en server
  assert.match(server,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
  assert.match(parser,/export function createMediaUploadParser/);
  assert.match(parser,/boundary=/);
- assert.match(parser,/7\*1024\*1024/);
+ assert.match(parser,/9\*1024\*1024/);
  assert.match(parser,/thumbnail/);
+ assert.match(parser,/viewer/);
  assert.match(parser,/No se recibió la foto/);
  assert.doesNotMatch(server,/const readMultipart=async req=>/);
 });

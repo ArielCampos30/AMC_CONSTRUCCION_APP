@@ -25,11 +25,11 @@ export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchase
    storageDurationMs:Number.isFinite(error?.storageDurationMs)?error.storageDurationMs:null,circuitOpen:!!diagnostics?.readCircuitOpen
   }));
  };
- const writeMediaHeaders=(res,file,tag,servedThumb)=>{
+ const writeMediaHeaders=(res,file,tag,variant)=>{
   res.setHeader('Cache-Control','private, no-cache');
   res.setHeader('ETag','"'+tag+'"');
-  res.setHeader('Content-Type',servedThumb?'image/jpeg':file.mime);
-  if(file.mime==='application/pdf'&&!servedThumb)res.setHeader('Content-Disposition','attachment; filename="Documento-AMC.pdf"');
+  res.setHeader('Content-Type',variant?'image/jpeg':file.mime);
+  if(file.mime==='application/pdf'&&!variant)res.setHeader('Content-Disposition','attachment; filename="Documento-AMC.pdf"');
  };
  const serve=async({user,p,method,req,res})=>{
   if(!(p==='/media/'+p.split('/')[2]&&p.startsWith('/media/')&&method==='GET'))return false;
@@ -40,34 +40,25 @@ export function mediaAccessFeatures({db,all,objectStore,appearance,team,purchase
    const publicFile=appearance.publicMedia(p)||all('post').filter(post=>!post.demo).some(post=>post.image===p||post.before===p);
    if(!publicFile)fail(404,'Archivo no encontrado.');
   }
-  const wantsThumb=new URL(req.url,'http://localhost').searchParams.has('thumb')&&file.mime.startsWith('image/');
-  const localThumb=wantsThumb?db.prepare('SELECT body FROM files WHERE id=?').get(key+'-thumb'):null;
-  if(!wantsThumb||localThumb?.body){
-   const knownThumb=!!localThumb?.body,knownTag=key+(knownThumb?'-thumb':'');
-   writeMediaHeaders(res,file,knownTag,knownThumb);
-   if(req.headers['if-none-match']==='"'+knownTag+'"'){res.writeHead(304);res.end();return true;}
-  }
-  let mediaBody=null,servedThumb=false;
+  const params=new URL(req.url,'http://localhost').searchParams,
+   requestedVariant=file.mime.startsWith('image/')?(params.has('thumb')?'thumb':params.has('view')?'view':null):null,
+   requestedKey=requestedVariant?key+'-'+requestedVariant:key,
+   variantExists=requestedVariant?!!db.prepare('SELECT 1 AS ok FROM files WHERE id=?').get(requestedKey):false,
+   servedVariant=variantExists?requestedVariant:null,
+   storageKey=servedVariant?requestedKey:key,
+   knownTag=storageKey;
+  writeMediaHeaders(res,file,knownTag,servedVariant);
+  if(req.headers['if-none-match']==='"'+knownTag+'"'){res.writeHead(304);res.end();return true;}
+  let mediaBody=null;
   if(objectStore.preferStorage){
-   try{
-    mediaBody=await objectStore.download(wantsThumb?key+'-thumb':key);
-    servedThumb=wantsThumb;
-   }catch(error){
-    if(error.status!==404)logStorageFallback(key,error);
-   }
+   try{mediaBody=await objectStore.download(storageKey);}
+   catch(error){if(error.status!==404)logStorageFallback(key,error);}
   }
   if(!mediaBody){
-   if(localThumb?.body){mediaBody=localThumb.body;servedThumb=true;}
-   else{
-    const local=db.prepare('SELECT body FROM files WHERE id=?').get(key);
-    if(!local?.body)fail(404,'Archivo no encontrado.');
-    mediaBody=local.body;
-    servedThumb=false;
-   }
+   const local=db.prepare('SELECT body FROM files WHERE id=?').get(storageKey);
+   if(!local?.body)fail(404,'Archivo no encontrado.');
+   mediaBody=local.body;
   }
-  const tag=key+(servedThumb?'-thumb':'');
-  writeMediaHeaders(res,file,tag,servedThumb);
-  if(req.headers['if-none-match']==='"'+tag+'"'){res.writeHead(304);res.end();return true;}
   res.end(mediaBody);
   return true;
  };
