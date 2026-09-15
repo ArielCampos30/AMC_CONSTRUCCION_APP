@@ -90,6 +90,7 @@ test('parser multipart queda modularizado sin duplicar implementación en server
   readFile(new URL('../media-upload-parser.mjs',import.meta.url),'utf8')
  ]);
  assert.match(server,/from '.\/media-upload-parser\.mjs'/);
+ assert.match(server,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
  assert.match(parser,/export function createMediaUploadParser/);
  assert.match(parser,/boundary=/);
  assert.match(parser,/7\*1024\*1024/);
