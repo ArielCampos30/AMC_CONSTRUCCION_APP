@@ -32,12 +32,26 @@ test('migración regional valida TLS y admite CA por origen y destino',async()=>
  assert.match(source,/ssl:tlsConfig\(targetCaFile\)/);
 });
 
-test('preparación sólo corre con bandera explícita y no reemplaza la base activa',async()=>{
+test('preparación regional conserva origen y destino antes del corte',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(server,/const sourceUrl=process\.env\.AMC_DATABASE_URL/);
+ assert.match(server,/const targetUrl=process\.env\.AMC_REGION_MIGRATION_TARGET_URL/);
  assert.match(server,/AMC_REGION_MIGRATION_PREPARE==='1'/);
- assert.match(server,/sourceUrl:process\.env\.AMC_DATABASE_URL/);
- assert.match(server,/targetUrl:process\.env\.AMC_REGION_MIGRATION_TARGET_URL/);
- assert.match(server,/sourceCaFile:process\.env\.AMC_DATABASE_CA_FILE/);
- assert.match(server,/targetCaFile:process\.env\.AMC_REGION_MIGRATION_TARGET_CA_FILE\|\|process\.env\.AMC_DATABASE_CA_FILE/);
+ assert.match(server,/sourceUrl,/);
+ assert.match(server,/targetUrl,/);
+ assert.match(server,/sourceCaFile,/);
+ assert.match(server,/targetCaFile,/);
+});
+
+test('corte a Virginia sólo ocurre con bandera explícita y es reversible por entorno',async()=>{
+ const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+ assert.match(server,/AMC_REGION_TARGET_ACTIVE==='1'/);
+ assert.match(server,/if\(!targetUrl\)throw Error/);
+ assert.match(server,/process\.env\.AMC_DATABASE_URL=targetUrl/);
+ assert.match(server,/process\.env\.AMC_DATABASE_CA_FILE=targetCaFile/);
+ assert.match(server,/region-database-target-active/);
  assert.match(server,/startServer\(\{createApp,root:ROOT\}\)/);
+ const migrationIndex=server.indexOf("AMC_REGION_MIGRATION_PREPARE==='1'");
+ const cutoverIndex=server.indexOf("AMC_REGION_TARGET_ACTIVE==='1'");
+ assert.ok(migrationIndex>=0&&cutoverIndex>migrationIndex,'la sincronización final debe ocurrir antes del corte');
 });

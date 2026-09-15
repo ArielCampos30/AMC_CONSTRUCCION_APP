@@ -10,14 +10,24 @@ export function createApp({dbPath,demo,origin,clock,sendRecovery,twoFactorKey,fi
  return composeApp({services,serviceCatalog,dbPath,demo,origin,clock,sendRecovery,twoFactorKey,fileStore});
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ const sourceUrl=process.env.AMC_DATABASE_URL;
+ const targetUrl=process.env.AMC_REGION_MIGRATION_TARGET_URL;
+ const sourceCaFile=process.env.AMC_DATABASE_CA_FILE;
+ const targetCaFile=process.env.AMC_REGION_MIGRATION_TARGET_CA_FILE||sourceCaFile;
  if(process.env.AMC_REGION_MIGRATION_PREPARE==='1'){
   await migrateRegionDatabase({
-   sourceUrl:process.env.AMC_DATABASE_URL,
-   targetUrl:process.env.AMC_REGION_MIGRATION_TARGET_URL,
-   sourceCaFile:process.env.AMC_DATABASE_CA_FILE,
-   targetCaFile:process.env.AMC_REGION_MIGRATION_TARGET_CA_FILE||process.env.AMC_DATABASE_CA_FILE,
+   sourceUrl,
+   targetUrl,
+   sourceCaFile,
+   targetCaFile,
    logger:value=>console.log(JSON.stringify(value))
   });
+ }
+ if(process.env.AMC_REGION_TARGET_ACTIVE==='1'){
+  if(!targetUrl)throw Error('Falta AMC_REGION_MIGRATION_TARGET_URL para activar la base regional.');
+  process.env.AMC_DATABASE_URL=targetUrl;
+  if(targetCaFile)process.env.AMC_DATABASE_CA_FILE=targetCaFile;
+  console.log(JSON.stringify({event:'region-database-target-active'}));
  }
  startServer({createApp,root:ROOT});
 }
