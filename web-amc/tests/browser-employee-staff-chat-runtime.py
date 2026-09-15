@@ -94,7 +94,7 @@ try:
     transform=js("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform")
     assert 'translate3d(0px,0px,0)' not in transform,transform
     assert js("return !!document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]')")
-    pointer_result=js("""const button=document.querySelector('.amc-photo-viewer[open] button[aria-label='Cerrar foto']'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2}));return {chatOpen:!!document.querySelector('#amc-chat-dialog[open] .floating-staff-message'),viewerOpen:!!document.querySelector('.amc-photo-viewer[open]')};""")
+    pointer_result=js("""const button=document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2}));return {chatOpen:!!document.querySelector('#amc-chat-dialog[open] .floating-staff-message'),viewerOpen:!!document.querySelector('.amc-photo-viewer[open]')};""")
     assert pointer_result['chatOpen'] and pointer_result['viewerOpen'],pointer_result
     js("document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]').click();return true;")
     wait("return window.__amcViewerFlightAdds>=2",3)
