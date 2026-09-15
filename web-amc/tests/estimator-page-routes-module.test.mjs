@@ -8,9 +8,10 @@ test('la ruta histórica de presupuestos queda como compatibilidad hacia el Coti
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../estimator-page-routes.mjs',import.meta.url),'utf8')
  ]);
+ const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
  assert.match(server,/import \{estimatorPageRoutes\} from '\.\/estimator-page-routes\.mjs'/);
  assert.match(server,/const handleEstimatorPage=estimatorPageRoutes\(/);
- assert.match(server,/if\(handleEstimatorPage\(\{p,method,user,session,res\}\)\)return/);
+ assert.match(dispatcher,/if\(handleEstimatorPage\(\{p,method,user,session,res\}\)\)return/);
  assert.doesNotMatch(server,/if\(p==='\/presupuestos'\)\{/);
  assert.match(moduleSource,/p!=='\/presupuestos'/);
  assert.match(moduleSource,/Location:'\/#cotizador'/);
