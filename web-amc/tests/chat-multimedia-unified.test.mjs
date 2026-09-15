@@ -36,7 +36,7 @@ test('chat flotante de equipo permite texto, galería, cámara y hasta cuatro fo
  assert.match(backend,/p==='\/api\/staff-chat\/messages'.*photos=.*slice\(0,4\).*safeFile/s);
 });
 
-test('fotos de chat mantienen thumbnail liviano y el visor abre una única calidad precargada',async()=>{
+test('fotos de chat mantienen thumbnail liviano y el visor precarga el archivo principal sin intercambio visible',async()=>{
  const [viewer,viewerCss,employeeView,adminRuntime,adminUI,app,uploadUi,storage,access]=await Promise.all([
   readFile(new URL('../public/media-viewer.js',import.meta.url),'utf8'),
   readFile(new URL('../public/media-viewer.css',import.meta.url),'utf8'),
@@ -53,8 +53,10 @@ test('fotos de chat mantienen thumbnail liviano y el visor abre una única calid
  assert.doesNotMatch(employeeView,/target="_blank"/);
  assert.match(adminRuntime,/url\+'\?thumb=1'/);
  assert.match(adminUI,/\?thumb=1/);
- assert.match(uploadUi,/renderJpegVariant\(source,width,height,long,1080,\.78\)/);
- assert.match(uploadUi,/data\.append\('viewer',viewer,'vista\.jpg'\)/);
+ assert.match(uploadUi,/renderJpegVariant\(source,width,height,long,320,\.62\)/);
+ assert.doesNotMatch(uploadUi,/renderJpegVariant\(source,width,height,long,1080/);
+ assert.doesNotMatch(uploadUi,/data\.append\('viewer'/);
+ assert.match(uploadUi,/payloadBytes/);
  assert.match(storage,/key:key\+'-view'/);
  assert.match(access,/params\.has\('view'\)\?'view'/);
  assert.match(viewer,/url\.searchParams\.set\('view','1'\)/);
