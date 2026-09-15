@@ -14,6 +14,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   await migrateRegionDatabase({
    sourceUrl:process.env.AMC_DATABASE_URL,
    targetUrl:process.env.AMC_REGION_MIGRATION_TARGET_URL,
+   sourceCaFile:process.env.AMC_DATABASE_CA_FILE,
+   targetCaFile:process.env.AMC_REGION_MIGRATION_TARGET_CA_FILE||process.env.AMC_DATABASE_CA_FILE,
    logger:value=>console.log(JSON.stringify(value))
   });
  }
