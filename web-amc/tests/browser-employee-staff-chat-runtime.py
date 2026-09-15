@@ -88,9 +88,11 @@ try:
     wait("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform.includes('scale(2.6)')")
     transform=js("return document.querySelector('.amc-photo-viewer[open] .amc-viewer-image').style.transform")
     assert 'translate3d(0px,0px,0)' not in transform,transform
-    shared_close=js_async("""const done=arguments[arguments.length-1],button=document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',clientX:r.left+r.width/2,clientY:r.top+r.height/2}));button.click();const started=performance.now(),timer=setInterval(()=>{if(document.querySelector('.amc-photo-viewer[open] .amc-viewer-flight')){clearInterval(timer);done(true);}else if(performance.now()-started>900){clearInterval(timer);done(false);}},10);""")
-    assert shared_close,'No se observó la transición compartida visor→miniatura'
-    wait("return !document.querySelector('.amc-photo-viewer[open]')")
+    pointer_result=js("""const button=document.querySelector('.amc-photo-viewer[open] button[aria-label='Cerrar foto']'),r=button.getBoundingClientRect();button.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',clientX:r.left+r.width/2,clientY:r.top+r.height/2}));return {chatOpen:!!document.querySelector('#amc-chat-dialog[open] .floating-staff-message'),viewerOpen:!!document.querySelector('.amc-photo-viewer[open]')};""")
+    assert pointer_result['chatOpen'] and pointer_result['viewerOpen'],pointer_result
+    js("document.querySelector('.amc-photo-viewer[open] button[aria-label=\"Cerrar foto\"]').click();return true;")
+    wait("return window.__amcViewerFlightAdds>=2",3)
+    wait("return !document.querySelector('.amc-photo-viewer[open]')",3)
     assert js("return !!document.querySelector('#amc-chat-dialog[open] .floating-staff-message')"),'Cerrar la foto no debe cerrar el chat flotante'
     assert js("return window.__amcViewerFlightAdds===2"),js("return window.__amcViewerFlightAdds")
     js("window.__amcViewerFlightObserver?.disconnect?.();return true;")
