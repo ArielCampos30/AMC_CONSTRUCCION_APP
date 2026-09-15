@@ -33,7 +33,8 @@ test('chat flotante de equipo permite texto, galería, cámara y hasta cuatro fo
  assert.match(floating,/Sacar foto/);
  assert.match(floating,/capture','environment'/);
  assert.match(floating,/existing\.length>=4/);
- assert.match(backend,/p==='\/api\/staff-chat\/messages'.*photos=.*slice\(0,4\).*safeFile/s);
+ assert.match(backend,/p==='\/api\/staff-chat\/messages'.*files=Array\.isArray\(b\.photos\)\?b\.photos:\[\].*files\.length>4.*hasta cuatro fotos por mensaje.*photos=files\.map/s);
+ assert.doesNotMatch(backend,/p==='\/api\/staff-chat\/messages'.*slice\(0,4\)/s);
 });
 
 test('fotos de chat mantienen thumbnail liviano y el visor precarga el archivo principal sin intercambio visible',async()=>{
