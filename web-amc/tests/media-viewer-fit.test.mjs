@@ -11,12 +11,12 @@ test('photo viewer is compact, stable and keeps floating chat open',async()=>{
  ]);
  assert.match(index,/href="\/media-viewer\.css"/);
  assert.doesNotMatch(source,/document\.createElement\('style'\)/);
- assert.match(styles,/\.amc-photo-viewer\{box-sizing:border-box;position:fixed;top:50%;left:50%;right:auto;bottom:auto;width:min\(96vw,1400px\)/);
- assert.match(styles,/transform:translate\(-50%,-50%\)/);
+ assert.match(styles,/\.amc-photo-viewer\{box-sizing:border-box;position:fixed;inset:3dvh 2vw;width:auto;max-width:1400px/);
+ assert.match(styles,/@media\(max-width:560px\)\{\.amc-photo-viewer\{inset:9px 6px;width:auto;max-width:none/);
+ assert.doesNotMatch(styles,/\.amc-photo-viewer\{[^}]*transform:/);
  assert.match(styles,/\.amc-photo-viewer\[open\]\{display:flex;flex-direction:column\}/);
  assert.match(styles,/\.amc-viewer-stage\{box-sizing:border-box;width:100%;min-width:0;min-height:0;flex:1/);
  assert.match(styles,/\.amc-photo-viewer \.amc-viewer-image\{display:block;width:auto;height:auto;max-width:100%;max-height:100%/);
- assert.match(styles,/@media\(max-width:560px\)\{\.amc-photo-viewer\{width:calc\(100vw - 12px\)/);
  assert.match(styles,/\.amc-viewer-flight\{/);
  assert.doesNotMatch(styles,/!important/);
  assert.match(source,/let openingStarted=false,openingPromise=Promise\.resolve\(\)/);
