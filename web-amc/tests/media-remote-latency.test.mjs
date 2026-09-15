@@ -61,7 +61,7 @@ test('9.3E resuelve metadata y variante del visor con una sola consulta',async()
  const handled=await access.serve({user:{id:'admin-1',role:'admin'},p:'/media/photo-1',method:'GET',req:{url:'/media/photo-1?view=1',headers:{}},res});
  assert.equal(handled,true);
  assert.equal(dbCalls.length,1);
- assert.match(dbCalls[0].sql,/EXISTS\(SELECT 1 FROM files variant WHERE variant.id=\?\) AS variantExists/);
+ assert.match(dbCalls[0].sql,/EXISTS\(SELECT 1 FROM files variant WHERE variant.id=\?\) AS "variantExists"/);
  assert.deepEqual(dbCalls[0].params,['photo-1-view','photo-1']);
  assert.deepEqual(downloads,['photo-1']);
  assert.equal(headers['Content-Type'],'image/jpeg');
