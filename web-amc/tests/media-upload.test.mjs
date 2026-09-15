@@ -46,10 +46,11 @@ test('almacenamiento de media queda modularizado sin duplicar upload y GC en ser
   readFile(new URL('../media-upload-routes.mjs',import.meta.url),'utf8')
  ]);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/media-storage\.mjs'/);
- assert.match(server,/mediaStorageFeatures\(\{db,all,put,transaction,objectStore,text,fail,id,now\}\)/);
- assert.match(server,/from '.\/media-upload-routes\.mjs'/);
- assert.match(server,/mediaUploadRoutes\(\{mediaStorage,send\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/media-storage\.mjs'/);
+ assert.match(composition,/mediaStorageFeatures\(\{db,all,put,transaction,objectStore,text,fail,id,now\}\)/);
+ assert.match(composition,/from '.\/media-upload-routes\.mjs'/);
+ assert.match(composition,/mediaUploadRoutes\(\{mediaStorage,send\}\)/);
  assert.match(dispatcher,/handleMediaUpload\(\{p,method,b,user,res\}\)/);
  assert.match(uploadRoutes,/mediaStorage\.upload\(user,b\)/);
  assert.doesNotMatch(server,/mediaStorage\.upload\(user,b\)/);
@@ -70,8 +71,9 @@ test('acceso y serving de media quedan modularizados sin duplicar reglas en serv
   readFile(new URL('../media-access.mjs',import.meta.url),'utf8')
  ]);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/media-access\.mjs'/);
- assert.match(server,/mediaAccessFeatures\(\{db,all,objectStore,appearance,team,purchases,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/media-access\.mjs'/);
+ assert.match(composition,/mediaAccessFeatures\(\{db,all,objectStore,appearance,team,purchases,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail\}\)/);
  assert.match(dispatcher,/mediaAccess\.serve\(\{user,p,method,req,res\}\)/);
  assert.match(access,/const canAccessPrivateFile=/);
  assert.match(access,/const serve=async/);
@@ -93,8 +95,9 @@ test('parser multipart queda modularizado sin duplicar implementación en server
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../media-upload-parser.mjs',import.meta.url),'utf8')
  ]);
- assert.match(server,/from '.\/media-upload-parser\.mjs'/);
- assert.match(server,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/media-upload-parser\.mjs'/);
+ assert.match(composition,/createMediaUploadParser\(\{readRaw,text,fail\}\)/);
  assert.match(parser,/export function createMediaUploadParser/);
  assert.match(parser,/boundary=/);
  assert.match(parser,/9\*1024\*1024/);

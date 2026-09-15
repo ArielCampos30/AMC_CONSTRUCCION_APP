@@ -36,9 +36,10 @@ test('employeeWork parte de publicWork y además oculta datos comerciales y del 
 
 test('server delega las vistas de recursos sin duplicar filtros sensibles',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/resource-views\.mjs'/);
- assert.match(server,/createResourceViews\(\)/);
- assert.match(server,/const \{publicWork,publicQuote,employeeWork\}=createResourceViews\(\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/resource-views\.mjs'/);
+ assert.match(composition,/createResourceViews\(\)/);
+ assert.match(composition,/const \{publicWork,publicQuote,employeeWork\}=createResourceViews\(\)/);
  assert.doesNotMatch(server,/const publicWork=w=>/);
  assert.doesNotMatch(server,/const publicQuote=q=>/);
  assert.doesNotMatch(server,/const employeeWork=w=>/);

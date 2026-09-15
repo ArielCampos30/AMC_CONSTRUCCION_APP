@@ -7,10 +7,11 @@ test('notas offline y tarifario quedan fuera del router principal sin persistenc
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../admin-utility-routes.mjs',import.meta.url),'utf8')
  ]);
- assert.match(server,/import \{adminUtilityRoutes\} from '\.\/admin-utility-routes\.mjs'/);
- assert.match(server,/const handleAdminUtility=adminUtilityRoutes\(/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/import \{adminUtilityRoutes\} from '\.\/admin-utility-routes\.mjs'/);
+ assert.match(composition,/const handleAdminUtility=adminUtilityRoutes\(/);
  const dispatcher=await readFile(new URL('../server-request-dispatcher.mjs',import.meta.url),'utf8');
- assert.match(server,/createRequestDispatcher\(\{origin,staticFiles,authentication/);
+ assert.match(composition,/createRequestDispatcher\(\{origin,staticFiles,authentication/);
  assert.match(dispatcher,/if\(handleAdminUtility\(\{p,method,b,user,res\}\)\)return/);
  assert.doesNotMatch(server,/p==='\/api\/offline-notes'/);
  assert.doesNotMatch(server,/p==='\/api\/estimator-state'/);

@@ -54,9 +54,10 @@ test('attach conserva cierre de recursos del servidor',()=>{
 
 test('server delega cola y temporizadores sin duplicarlos',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/from '.\/background-runtime\.mjs'/);
- assert.match(server,/createBackgroundRuntime\(\{db,keys,deliver,text\}\)/);
- assert.match(server,/background\.attach\(\{server,lifecycle,cleanupOrphanFiles\}\)/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/from '.\/background-runtime\.mjs'/);
+ assert.match(composition,/createBackgroundRuntime\(\{db,keys,deliver,text\}\)/);
+ assert.match(composition,/background\.attach\(\{server,lifecycle,cleanupOrphanFiles\}\)/);
  assert.doesNotMatch(server,/let delivering=false/);
  assert.doesNotMatch(server,/setInterval\(\(\)=>flushPush/);
  assert.doesNotMatch(server,/const quoteTimer=setInterval/);

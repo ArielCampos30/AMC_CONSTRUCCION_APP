@@ -16,7 +16,8 @@ test('Compras tiene dominio propio y no vuelve a Team',async()=>{
  assert.match(purchases,/export function purchaseFeatures/);
  assert.match(purchases,/\/api\/purchases/);
  assert.match(purchases,/purchases:purchaseView\(user\)/);
- assert.match(server,/const purchases=purchaseFeatures/);
+ const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
+ assert.match(composition,/const purchases=purchaseFeatures/);
  assert.match(dispatcher,/await purchases\.route/);
  assert.match(state,/\.\.\.purchases\.state\(user\)/);
  assert.match(media,/purchases\.media\(user,p\)/);
