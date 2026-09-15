@@ -2,22 +2,29 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-test('photo viewer fits images and uses formal shared-transition presentation',async()=>{
- const [source,styles,index]=await Promise.all([
+test('photo viewer is compact, stable and keeps floating chat open',async()=>{
+ const [source,styles,index,floatingChat]=await Promise.all([
   readFile(new URL('../public/media-viewer.js',import.meta.url),'utf8'),
   readFile(new URL('../public/media-viewer.css',import.meta.url),'utf8'),
-  readFile(new URL('../public/index.html',import.meta.url),'utf8')
+  readFile(new URL('../public/index.html',import.meta.url),'utf8'),
+  readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8')
  ]);
  assert.match(index,/href="\/media-viewer\.css"/);
  assert.doesNotMatch(source,/document\.createElement\('style'\)/);
- assert.match(styles,/\.amc-photo-viewer\{box-sizing:border-box/);
- assert.match(styles,/\.amc-viewer-stage\{box-sizing:border-box;width:100%;height:calc\(100dvh - 68px\)/);
- assert.match(styles,/\.amc-photo-viewer \.amc-viewer-image\{display:block;width:auto;height:auto/);
- assert.match(styles,/max-width:calc\(100vw - 24px\)/);
- assert.match(styles,/object-fit:contain/);
+ assert.match(styles,/\.amc-photo-viewer\{box-sizing:border-box;position:fixed;inset:3dvh 2vw;width:auto;max-width:1400px/);
+ assert.match(styles,/@media\(max-width:560px\)\{\.amc-photo-viewer\{inset:9px 6px;width:auto;max-width:none/);
+ assert.doesNotMatch(styles,/\.amc-photo-viewer\{[^}]*transform:/);
+ assert.match(styles,/\.amc-photo-viewer\[open\]\{display:flex;flex-direction:column\}/);
+ assert.match(styles,/\.amc-viewer-stage\{box-sizing:border-box;width:100%;min-width:0;min-height:0;flex:1/);
+ assert.match(styles,/\.amc-photo-viewer \.amc-viewer-image\{display:block;width:auto;height:auto;max-width:100%;max-height:100%/);
  assert.match(styles,/\.amc-viewer-flight\{/);
  assert.doesNotMatch(styles,/!important/);
+ assert.match(source,/let openingStarted=false,openingPromise=Promise\.resolve\(\)/);
+ assert.match(source,/if\(!animateFrom\|\|openingStarted\|\|token!==loadToken\)return openingPromise/);
+ assert.match(source,/await revealOnce\(\);if\(token!==loadToken\)return;img\.src=source/);
  assert.match(source,/animateFlight\(preview,from,to,\{opening:true\}\)/);
  assert.match(source,/animateFlight\(src,from,to,\{opening:false\}\)/);
- assert.match(source,/fittedRect\(stage,ratio\)/);
+ assert.match(source,/currentLink\(\)\?\.focus\?\.\(\{preventScroll:true\}\)/);
+ assert.match(floatingChat,/document\.querySelector\('\.amc-photo-viewer\[open\]'\)/);
+ assert.doesNotMatch(floatingChat,/!important/);
 });
