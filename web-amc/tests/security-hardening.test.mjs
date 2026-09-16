@@ -27,7 +27,7 @@ test('security hardening keeps account throttling and a bounded session count in
  assert.match(authCore,/scryptSync/);
  assert.match(authCore,/timingSafeEqual/);
  assert.match(stateRoutes,/const snapshot=!!user/);
- assert.match(stateRoutes,/if\(snapshot\)await beginStateSnapshot\(\)/);
+ assert.match(stateRoutes,/if\(snapshot\)await beginStateSnapshot\(user\)/);
  assert.match(stateRoutes,/finally\{if\(snapshot\)endStateSnapshot\(\);\}/);
  assert.match(httpServer,/X-Request-ID/);
  assert.match(httpServer,/durationMs/);
