@@ -214,6 +214,7 @@ try:
     set_value('[data-qw-work-input][data-qw-key="description"]','Revoque fino piloto')
     click('[data-qw-pricing-mode="manual"]')
     wait("return !!document.querySelector('[data-qw-work-input][data-qw-key=\"unitPrice\"]')")
+    set_value('[data-qw-work-input][data-qw-key="quantity"]',1)
     set_value('[data-qw-work-input][data-qw-key="unitPrice"]',955000)
     wait("return !!document.querySelector('[data-qw-next]:not([disabled])')")
     click('[data-qw-next]')
