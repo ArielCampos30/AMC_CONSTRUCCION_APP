@@ -50,7 +50,7 @@ export function createRequestDispatcher({
    }
    if(handlePublicSystem({p,method,res}))return;
    if(await authentication.handlePublic({p,method,req,res}))return;
-   if(handleState({p,method,user,session,res}))return;
+   if(await handleState({p,method,user,session,res}))return;
    if(await mediaAccess.serve({user,p,method,req,res}))return;
    if(p.startsWith('/api/')){
     if(!user)fail(401,'Ingresá a tu cuenta para continuar.');
