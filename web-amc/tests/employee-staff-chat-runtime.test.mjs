@@ -32,19 +32,21 @@ test('vista del chat hidrata sólo desde el endpoint dedicado y lleva el log al 
  assert.equal(log.scrollTop,240);
 });
 
-test('estado general conserva placeholders y el índice carga los runtimes oficiales en orden',async()=>{
- const [stateSource,runtimeSource,viewSource,indexSource]=await Promise.all([
+test('estado general conserva placeholders y el cargador asigna los runtimes oficiales al empleado',async()=>{
+ const [stateSource,runtimeSource,viewSource,indexSource,roleAssets]=await Promise.all([
   readFile(new URL('../state-routes.mjs',import.meta.url),'utf8'),
   readFile(new URL('../public/app-employee-staff-chat-runtime.js',import.meta.url),'utf8'),
   readFile(new URL('../public/employee-staff-chat-view.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/index.html',import.meta.url),'utf8')
+  readFile(new URL('../public/index.html',import.meta.url),'utf8'),
+  readFile(new URL('../public/app-role-assets.js',import.meta.url),'utf8')
  ]);
  assert.match(stateSource,/staffMessages:\[\],staffUnread:staffUnread\(user\),staffReadByAdmin:''/);
  assert.doesNotMatch(stateSource,/staffMessages:staffMessages\(user\),staffUnread:staffUnread\(user\),staffReadByAdmin:staffReadByAdmin\(user\.id\)/);
  assert.match(viewSource,/fetchImpl\('\/api\/staff-chat\/messages',\{credentials:'same-origin'\}\)/);
  assert.match(runtimeSource,/new MutationObserverRef\(hydrateVisible\)\.observe\(target,\{childList:true\}\)/);
- assert.match(indexSource,/employee-v4\.css[\s\S]*employee-staff-chat\.css[\s\S]*client-v5\.css/);
- assert.match(indexSource,/app-mobile-runtime\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js[\s\S]*app-shell-back-controller\.js/);
+ assert.doesNotMatch(indexSource,/employee-v4\.css|employee-staff-chat\.css|client-v5\.css/);
+ assert.match(indexSource,/app-bootstrap\.js[\s\S]*app-shell-back-controller\.js/);
+ assert.match(roleAssets,/employee[\s\S]*\/employee-v4\.css[\s\S]*\/employee-staff-chat\.css[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
  assert.doesNotMatch(indexSource,/mobile-runtime-fixes\.js|admin-maintenance-ui\.js|employee-staff-chat-lazy\.js/);
 });
 
