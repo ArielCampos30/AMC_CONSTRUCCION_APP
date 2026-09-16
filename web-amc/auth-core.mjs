@@ -1,8 +1,10 @@
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
+import {createPersistentRateLimiter} from './request-runtime.mjs';
 
 const weakPasswords=new Set(['12345678','123456789','1234567890','password','password1','qwerty123','admin123','contraseña','contrasena','amc12345']);
 
 export function createAuthCore({db,all,id,fail}){
+ const sensitiveRate=createPersistentRateLimiter({db,fail});
  const userView=u=>u?{id:u.id,email:u.email,name:u.name,phone:u.phone,town:u.town,role:u.role,sound:!!u.sound}:null;
  const passwordHash=p=>{
   if(typeof p!=='string'||p.length<8||p.length>200||weakPasswords.has(p.trim().toLowerCase()))fail(400,'Usá una contraseña de al menos 8 caracteres que no sea una clave común.');
@@ -24,12 +26,14 @@ export function createAuthCore({db,all,id,fail}){
  const canAccessQuote=(u,q)=>u.role==='admin'||u.role==='client'&&q.userId===u.id;
  const canAccessWork=(u,w)=>u.role==='admin'||u.role==='client'&&w.userId===u.id||u.role==='employee'&&employeeRequestIds(u).has(requestForWork(w));
  const requireResource=(u,resource,check)=>{if(!resource||!check(u,resource))fail(404,'No encontrado.');return resource;};
- const createAdminVerifier=checkRate=>(user,password)=>{
+ const createAdminVerifier=()=>(user,password)=>{
   requireAdmin(user);
-  checkRate(user.id+':sensitive',5);
+  const key='admin-sensitive:'+user.id;
+  sensitiveRate.check(key,5);
   if(typeof password!=='string'||password.length<8||password.length>200)fail(403,'Ingresá tu contraseña de administrador.');
   const [salt,hash]=user.password.split(':');
   if(!timingSafeEqual(Buffer.from(hash,'hex'),scryptSync(password,salt,64)))fail(403,'La contraseña de administrador no es correcta.');
+  sensitiveRate.clear(key);
  };
  return {userView,passwordHash,addUser,own,requireAdmin,canAccessRequest,canAccessQuote,canAccessWork,requireResource,createAdminVerifier};
 }
