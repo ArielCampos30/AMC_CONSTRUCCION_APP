@@ -9,7 +9,7 @@ const sha=value=>createHash('sha256').update(value).digest('hex');
 const now=()=>new Date().toISOString();
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
 
-test('database core initializes schema, storage helpers, snapshots and migrations',()=>{
+test('database core initializes schema, storage helpers, snapshots and migrations',async()=>{
  const core=createDatabaseCore({dbPath:':memory:',id,sha,now,fail});
  try{
   const columns=core.db.prepare('PRAGMA table_info(users)').all().map(c=>c.name);
@@ -36,7 +36,7 @@ test('database core initializes schema, storage helpers, snapshots and migration
   core.put('message','client-snapshot',{id:'m-snapshot',userId:'client-snapshot',requestId:'r1',senderId:'admin',date:'2026-09-12T20:00:00.000Z'});
   core.put('chatRead','client-snapshot',{id:'read-snapshot',requestId:'r1',lastMessageId:'m-snapshot'});
   core.put('post','',{id:'p1',title:'Uno'});
-  core.beginStateSnapshot();
+  await core.beginStateSnapshot();
   assert.equal(core.activeUsers('client').some(user=>user.id==='client-snapshot'),true);
   assert.equal(core.activeUsers('employee').some(user=>user.id==='employee-inactive'),false);
   assert.equal(core.usersByRoles(['employee']).some(user=>user.id==='employee-inactive'&&!user.active),true);
@@ -74,7 +74,7 @@ test('server delegates database initialization and migrations to database core',
  const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
  assert.match(composition,/from '.\/database-core\.mjs'/);
  assert.match(composition,/createDatabaseCore\(\{dbPath,id,sha,now,fail\}\)/);
- assert.match(stateRoutes,/beginStateSnapshot\(\)/);
+ assert.match(stateRoutes,/await beginStateSnapshot\(\)/);
  assert.match(stateRoutes,/endStateSnapshot\(\)/);
  assert.doesNotMatch(server,/CREATE TABLE IF NOT EXISTS users/);
  assert.doesNotMatch(server,/const migrateRelations=/);
