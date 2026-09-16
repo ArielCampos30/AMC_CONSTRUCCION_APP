@@ -9,8 +9,10 @@ export function createEmployeeStaffChatRuntime({
  clearTimeoutRef=globalThis.clearTimeout,
  queueMicrotaskRef=globalThis.queueMicrotask,
  fetchImpl=globalThis.fetch,
+ onHydrationError=error=>globalThis.console?.warn?.('[AMC staff chat]',String(error?.message||error||'Error')),
+ retryDelayMs=1500,
 }={}){
- let activeRoot=null,draft='',focusWanted=false,selectionStart=0,selectionEnd=0,focusReleaseTimer=0;
+ let activeRoot=null,draft='',focusWanted=false,selectionStart=0,selectionEnd=0,focusReleaseTimer=0,hydrateRetryTimer=0,hydrateAttempts=0;
  const textareaOf=root=>root?.querySelector('.staff-message textarea[name="text"]');
  const reveal=textarea=>requestAnimationFrameRef(()=>textarea?.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'auto'}));
  const rememberSelection=textarea=>{selectionStart=textarea?.selectionStart??0;selectionEnd=textarea?.selectionEnd??selectionStart;};
@@ -20,12 +22,31 @@ export function createEmployeeStaffChatRuntime({
   if(!focusWanted)return;
   requestAnimationFrameRef(()=>{if(!textarea.isConnected)return;try{textarea.focus({preventScroll:true});textarea.setSelectionRange(Math.min(selectionStart,textarea.value.length),Math.min(selectionEnd,textarea.value.length));}catch{}reveal(textarea);});
  };
+ const clearHydrationError=root=>{
+  delete root?.dataset?.staffChatError;
+  const notice=root?.querySelector?.('[data-staff-chat-load-error]');notice?.remove?.();
+ };
+ const showHydrationError=root=>{
+  if(!root)return;
+  root.dataset.staffChatError='1';
+  const log=root.querySelector?.('.employee-message-log');
+  if(!log||log.querySelector?.('[data-staff-chat-load-error]'))return;
+  log.insertAdjacentHTML?.('afterbegin','<p class="muted" role="status" data-staff-chat-load-error>AMC no pudo actualizar el chat. Reintentando…</p>');
+ };
+ const hydrateRoot=root=>{
+  if(!root)return;
+  root.dataset.staffChatLoading='1';hydrateAttempts++;
+  hydrateEmployeeStaffChat(root,fetchImpl).then(()=>{hydrateAttempts=0;clearHydrationError(root);}).catch(error=>{
+   if(error?.name==='AbortError')return;
+   showHydrationError(root);onHydrationError?.(error,{attempt:hydrateAttempts});
+   if(root===activeRoot&&hydrateAttempts<2){clearTimeoutRef(hydrateRetryTimer);hydrateRetryTimer=setTimeoutRef(()=>hydrateRoot(root),retryDelayMs);}
+  }).finally(()=>{if(root===activeRoot)delete root.dataset.staffChatLoading;restoreComposer(root);});
+ };
  const hydrateVisible=()=>{
   const root=documentRef.querySelector('.employee-staff-chat');
-  if(!root){activeRoot=null;return;}
+  if(!root){activeRoot=null;hydrateAttempts=0;clearTimeoutRef(hydrateRetryTimer);return;}
   if(root===activeRoot)return;
-  activeRoot=root;restoreComposer(root);root.dataset.staffChatLoading='1';
-  hydrateEmployeeStaffChat(root,fetchImpl).catch(()=>{}).finally(()=>{if(root===activeRoot)delete root.dataset.staffChatLoading;restoreComposer(root);});
+  activeRoot=root;hydrateAttempts=0;clearTimeoutRef(hydrateRetryTimer);restoreComposer(root);hydrateRoot(root);
  };
  const onInput=event=>{const textarea=event.target.closest?.('.employee-staff-chat .staff-message textarea[name="text"]');if(!textarea)return;draft=textarea.value;rememberSelection(textarea);};
  const onFocusIn=event=>{const textarea=event.target.closest?.('.employee-staff-chat .staff-message textarea[name="text"]');if(!textarea)return;clearTimeoutRef(focusReleaseTimer);focusWanted=true;draft=textarea.value;rememberSelection(textarea);reveal(textarea);};
