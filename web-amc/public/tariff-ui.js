@@ -1,3 +1,5 @@
+import {assetUrl} from './asset-url.js';
+
 export function createTariffUI({isAdmin,heading,esc,money,api,toast}){
  let items=[],rubrics=[],meta={},query='',rubricFilter='',loaded=false,loading=false,saving=false,error='',updatedAt='',modal=null;
  const selected=new Set();
@@ -9,7 +11,7 @@ export function createTariffUI({isAdmin,heading,esc,money,api,toast}){
  const filtered=()=>{const term=clean(query);return items.filter(item=>(!rubricFilter||item.rubricId===rubricFilter)&&(!term||clean([item.rubro,item.tarea,item.unidad,item.obs].join(' ')).includes(term)));};
  const countByRubric=id=>items.filter(item=>item.rubricId===id).length;
  const optionMarkup=(current='')=>rubrics.map(item=>`<option value="${esc(item.id)}"${item.id===current?' selected':''}>${esc(item.name)}</option>`).join('');
- const ensureStyle=()=>{if(document.querySelector('link[data-tariff-ui]'))return;const link=document.createElement('link');link.rel='stylesheet';link.href='/tariff-ui.css';link.dataset.tariffUi='1';document.head.append(link);};
+ const ensureStyle=()=>{if(document.querySelector('link[data-tariff-ui]'))return;const link=document.createElement('link');link.rel='stylesheet';link.href=assetUrl('/tariff-ui.css');link.dataset.tariffUi='1';document.head.append(link);};
  const sourceText=()=>Array.isArray(meta.sources)&&meta.sources.length?meta.sources.join(' · '):'';
 
  function applyData(data={}){
