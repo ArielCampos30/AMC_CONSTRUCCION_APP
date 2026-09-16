@@ -72,7 +72,7 @@ def login(email,password,role_class):
     go(BASE+"/#ingresar")
     wait("return !!document.querySelector('#auth')")
     js("const f=document.querySelector('#auth');f.elements.email.value=arguments[0];f.elements.password.value=arguments[1];f.requestSubmit();return true;",[email,password])
-    wait("return document.body.classList.contains(arguments[0])",20) if False else wait("return document.body.classList.contains("+json.dumps(role_class)+")",20)
+    wait("return document.body.classList.contains("+json.dumps(role_class)+")",20)
 
 
 def api(path,payload=None,method=None,expected=(200,201)):
@@ -211,6 +211,7 @@ try:
     set_value('[data-qw-request]',request_id)
     click('[data-qw-next]')
     wait("return !!document.querySelector('[data-qw-work-input][data-qw-key=\"description\"]')")
+    wait("return !document.body.innerText.includes('Consultando Tarifario…')",20)
     js("""
       const input=document.querySelector('[data-qw-work-input][data-qw-key="description"]');
       input.value='revo';input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();return true;
