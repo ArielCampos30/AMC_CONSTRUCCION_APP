@@ -22,6 +22,20 @@ test('migración regional verifica destino antes de commit y revierte ante error
  assert.doesNotMatch(source,/console\.log/);
 });
 
+test('migración regional resincroniza identidades después de preservar rowid',async()=>{
+ const source=await readFile(new URL('../region-migration.mjs',import.meta.url),'utf8');
+ assert.match(source,/OVERRIDING SYSTEM VALUE/);
+ assert.match(source,/async function syncIdentitySequence/);
+ assert.match(source,/pg_get_serial_sequence/);
+ assert.match(source,/SELECT setval\(\$1::regclass,\$2,\$3\)/);
+ assert.match(source,/TABLES\.filter\(table=>table\.identity\)/);
+ const inserts=source.indexOf('for(const table of TABLES)await insertRows');
+ const sequences=source.indexOf('for(const table of TABLES.filter(table=>table.identity))await syncIdentitySequence');
+ const verification=source.indexOf('for(const table of TABLES){',sequences);
+ const commit=source.indexOf("await target.query('COMMIT')");
+ assert.ok(inserts>=0&&inserts<sequences&&sequences<verification&&verification<commit);
+});
+
 test('migración regional valida TLS y admite CA por origen y destino',async()=>{
  const source=await readFile(new URL('../region-migration.mjs',import.meta.url),'utf8');
  assert.match(source,/readFileSync\(caFile,'utf8'\)/);
