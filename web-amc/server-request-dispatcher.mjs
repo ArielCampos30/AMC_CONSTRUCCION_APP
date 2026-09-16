@@ -1,4 +1,5 @@
 import {applyHttpSecurity} from './http-security.mjs';
+import {clientIpFromRequest} from './request-runtime.mjs';
 
 export function createRequestDispatcher({
  origin,
@@ -6,7 +7,6 @@ export function createRequestDispatcher({
  authentication,
  fail,
  checkRate,
- clientIp,
  readBody,
  recovery,
  handlePublicSystem,
@@ -45,7 +45,7 @@ export function createRequestDispatcher({
    }
    if(['/api/forgot-password','/api/reset-password'].includes(p)){
     if(method!=='POST')fail(405,'Método no permitido.');
-    checkRate('ip:'+clientIp(req)+':recovery',8);
+    checkRate('ip:'+clientIpFromRequest(req)+':recovery',8);
     const b=await readBody(req);
     if(await recovery.route({p,method,b,user,res}))return;
    }
