@@ -1,5 +1,6 @@
 const LEGACY_ADMIN_ROUTES=new Set(['admin']);
-const PROTECTED_PAGES=new Set(['clientes','calendario','portada','pedir','visita','perfil','presupuestos','obra','avisos','favoritos','referidos','admin','mensajes','agenda','adicionales','comprobantes','cotizador','empleados','tareas','compras','estado-presupuestos','fichas','materiales','resumen','resumen-diario','cierre','recuperar-cuentas','inicio-empleado','mis-trabajos','chat-equipo','mis-trabajos-cliente','chat-cliente','solicitar']);
+const PROTECTED_PAGES=new Set(['clientes','calendario','portada','pedir','visita','perfil','presupuestos','obra','avisos','favoritos','referidos','admin','mensajes','agenda','adicionales','comprobantes','cotizador','empleados','tareas','compras','estado-presupuestos','fichas','materiales','resumen','resumen-diario','cierre','recuperar-cuentas','inicio-empleado','mis-trabajos','chat-equipo','mis-trabajos-cliente','chat-cliente','solicitar','solicitudes','obras','chat-admin','mas-admin','respaldos']);
+const PROTECTED_PREFIXES=['mi-trabajo/','solicitud/','presupuesto/','obra/','chat/','presupuesto-admin/','obra-admin/','chat-admin/','chat-equipo/','cliente/','trabajo/'];
 const EMPLOYEE_PAGES=new Set(['perfil','avisos','mensajes','inicio-empleado','mis-trabajos','chat-equipo']);
 const TEAM_PAGES=new Set(['empleados','tareas','compras','estado-presupuestos']);
 const FEATURE_PAGES=new Set(['mensajes','agenda','adicionales','comprobantes','cotizador']);
@@ -16,8 +17,14 @@ export function normalizePageForRole(page,role){
  return role==='admin'&&LEGACY_ADMIN_ROUTES.has(page)?'inicio':page;
 }
 
+export function isProtectedPage(page=''){
+ const value=String(page||'');
+ return PROTECTED_PAGES.has(value)||PROTECTED_PREFIXES.some(prefix=>value.startsWith(prefix));
+}
+
 export function resolveAppPage(page,state={}){
  const role=state.user?.role;
+ if(!state.user&&isProtectedPage(page))return {view:'auth',returnTo:page};
  if(role==='client'&&page==='inicio')return {view:'client-home'};
  if(role==='client'&&(page==='obra'||page==='mis-trabajos-cliente'))return {view:'client-works'};
  if(role==='client'&&page.startsWith('mi-trabajo/'))return {view:'client-work-detail',id:page.slice(11)};
@@ -47,7 +54,6 @@ export function resolveAppPage(page,state={}){
  if(page.startsWith('trabajo/')&&role==='employee')return {view:'employee-work-detail',id:page.slice(8)};
  if(role==='employee'&&page==='chat-equipo')return {view:'team',page:'inicio-empleado',legacyEmployeeChat:true};
  if(role==='employee'&&['inicio-empleado','mis-trabajos'].includes(page))return {view:'team',page};
- if(!state.user&&PROTECTED_PAGES.has(page))return {view:'auth'};
  if(page==='calendario'||page==='portada')return {view:'planning',page};
  if(['recuperar','restablecer','recuperar-cuentas','cierre'].includes(page))return {view:'accounts',page};
  if(page==='resumen-diario')return {view:'fieldwork',page:'resumen'};
