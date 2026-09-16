@@ -7,274 +7,13 @@
   <meta name="theme-color" content="#121212" />
   <meta name="color-scheme" content="dark" />
   <title>AMC Construcciones | Valle Hermoso y Punilla</title>
-  <style>
-    :root {
-      --bg: #101010;
-      --panel: #191919;
-      --panel-2: #222;
-      --line: rgba(255,255,255,.09);
-      --text: #f5f5f5;
-      --muted: #b9b9b9;
-      --accent: #f2b705;
-      --accent-2: #ffd75d;
-      --max: 1120px;
-      --radius: 20px;
-      --shadow: 0 24px 80px rgba(0,0,0,.28);
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      min-width: 320px;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.55;
-    }
-    a { color: inherit; text-decoration: none; }
-    button, a { -webkit-tap-highlight-color: transparent; }
-    .wrap { width: min(calc(100% - 32px), var(--max)); margin: auto; }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      backdrop-filter: blur(14px);
-      background: rgba(16,16,16,.88);
-      border-bottom: 1px solid var(--line);
-    }
-    .nav {
-      min-height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-    }
-    .brand { display: flex; align-items: center; gap: 12px; font-weight: 850; letter-spacing: .1px; }
-    .mark {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      background: var(--accent);
-      color: #111;
-      font-weight: 950;
-    }
-    .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: .95rem; }
-    .nav-links > a:not(.btn):hover { color: var(--text); }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 46px;
-      border: 0;
-      border-radius: 13px;
-      padding: 12px 18px;
-      font: inherit;
-      font-weight: 850;
-      cursor: pointer;
-      background: var(--accent);
-      color: #111;
-      transition: transform .18s ease, background .18s ease, border-color .18s ease;
-    }
-    .btn:hover { transform: translateY(-1px); background: var(--accent-2); }
-    .btn:focus-visible, a:focus-visible { outline: 3px solid rgba(242,183,5,.45); outline-offset: 3px; }
-    .btn.secondary { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,.16); }
-    .btn.secondary:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.28); }
-
-    .hero { padding: 86px 0 58px; }
-    .hero-grid { display: grid; grid-template-columns: 1.13fr .87fr; gap: 42px; align-items: center; }
-    .eyebrow { color: var(--accent); font-weight: 850; text-transform: uppercase; letter-spacing: .12em; font-size: .79rem; }
-    h1 { margin: 14px 0 20px; font-size: clamp(2.7rem, 7vw, 5.8rem); line-height: .95; letter-spacing: -.055em; }
-    .lead { max-width: 720px; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.3rem); }
-    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-    .areas { margin-top: 20px; color: #ddd; font-size: .95rem; }
-
-    .hero-card {
-      position: relative;
-      overflow: hidden;
-      min-height: 430px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 30px;
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      background:
-        radial-gradient(circle at 15% 20%, rgba(242,183,5,.26), transparent 32%),
-        linear-gradient(150deg, #2b2b2b 0%, #1b1b1b 48%, #141414 100%);
-      box-shadow: var(--shadow);
-    }
-    .hero-card::before,
-    .hero-card::after {
-      content: "";
-      position: absolute;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 24px;
-      transform: rotate(-8deg);
-    }
-    .hero-card::before { width: 250px; height: 155px; right: -48px; top: 38px; }
-    .hero-card::after { width: 180px; height: 112px; left: -36px; top: 138px; transform: rotate(9deg); }
-    .hero-card > * { position: relative; z-index: 1; }
-    .hero-chip { align-self: flex-start; margin-bottom: auto; padding: 8px 11px; border-radius: 999px; background: rgba(242,183,5,.12); border: 1px solid rgba(242,183,5,.34); color: #ffe59a; font-size: .82rem; font-weight: 750; }
-    .hero-card .big { font-size: clamp(2.3rem, 5vw, 3.6rem); font-weight: 950; line-height: .98; letter-spacing: -.045em; }
-    .hero-card p { margin: 13px 0 0; color: var(--muted); }
-
-    .notice {
-      display: none;
-      margin-top: 16px;
-      padding: 13px 15px;
-      border-radius: 13px;
-      background: #2a2310;
-      border: 1px solid rgba(242,183,5,.24);
-      color: #ffe7a3;
-      font-size: .9rem;
-    }
-
-    section { padding: 72px 0; }
-    .section-head { max-width: 760px; margin-bottom: 30px; }
-    .section-head h2 { margin: 8px 0 10px; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.02; letter-spacing: -.04em; }
-    .section-head p { margin: 0; color: var(--muted); }
-
-    .service-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; }
-    .card {
-      min-height: 205px;
-      padding: 22px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--panel);
-    }
-    .card .icon { font-size: 1.8rem; }
-    .card h3 { margin: 12px 0 7px; }
-    .card p { margin: 0; color: var(--muted); }
-
-    .steps { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; counter-reset: step; }
-    .step {
-      min-height: 205px;
-      padding: 24px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--panel-2);
-    }
-    .step::before {
-      counter-increment: step;
-      content: counter(step);
-      width: 34px;
-      height: 34px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 16px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #111;
-      font-weight: 950;
-    }
-    .step p { color: var(--muted); }
-
-    .visual-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }
-    .visual {
-      min-height: 270px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: flex-end;
-      padding: 28px;
-      border-radius: 24px;
-      border: 1px solid var(--line);
-      background:
-        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.62) 100%),
-        radial-gradient(circle at 70% 20%, rgba(242,183,5,.18), transparent 30%),
-        linear-gradient(135deg, #272727, #151515);
-    }
-    .visual::before {
-      content: "";
-      position: absolute;
-      inset: 16% 10% auto auto;
-      width: 55%;
-      height: 42%;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.09);
-      transform: skewY(-4deg);
-    }
-    .visual-copy { position: relative; z-index: 1; max-width: 470px; }
-    .visual-copy strong { display: block; margin-bottom: 7px; font-size: 1.25rem; }
-    .visual-copy p { margin: 0; color: var(--muted); }
-
-    .proof { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-    .proof-box { min-height: 210px; padding: 28px; border-radius: 22px; background: #171717; border: 1px solid var(--line); }
-    .proof-box strong { display: block; margin-bottom: 8px; font-size: 1.22rem; }
-    .proof-box p { margin: 0; color: var(--muted); }
-
-    .cta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      padding: 42px;
-      border-radius: 28px;
-      background: var(--accent);
-      color: #111;
-    }
-    .cta h2 { margin: 0; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1; letter-spacing: -.04em; }
-    .cta p { max-width: 670px; margin: 9px 0 0; }
-    .cta .btn { flex: 0 0 auto; background: #111; color: #fff; white-space: nowrap; }
-    .cta .btn:hover { background: #272727; }
-
-    footer { padding: 38px 0 54px; color: var(--muted); font-size: .92rem; }
-    .footer-row { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
-
-    .floating {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 50;
-      width: 58px;
-      height: 58px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: #25d366;
-      color: #081b0f;
-      font-size: .86rem;
-      font-weight: 950;
-      box-shadow: 0 12px 35px rgba(0,0,0,.34);
-    }
-
-    @media (max-width: 900px) {
-      .hero-grid, .visual-grid, .proof { grid-template-columns: 1fr; }
-      .service-grid, .steps { grid-template-columns: 1fr 1fr; }
-      .nav-links > a:not(.btn) { display: none; }
-      .hero { padding-top: 58px; }
-      .hero-card { min-height: 320px; }
-      .cta { align-items: flex-start; flex-direction: column; }
-    }
-
-    @media (max-width: 590px) {
-      .wrap { width: min(calc(100% - 24px), var(--max)); }
-      .service-grid, .steps { grid-template-columns: 1fr; }
-      .hero-actions { flex-direction: column; }
-      .hero-actions .btn { width: 100%; }
-      .brand span:last-child { font-size: .9rem; }
-      .nav .btn { padding-inline: 13px; font-size: .9rem; }
-      .cta { padding: 30px 24px; }
-      .floating { right: 14px; bottom: 14px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      *, *::before, *::after { transition-duration: .01ms !important; }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/css/landing.css" />
 </head>
 <body>
 <header>
   <div class="wrap nav">
     <a class="brand" href="#inicio" aria-label="AMC Construcciones">
-      <span class="mark">AMC</span>
+      <img class="brand-logo" src="assets/img/amc-logo.webp" alt="" width="54" height="54" />
       <span>Construcciones</span>
     </a>
     <nav class="nav-links" aria-label="Navegación principal">
@@ -300,7 +39,7 @@
         <div class="notice" id="waNotice" role="status" aria-live="polite">Modo demo: el WhatsApp comercial todavía no está cargado. La landing ya conserva la procedencia de campaña para que el contacto pueda atribuirse cuando se active el número.</div>
       </div>
 
-      <div class="hero-card" aria-label="Presentación de AMC Construcciones">
+      <div class="hero-card" aria-label="Presentación visual de trabajos de construcción y reparación">
         <div class="hero-chip">Valle Hermoso · Punilla</div>
         <div class="big">Tu obra,<br />bien clara.</div>
         <p>Presupuestos organizados, trabajos detallados y comunicación directa desde el primer contacto.</p>
@@ -342,16 +81,16 @@
   <section aria-labelledby="visual-title">
     <div class="wrap">
       <div class="section-head">
-        <div class="eyebrow">Presentación visual</div>
-        <h2 id="visual-title">Una landing lista para sumar imágenes sin inventar trabajos realizados.</h2>
-        <p>En este rescate no se publican fotos reales ni se atribuyen obras que todavía no estén documentadas. Los espacios visuales quedan preparados para incorporar material propio o piezas ilustrativas en una fase posterior.</p>
+        <div class="eyebrow">Trabajo en obra</div>
+        <h2 id="visual-title">Reparaciones, reformas y terminaciones.</h2>
+        <p>Una primera mirada al tipo de trabajo que resolvemos en viviendas y espacios de la zona.</p>
       </div>
       <div class="visual-grid">
-        <div class="visual" aria-hidden="true">
-          <div class="visual-copy"><strong>Reparaciones y reformas</strong><p>Espacio visual preparado para futuras piezas de campaña.</p></div>
+        <div class="visual visual--repair" aria-label="Trabajo de albañilería y reparación en obra">
+          <div class="visual-copy"><strong>Reparaciones y reformas</strong><p>Correcciones, revoques, mampostería y mejoras para recuperar cada espacio.</p></div>
         </div>
-        <div class="visual" aria-hidden="true">
-          <div class="visual-copy"><strong>Trabajo claro desde el inicio</strong><p>Servicio, zona y forma de contacto visibles.</p></div>
+        <div class="visual visual--finish" aria-label="Trabajo de terminación en vivienda">
+          <div class="visual-copy"><strong>Terminaciones cuidadas</strong><p>Buscamos que cada trabajo quede limpio, ordenado y correctamente resuelto.</p></div>
         </div>
       </div>
     </div>
@@ -361,11 +100,11 @@
     <div class="wrap">
       <div class="section-head">
         <div class="eyebrow">Confianza</div>
-        <h2>La credibilidad se construye con información verificable.</h2>
+        <h2>Claridad desde el primer contacto.</h2>
       </div>
       <div class="proof">
         <div class="proof-box"><strong>Alcance claro</strong><p>La consulta empieza con fotos, localidad, medidas y una descripción breve. Así podemos entender mejor el trabajo antes de cotizar.</p></div>
-        <div class="proof-box"><strong>Seguimiento ordenado</strong><p>La landing queda separada de la app en esta etapa. La integración de prospectos y seguimiento comercial se hará en un bloque posterior.</p></div>
+        <div class="proof-box"><strong>Comunicación directa</strong><p>Coordinamos cada paso de forma simple para que sepas qué trabajo se va a realizar y cómo seguimos.</p></div>
       </div>
     </div>
   </section>
@@ -390,57 +129,10 @@
   </div>
 </footer>
 
-<a class="floating js-wa" href="#contacto" aria-label="Contactar a AMC por WhatsApp">WA</a>
+<a class="floating js-wa" href="#contacto" aria-label="Contactar a AMC por WhatsApp">
+  <img src="assets/icons/whatsapp.svg" alt="" width="31" height="31" />
+</a>
 
-<script>
-  // Bloque 15.2A: dejar vacío hasta definir el WhatsApp Business comercial.
-  // Formato futuro: código de país + característica + número, sin +, espacios ni guiones.
-  const WHATSAPP_NUMBER = "";
-
-  const params = new URLSearchParams(window.location.search);
-  const campaign = {
-    source: params.get("utm_source") || "",
-    medium: params.get("utm_medium") || "",
-    campaign: params.get("utm_campaign") || "",
-    content: params.get("utm_content") || ""
-  };
-
-  const campaignLabel = Object.entries(campaign)
-    .filter(([, value]) => value)
-    .map(([key, value]) => `${key}=${value}`)
-    .join(" | ");
-
-  const baseMessage = [
-    "Hola AMC, quisiera pedir un presupuesto.",
-    "Mi localidad es: _____.",
-    "El trabajo que necesito es: _____.",
-    "Medidas aproximadas: _____."
-  ];
-
-  if (campaignLabel) {
-    baseMessage.push(`Origen de la consulta: ${campaignLabel}`);
-  }
-
-  const message = encodeURIComponent(baseMessage.join("\n"));
-  const notice = document.getElementById("waNotice");
-
-  document.querySelectorAll(".js-wa").forEach(link => {
-    if (WHATSAPP_NUMBER) {
-      link.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      return;
-    }
-
-    link.href = "#contacto";
-    link.addEventListener("click", event => {
-      event.preventDefault();
-      notice.style.display = "block";
-      notice.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  });
-
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>
+<script src="assets/js/landing.js" defer></script>
 </body>
 </html>

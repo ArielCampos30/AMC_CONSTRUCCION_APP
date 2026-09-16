@@ -2,6 +2,15 @@
 
 Aplicación conectada para administrar clientes, solicitudes, presupuestos, obras y equipo de AMC desde Web, Android y PWA/iPhone.
 
+## Frentes del proyecto
+
+AMC se mantiene en dos superficies independientes que comparten identidad pero no deben mezclarse por defecto:
+
+- **Landing comercial**: `docs/` — sitio público, presentación, campañas, captación y acceso hacia la app.
+- **App AMC**: `web-amc/` + Android — clientes, administración, presupuestos, obras, empleados, chat y operación.
+
+Cada bloque nuevo debe ejecutarse sobre **Landing** o **App** según el pedido. Sólo se modifican ambos frentes cuando el alcance autorizado sea explícitamente una integración entre ellos.
+
 ## Qué incluye
 
 - Administración: clientes, solicitudes, presupuestos, obras, calendario, empleados, tareas, chat, reseñas y cierre.
