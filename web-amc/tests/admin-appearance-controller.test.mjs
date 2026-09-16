@@ -50,10 +50,11 @@ test('acciones locales reordenan, quitan y limpian fotos sin llamar API',async()
 });
 
 test('Apariencia tiene ownership dedicado y no depende de mantenimiento legacy',async()=>{
- const [controller,planning,index,styles]=await Promise.all([
+ const [controller,planning,index,roleAssets,styles]=await Promise.all([
   source('public/app-admin-appearance-controller.js'),
   source('public/planning-ui.js'),
   source('public/index.html'),
+  source('public/app-role-assets.js'),
   source('public/admin-appearance.css'),
  ]);
  assert.match(planning,/createAdminAppearanceController/);
@@ -68,7 +69,8 @@ test('Apariencia tiene ownership dedicado y no depende de mantenimiento legacy',
  assert.doesNotMatch(controller,/X-CSRF-Token/);
  assert.doesNotMatch(controller,/setTimeout\(\(\)=>el\.classList\.remove/);
  assert.doesNotMatch(index,/admin-maintenance-ui\.js/);
- assert.match(index,/admin-appearance\.css/);
+ assert.doesNotMatch(index,/admin-appearance\.css/);
+ assert.match(roleAssets,/admin[\s\S]*\/admin-appearance\.css/);
  assert.match(styles,/\.appearance-photo-list/);
  assert.match(styles,/\.appearance-preview/);
  assert.match(styles,/\.appearance-history/);
