@@ -335,7 +335,7 @@ try:
     set_value('#amc-chat-dialog .floating-staff-message textarea[name="text"]',CHAT_TEXT)
     attach_png('#amc-chat-dialog .floating-staff-message input[name="photos"]','chat-avance-piloto.png')
     submit('#amc-chat-dialog .floating-staff-message')
-    wait("return document.querySelector('#amc-chat-dialog .message-log')?.innerText.includes("+json.dumps(CHAT_TEXT)+")",25)
+    wait("return [...document.querySelectorAll('#amc-chat-dialog .message[data-message-id]')].some(message=>message.innerText.includes("+json.dumps(CHAT_TEXT)+") && !!message.querySelector('.mini-photos img'))",30)
     staff_chat=api('/api/staff-chat/messages',None,'GET')
     assert any(m.get('text')==CHAT_TEXT and m.get('photos') for m in staff_chat.get('messages',[])),staff_chat
 
