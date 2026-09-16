@@ -50,7 +50,7 @@ test('formularios Admin reducen autofill de datos ajenos sin romper login',()=>{
 
 test('favicon PWA y notificaciones usan la identidad AMC actual',()=>{
   const html=read('../public/index.html'),manifest=JSON.parse(read('../public/manifest.webmanifest')),sw=read('../public/sw.js'),staticFiles=read('../static-file-routes.mjs');
-  assert.match(html,/amc-logo\.webp\?v=20260908/);assert.doesNotMatch(html,/amc-icon\.png/);assert.equal(manifest.theme_color,'#0b675f');assert.equal(manifest.icons[0].src,'/assets/amc-logo.webp');assert.match(sw,/AMC-offline-shell-v12/);assert.match(sw,/__AMC_ASSET_VERSION__/);assert.match(sw,/\/assets\/amc-logo\.webp/);assert.doesNotMatch(sw,/amc-icon\.png/);assert.match(staticFiles,/'webp':'image\/webp'/);
+  assert.match(html,/__AMC_ASSET_BASE__\/assets\/amc-logo\.webp/);assert.doesNotMatch(html,/amc-logo\.webp\?v=\d+/);assert.doesNotMatch(html,/amc-icon\.png/);assert.equal(manifest.theme_color,'#0b675f');assert.equal(manifest.icons[0].src,'/assets/amc-logo.webp');assert.match(sw,/AMC-offline-shell-v12/);assert.match(sw,/__AMC_ASSET_VERSION__/);assert.match(sw,/\/assets\/amc-logo\.webp/);assert.doesNotMatch(sw,/amc-icon\.png/);assert.match(staticFiles,/'webp':'image\/webp'/);
 });
 
 test('WhatsApp externo normaliza números argentinos desde la vista actual',()=>{

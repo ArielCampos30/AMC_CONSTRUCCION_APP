@@ -2,7 +2,7 @@ name: AMC - Piloto comercial integral
 on:
   pull_request:
     branches: [main]
-    paths: ['web-amc/**', '.github/workflows/bloque13-piloto-comercial.yml']
+    paths: ['web-amc/**', '.github/workflows/commercial-pilot.yml']
   workflow_dispatch:
 permissions:
   contents: read
