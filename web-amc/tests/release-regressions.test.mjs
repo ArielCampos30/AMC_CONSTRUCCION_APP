@@ -50,7 +50,7 @@ test('formularios Admin reducen autofill de datos ajenos sin romper login',()=>{
 
 test('favicon PWA y notificaciones usan la identidad AMC actual',()=>{
   const html=read('../public/index.html'),manifest=JSON.parse(read('../public/manifest.webmanifest')),sw=read('../public/sw.js'),staticFiles=read('../static-file-routes.mjs');
-  assert.match(html,/amc-logo\.webp\?v=20260908/);assert.doesNotMatch(html,/amc-icon\.png/);assert.equal(manifest.theme_color,'#0b675f');assert.equal(manifest.icons[0].src,'/assets/amc-logo.webp');assert.match(sw,/AMC-offline-shell-v11/);assert.match(sw,/\/assets\/amc-logo\.webp/);assert.doesNotMatch(sw,/amc-icon\.png/);assert.match(staticFiles,/'webp':'image\/webp'/);
+  assert.match(html,/amc-logo\.webp\?v=20260908/);assert.doesNotMatch(html,/amc-icon\.png/);assert.equal(manifest.theme_color,'#0b675f');assert.equal(manifest.icons[0].src,'/assets/amc-logo.webp');assert.match(sw,/AMC-offline-shell-v12/);assert.match(sw,/__AMC_ASSET_VERSION__/);assert.match(sw,/\/assets\/amc-logo\.webp/);assert.doesNotMatch(sw,/amc-icon\.png/);assert.match(staticFiles,/'webp':'image\/webp'/);
 });
 
 test('WhatsApp externo normaliza números argentinos desde la vista actual',()=>{
@@ -76,6 +76,6 @@ test('editar presupuesto restaura el modelo persistido y el precio por quoteId',
 });
 
 test('los scripts actuales conservan sintaxis JavaScript válida y no reaparece el estimador v1',()=>{
-  for(const path of ['../public/features-ui.js','../public/quote-tools-loader.js','../public/quote-tools-runtime.js','../public/chat-features.js','../public/project-actions-features.js','../public/quote-wizard.js','../public/quote-save-controller.js','../public/quote-pdf-controller.js','../public/client-directory.js','../public/floating-chat.js','../public/team-ui.js','../public/amc-busy.js','../public/app.js','../public/app-bootstrap.js','../public/app-role-assets.js','../public/admin-quotes-ui.js','../public/admin-works-ui.js'])execFileSync(process.execPath,['--check',fileURLToPath(new URL(path,import.meta.url))]);
+  for(const path of ['../public/asset-url.js','../public/features-ui.js','../public/quote-tools-loader.js','../public/quote-tools-runtime.js','../public/chat-features.js','../public/project-actions-features.js','../public/quote-wizard.js','../public/quote-save-controller.js','../public/quote-pdf-controller.js','../public/client-directory.js','../public/floating-chat.js','../public/team-ui.js','../public/amc-busy.js','../public/app.js','../public/app-bootstrap.js','../public/app-role-assets.js','../public/admin-quotes-ui.js','../public/admin-works-ui.js'])execFileSync(process.execPath,['--check',fileURLToPath(new URL(path,import.meta.url))]);
   for(const path of ['../public/features-ui-legacy.js','../public/presupuestos-bridge.js','../public/estimator-sync.js','../public/estimator-steps.js','../public/estimator-v1.js','../public/pdf-logo.js'])assert.throws(()=>read(path));
 });
