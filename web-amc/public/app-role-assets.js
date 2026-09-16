@@ -8,14 +8,14 @@ export const ROLE_ASSETS=Object.freeze({
 const KNOWN_ROLE_STYLES=new Set(Object.values(ROLE_ASSETS).flatMap(config=>config.styles));
 const moduleLoads=new Map(),styleLoads=new Map();
 
-function normalizedRole(role){return Object.hasOwn(ROLE_ASSETS,role)?role:'public';}
+function normalizedRole(role){return Object.prototype.hasOwnProperty.call(ROLE_ASSETS,role)?role:'public';}
 function stylesheetPath(link){try{return new URL(link.href||link.getAttribute?.('href')||'',globalThis.location?.origin||'http://localhost').pathname;}catch{return String(link.getAttribute?.('href')||'');}}
 function stylesheetLinks(documentRef){return [...(documentRef?.querySelectorAll?.('link[rel="stylesheet"]')||[])];}
 function existingStylesheet(documentRef,href){return stylesheetLinks(documentRef).find(link=>stylesheetPath(link)===href);}
 function pruneRoleStyles(documentRef,keep){
  for(const link of stylesheetLinks(documentRef)){
   const href=stylesheetPath(link);
-  if(KNOWN_ROLE_STYLES.has(href)&&!keep.has(href))link.remove?.();
+  if(KNOWN_ROLE_STYLES.has(href)&&!keep.has(href)){link.remove?.();styleLoads.delete(href);}
  }
 }
 function ensureStylesheet(documentRef,href){
