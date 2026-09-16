@@ -65,12 +65,11 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
   for(const row of rows)if(row.source==='user'){const user={id:row.id,name:row.name,email:row.email,phone:row.phone,town:row.town,role:row.role,active:Number(row.active)!==0};stateUsers.push(user);stateUsersById.set(user.id,user);}
   return stateRows;
  };
- const beginStateSnapshot=()=>hydrateStateSnapshot(db.prepare(STATE_SNAPSHOT_SQL).all());
- const beginStateSnapshotAsync=async()=>{
+ const beginStateSnapshot=async()=>{
   if(remoteUrl&&typeof db.queryAsync==='function')return hydrateStateSnapshot((await db.queryAsync(STATE_SNAPSHOT_SQL)).rows);
-  return beginStateSnapshot();
+  return hydrateStateSnapshot(db.prepare(STATE_SNAPSHOT_SQL).all());
  };
  const endStateSnapshot=()=>{stateRows=null;statePositions=null;stateUsers=null;stateUsersById=null;};
  runMigrations();
- return {db,remoteUrl,all,allEntries,activeUsers,usersByRoles,userById,docPosition,get,put,transaction,runMigrations,beginStateSnapshot,beginStateSnapshotAsync,endStateSnapshot};
+ return {db,remoteUrl,all,allEntries,activeUsers,usersByRoles,userById,docPosition,get,put,transaction,runMigrations,beginStateSnapshot,endStateSnapshot};
 }
