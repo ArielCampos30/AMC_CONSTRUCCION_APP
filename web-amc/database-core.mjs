@@ -12,7 +12,25 @@ const schema=`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS devices(id TEXT PRIMARY KEY,userId TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS delivery(id TEXT PRIMARY KEY,deviceId TEXT NOT NULL,noticeId TEXT NOT NULL,body TEXT NOT NULL,attempts INTEGER DEFAULT 0,nextAt INTEGER DEFAULT 0,status TEXT DEFAULT 'pending',error TEXT DEFAULT '');
  CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT NOT NULL);`;
-const STATE_SNAPSHOT_SQL="SELECT 'doc' AS source,CAST(rowid AS TEXT) AS position,id,kind,owner,body,NULL AS email,NULL AS name,NULL AS phone,NULL AS town,NULL AS role,NULL AS active FROM docs WHERE kind!='estimator' UNION ALL SELECT 'user' AS source,NULL AS position,id,NULL AS kind,NULL AS owner,NULL AS body,email,name,phone,town,role,active FROM users";
+const SNAPSHOT_ALWAYS_EXCLUDED=['estimator','fileUpload','tariffCatalog','admin2fa','monitor','teamAssignmentBatch','employeeAudit'];
+const SNAPSHOT_ADMIN_EXCLUDED=[...SNAPSHOT_ALWAYS_EXCLUDED,'staffMessage','staffRead','staffAdminRead'];
+const SNAPSHOT_CLIENT_SHARED=['appearance','post','review','calendarBooking','chatRead','clientChatRead'];
+const SNAPSHOT_EMPLOYEE_SHARED=['appearance','post','review','message','quote','work'];
+const marks=values=>values.map(()=>'?').join(',');
+const stateSnapshotQuery=user=>{
+ const role=user?.role,id=user?.id;
+ let docsWhere="kind!='estimator'",docParams=[],usersWhere='1=1',userParams=[];
+ if(role==='admin'){
+  docsWhere=`kind NOT IN (${marks(SNAPSHOT_ADMIN_EXCLUDED)})`;docParams=[...SNAPSHOT_ADMIN_EXCLUDED];
+ }else if(role==='client'&&id){
+  docsWhere=`kind NOT IN (${marks(SNAPSHOT_ALWAYS_EXCLUDED)}) AND (owner=? OR kind IN (${marks(SNAPSHOT_CLIENT_SHARED)}))`;
+  docParams=[...SNAPSHOT_ALWAYS_EXCLUDED,id,...SNAPSHOT_CLIENT_SHARED];usersWhere="id=? OR role='admin'";userParams=[id];
+ }else if(role==='employee'&&id){
+  docsWhere=`kind NOT IN (${marks(SNAPSHOT_ALWAYS_EXCLUDED)}) AND (owner=? OR kind IN (${marks(SNAPSHOT_EMPLOYEE_SHARED)}))`;
+  docParams=[...SNAPSHOT_ALWAYS_EXCLUDED,id,...SNAPSHOT_EMPLOYEE_SHARED];usersWhere='id=?';userParams=[id];
+ }
+ return {sql:`SELECT 'doc' AS source,CAST(rowid AS TEXT) AS position,id,kind,owner,body,NULL AS email,NULL AS name,NULL AS phone,NULL AS town,NULL AS role,NULL AS active FROM docs WHERE ${docsWhere} UNION ALL SELECT 'user' AS source,NULL AS position,id,NULL AS kind,NULL AS owner,NULL AS body,email,name,phone,town,role,active FROM users WHERE ${usersWhere}`,params:[...docParams,...userParams]};
+};
 
 export function createDatabaseCore({dbPath,id,sha,now,fail}){
  if(dbPath!==':memory:')mkdirSync(path.dirname(dbPath),{recursive:true});
@@ -65,9 +83,10 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
   for(const row of rows)if(row.source==='user'){const user={id:row.id,name:row.name,email:row.email,phone:row.phone,town:row.town,role:row.role,active:Number(row.active)!==0};stateUsers.push(user);stateUsersById.set(user.id,user);}
   return stateRows;
  };
- const beginStateSnapshot=async()=>{
-  if(remoteUrl&&typeof db.queryAsync==='function')return hydrateStateSnapshot((await db.queryAsync(STATE_SNAPSHOT_SQL)).rows);
-  return hydrateStateSnapshot(db.prepare(STATE_SNAPSHOT_SQL).all());
+ const beginStateSnapshot=async user=>{
+  const query=stateSnapshotQuery(user);
+  if(remoteUrl&&typeof db.queryAsync==='function')return hydrateStateSnapshot((await db.queryAsync(query.sql,query.params)).rows);
+  return hydrateStateSnapshot(db.prepare(query.sql).all(...query.params));
  };
  const endStateSnapshot=()=>{stateRows=null;statePositions=null;stateUsers=null;stateUsersById=null;};
  runMigrations();
