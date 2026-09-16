@@ -211,15 +211,10 @@ try:
     set_value('[data-qw-request]',request_id)
     click('[data-qw-next]')
     wait("return !!document.querySelector('[data-qw-work-input][data-qw-key=\"description\"]')")
-    wait("return !document.body.innerText.includes('Consultando Tarifario…')",20)
-    js("""
-      const input=document.querySelector('[data-qw-work-input][data-qw-key="description"]');
-      input.value='revo';input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();return true;
-    """)
-    wait("return !!document.querySelector('#quote-tariff-overlay:not([hidden]) button[data-qw-select-tariff]')",20)
-    click('#quote-tariff-overlay button[data-qw-select-tariff]')
-    wait("return !!document.querySelector('.quote-selected-tariff')")
-    set_if_exists('[data-qw-work-input][data-qw-key="quantity"]',10)
+    set_value('[data-qw-work-input][data-qw-key="description"]','Revoque fino piloto')
+    click('[data-qw-pricing-mode="manual"]')
+    wait("return !!document.querySelector('[data-qw-work-input][data-qw-key=\"unitPrice\"]')")
+    set_value('[data-qw-work-input][data-qw-key="unitPrice"]',955000)
     wait("return !!document.querySelector('[data-qw-next]:not([disabled])')")
     click('[data-qw-next]')
     wait("return !!document.querySelector('.quote-wizard-stage-3 .quote-cost-stage')")
