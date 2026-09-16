@@ -49,10 +49,15 @@ test('la X de cierre queda sola y centrada en el CSS principal',()=>{
  assert.match(wizard,/aria-labelledby="quote-wizard-title"/);
 });
 
-test('index carga el refuerzo visual después del cotizador base',()=>{
+test('index no carga autocomplete ni estilos del Cotizador hasta necesitarlos',()=>{
  const html=read('../public/index.html');
- assert.match(html,/quote-wizard-autocomplete\.css/);
- assert.match(html,/quote-wizard-autocomplete\.js/);
- assert.ok(html.indexOf('/quote-wizard.css')<html.indexOf('/quote-wizard-autocomplete.css'));
- assert.ok(html.indexOf('/app.js')<html.indexOf('/quote-wizard-autocomplete.js'));
+ const loader=read('../public/quote-tools-loader.js');
+ assert.doesNotMatch(html,/quote-wizard-autocomplete\.css/);
+ assert.doesNotMatch(html,/quote-wizard-autocomplete\.js/);
+ assert.doesNotMatch(html,/quote-wizard\.css/);
+ assert.doesNotMatch(html,/quote-builder-review\.css/);
+ assert.match(loader,/quote-wizard\.css/);
+ assert.match(loader,/quote-builder-review\.css/);
+ assert.match(loader,/quote-wizard-autocomplete\.css/);
+ assert.match(loader,/importModule\('\.\/quote-wizard-autocomplete\.js'\)/);
 });
