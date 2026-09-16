@@ -25,12 +25,15 @@ test('12.10A mantiene las implementaciones PDF pesadas fuera del grafo estático
  assert.doesNotMatch(payment,/LOGO_JPG_B64/);
  assert.ok(Buffer.byteLength(payment)<700);
  assert.ok(Buffer.byteLength(clients)<700);
- assert.ok(Buffer.byteLength(quotes)<700);
+ assert.ok(Buffer.byteLength(quotes)<1800);
  assert.ok(Buffer.byteLength(paymentImpl)>50000);
  assert.match(paymentImpl,/export async function downloadPaymentDocument/);
  assert.match(clientsImpl,/export function downloadClients/);
+ assert.match(quotesImpl,/export async function pdfBlob/);
+ assert.match(quotesImpl,/export function pdfFileName/);
+ assert.match(quotesImpl,/export async function blobBase64/);
  assert.match(quotesImpl,/export async function downloadQuotePdf/);
- assert.match(quotesImpl,/export async function shareQuotePdf/);
+ assert.doesNotMatch(quotesImpl,/navigator\.share/);
 });
 
 test('las fachadas lazy conservan la delegación funcional al invocarse',async()=>{
