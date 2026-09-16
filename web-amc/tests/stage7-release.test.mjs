@@ -26,7 +26,7 @@ test('PWA release metadata, safe cache and iPhone install help are present',()=>
  assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/');assert.equal(manifest.start_url,'/');assert.ok(manifest.icons.length>=2);
  assert.match(html,/apple-touch-icon/);assert.match(html,/apple-mobile-web-app-capable/);assert.match(html,/ios-install\.js/);
  assert.match(html,/id="boot-loader"/);assert.doesNotMatch(html,/Cargando tus espacios/);assert.match(read('web-amc/public/app.js'),/boot\.classList\.add\('is-ready'\)/);
- assert.match(ios,/Agregar a pantalla de inicio/);assert.match(ios,/amc-ios-install-dismissed/);assert.doesNotMatch(sw,/api\//);assert.match(sw,/AMC-offline-shell-v11/);assert.match(sw,/amc-theme\.css/);assert.doesNotMatch(sw,/admin-v3\.css|employee-v4\.css|client-v5\.css/);
+ assert.match(ios,/Agregar a pantalla de inicio/);assert.match(ios,/amc-ios-install-dismissed/);assert.doesNotMatch(sw,/api\//);assert.match(sw,/AMC-offline-shell-v12/);assert.match(sw,/__AMC_ASSET_VERSION__/);assert.match(sw,/amc-theme\.css/);assert.doesNotMatch(sw,/admin-v3\.css|employee-v4\.css|client-v5\.css/);
 });
 
 test('health checks the database and exposes only operational metadata',async()=>{
