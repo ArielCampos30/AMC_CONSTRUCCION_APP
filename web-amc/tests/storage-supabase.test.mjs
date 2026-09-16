@@ -13,6 +13,9 @@ test('Object Storage stays disabled by default and requires server secrets when 
  assert.deepEqual(fileStorageConfig({}),{mode:'off',base:'',key:'',bucket:'amc-files'});
  assert.throws(()=>fileStorageConfig({AMC_FILE_STORAGE_MODE:'mirror'}),/Faltan AMC_SUPABASE_URL/);
  assert.throws(()=>fileStorageConfig({AMC_FILE_STORAGE_MODE:'invalid'}),/off, mirror o prefer-storage/);
+ const disabled=createSupabaseFileStore({env:{}});
+ assert.equal(disabled.writeEnabled,false);
+ return disabled.list().then(items=>assert.deepEqual(items,[]));
 });
 
 test('Supabase file store uploads, downloads and removes only through the private bucket',async()=>{
@@ -38,6 +41,34 @@ test('Supabase file store uploads, downloads and removes only through the privat
  assert.equal(calls[2].method,'DELETE');
  assert.deepEqual(JSON.parse(calls[2].body),{prefixes:['files/abc-123','files/abc-123-thumb']});
  assert.deepEqual(store.diagnostics(),{readFailures:0,readCircuitOpen:false,readCircuitUntil:null});
+});
+
+test('private Storage metadata inventory paginates without downloading file bodies',async()=>{
+ const calls=[];
+ const fetchImpl=async(url,options={})=>{
+  calls.push({url:String(url),method:options.method,body:JSON.parse(options.body)});
+  assert.equal(String(url),'https://project.supabase.co/storage/v1/object/list/amc-files');
+  assert.equal(options.method,'POST');
+  assert.equal(options.headers.Authorization,'Bearer sb_secret_test_only');
+  const {offset}=JSON.parse(options.body);
+  const page=offset===0
+   ?[{name:'a',metadata:{size:10,eTag:'"aaa"'}},{name:'b',metadata:{size:20,eTag:'"bbb"'}}]
+   :[{name:'c',metadata:{size:30,eTag:'"ccc"'}}];
+  return new Response(JSON.stringify(page),{status:200,headers:{'Content-Type':'application/json'}});
+ };
+ const store=createSupabaseFileStore({env,fetchImpl});
+ const items=await store.list('files',{pageSize:2});
+ assert.deepEqual(items.map(item=>item.name),['a','b','c']);
+ assert.equal(calls.length,2);
+ assert.deepEqual(calls.map(call=>call.body),[
+  {prefix:'files',limit:2,offset:0,sortBy:{column:'name',order:'asc'}},
+  {prefix:'files',limit:2,offset:2,sortBy:{column:'name',order:'asc'}}
+ ]);
+});
+
+test('Storage inventory rejects invalid JSON without leaking credentials',async()=>{
+ const store=createSupabaseFileStore({env,fetchImpl:async()=>new Response('not-json',{status:200})});
+ await assert.rejects(store.list('files'),error=>error.code==='AMC_STORAGE'&&error.storageOperation==='list'&&error.storageReason==='invalid-response'&&!error.message.includes('sb_secret'));
 });
 
 test('upload retries one transient Storage failure using the same idempotent object path',async()=>{
