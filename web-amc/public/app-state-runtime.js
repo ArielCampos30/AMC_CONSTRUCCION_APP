@@ -1,3 +1,5 @@
+import {reconcileNativeNotifications} from './native-notification-reconcile-runtime.js';
+
 export function createAppStateRuntime({api,applyState,cacheEmployeeSnapshot}){
  let sessionEpoch=0,offlineSnapshotSignature='';
  async function syncEmployeeOffline(next){
@@ -10,7 +12,7 @@ export function createAppStateRuntime({api,applyState,cacheEmployeeSnapshot}){
  async function reload(){
   const epoch=sessionEpoch;
   const next=await api('/api/state',null,'GET');
-  if(epoch===sessionEpoch){applyState(next);syncEmployeeOffline(next);}
+  if(epoch===sessionEpoch){applyState(next);reconcileNativeNotifications(next);syncEmployeeOffline(next);}
   return next;
  }
  return {

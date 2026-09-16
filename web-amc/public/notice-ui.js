@@ -1,3 +1,5 @@
+import {reconcileNativeNotifications} from './native-notification-reconcile-runtime.js';
+
 export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,sound}){
  const shownLiveNotices=new Set();
  let lastNoticeRouteKey='',liveAlertTimer=0;
@@ -35,7 +37,8 @@ export function createNoticeUI({getState,getPage,api,esc,date,heading,btn,empty,
   if(notice.priority==='urgent')sound();
  }
  function paintCount(){
-  const el=document.querySelector('#notice-count'),count=notices().filter(n=>!n.read).length;
+  const state=getState(),el=document.querySelector('#notice-count'),count=(state.notices||[]).filter(n=>!n.read).length;
+  reconcileNativeNotifications(state);
   if(el){el.textContent=count;el.hidden=!count;}
   return count;
  }
