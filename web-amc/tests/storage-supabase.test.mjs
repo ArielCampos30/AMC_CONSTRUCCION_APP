@@ -29,7 +29,7 @@ test('Supabase file store uploads, downloads and removes only through the privat
  assert.equal(calls[0].method,'POST');
  assert.equal(calls[0].headers.Authorization,'Bearer sb_secret_test_only');
  assert.equal(calls[0].headers.apikey,'sb_secret_test_only');
- assert.equal(calls[0].headers['x-upsert'],'false');
+ assert.equal(calls[0].headers['x-upsert'],'true');
  const bytes=await store.download('abc-123');
  assert.deepEqual(bytes,download);
  assert.equal(calls[1].url,'https://project.supabase.co/storage/v1/object/authenticated/amc-files/files/abc-123');
@@ -38,6 +38,46 @@ test('Supabase file store uploads, downloads and removes only through the privat
  assert.equal(calls[2].method,'DELETE');
  assert.deepEqual(JSON.parse(calls[2].body),{prefixes:['files/abc-123','files/abc-123-thumb']});
  assert.deepEqual(store.diagnostics(),{readFailures:0,readCircuitOpen:false,readCircuitUntil:null});
+});
+
+test('upload retries one transient Storage failure using the same idempotent object path',async()=>{
+ const calls=[];
+ const fetchImpl=async(url,options={})=>{
+  calls.push({url:String(url),headers:options.headers});
+  if(calls.length===1)return new Response('temporary',{status:503});
+  return new Response('{}',{status:200});
+ };
+ const store=createSupabaseFileStore({env,fetchImpl,timeouts:{writeRetryDelayMs:1}});
+ assert.equal(await store.upload('retry-safe','image/jpeg',Buffer.from([255,216,255])),true);
+ assert.equal(calls.length,2);
+ assert.equal(calls[0].url,calls[1].url);
+ assert.equal(calls[0].headers['x-upsert'],'true');
+ assert.equal(calls[1].headers['x-upsert'],'true');
+});
+
+test('upload hard deadline returns even when fetch ignores AbortSignal completely',async()=>{
+ let calls=0;
+ const fetchImpl=()=>{calls++;return new Promise(()=>{});};
+ const store=createSupabaseFileStore({env,fetchImpl,timeouts:{writeAttemptMs:15,writeTotalMs:45,writeRetryDelayMs:1}});
+ const started=Date.now();
+ await assert.rejects(store.upload('never-settles','image/jpeg',Buffer.from([255,216,255])),error=>{
+  assert.equal(error.code,'AMC_STORAGE');
+  assert.equal(error.storageOperation,'upload');
+  assert.equal(error.storageReason,'timeout');
+  assert.equal(error.storageAttempts,2);
+  assert.equal(error.storageRetryable,true);
+  assert.match(error.message,/demorando demasiado/);
+  return true;
+ });
+ assert.equal(calls,2);
+ assert.ok(Date.now()-started<180,'AMC debe cortar el upload colgado sin esperar al fetch subyacente');
+});
+
+test('download hard deadline returns even when fetch ignores AbortSignal completely',async()=>{
+ const store=createSupabaseFileStore({env,fetchImpl:()=>new Promise(()=>{}),timeouts:{readMs:15}});
+ const started=Date.now();
+ await assert.rejects(store.download('read-never-settles'),error=>error.code==='AMC_STORAGE'&&error.storageOperation==='download'&&error.storageReason==='timeout');
+ assert.ok(Date.now()-started<120,'AMC debe cortar una lectura colgada sin esperar al fetch subyacente');
 });
 
 test('private storage read reports 404 without exposing credentials',async()=>{

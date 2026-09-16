@@ -5,7 +5,9 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
   console.error(JSON.stringify({
    level:'error',event,fileId:key,error:error?.code||error?.name||'Error',operation:error?.storageOperation||'',
    reason:error?.storageReason||'',storageStatus:error?.storageHttpStatus??null,
-   storageDurationMs:Number.isFinite(error?.storageDurationMs)?error.storageDurationMs:null
+   storageDurationMs:Number.isFinite(error?.storageDurationMs)?error.storageDurationMs:null,
+   storageAttempts:Number.isFinite(error?.storageAttempts)&&error.storageAttempts>0?error.storageAttempts:null,
+   storageRetryable:typeof error?.storageRetryable==='boolean'?error.storageRetryable:null
   }));
  };
  const logUploadPerformance=metrics=>{
@@ -36,6 +38,17 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
    removed++;
   }
   return removed;
+ };
+ const rollbackStorage=async(keys,error)=>{
+  if(!objectStore.writeEnabled||!keys.length)return;
+  try{await objectStore.remove(keys,{timeoutMs:1800});}
+  catch(cleanupError){logStorageError('file-storage-rollback',keys[0],cleanupError);}
+  if(error?.code==='AMC_STORAGE'&&['timeout','network'].includes(error?.storageReason)){
+   const timer=setTimeout(()=>{
+    Promise.resolve(objectStore.remove(keys,{timeoutMs:1800})).catch(cleanupError=>logStorageError('file-storage-late-rollback',keys[0],cleanupError));
+   },1500);
+   timer.unref?.();
+  }
  };
  const writeUploadBundle=({key,user,mime,bytes,miniature,viewer,meta,storedSize})=>{
   if(remoteDatabase){
@@ -76,18 +89,17 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
    if(Number(quota.total||0)+storedSize>GLOBAL_LIMIT)fail(413,'El almacenamiento de archivos de la prueba está completo. AMC debe ampliar o revisar el espacio.');
    if(Number(quota.used||0)+storedSize>USER_LIMIT)fail(413,'Alcanzaste el límite de archivos de esta versión.');
   }
-  const key=id(),mirrored=[],meta={id:'upload-'+key,fileId:key,date:now()};
-  let storageMs=0,dbMs=0;
+  const key=id(),meta={id:'upload-'+key,fileId:key,date:now()};
+  let storageMs=0,dbMs=0,storageJobs=[];
   try{
    if(objectStore.writeEnabled){
-    const storageStarted=Date.now(),jobs=[
+    const storageStarted=Date.now();storageJobs=[
      {key,mime,body:bytes},
      ...(miniature?[{key:key+'-thumb',mime:'image/jpeg',body:miniature}]:[]),
      ...(viewer?[{key:key+'-view',mime:'image/jpeg',body:viewer}]:[])
     ];
-    const results=await Promise.allSettled(jobs.map(job=>objectStore.upload(job.key,job.mime,job.body)));
+    const results=await Promise.allSettled(storageJobs.map(job=>objectStore.upload(job.key,job.mime,job.body)));
     storageMs=Date.now()-storageStarted;
-    results.forEach((result,i)=>{if(result.status==='fulfilled')mirrored.push(jobs[i].key);});
     const failed=results.find(result=>result.status==='rejected');if(failed)throw failed.reason;
    }
    const dbStarted=Date.now();
@@ -95,8 +107,7 @@ export function mediaStorageFeatures({db,all,put,transaction,objectStore,text,fa
    dbMs=Date.now()-dbStarted;
   }catch(error){
    if(error?.code==='AMC_STORAGE')logStorageError('file-storage-upload',key,error);
-   if(mirrored.length)try{await objectStore.remove(mirrored);}
-   catch(cleanupError){logStorageError('file-storage-rollback',key,cleanupError);}
+   if(storageJobs.length)await rollbackStorage(storageJobs.map(job=>job.key),error);
    throw error;
   }
   logUploadPerformance({bytes:storedSize,variants:1+(miniature?1:0)+(viewer?1:0),quotaMs,storageMs,dbMs,totalMs:Date.now()-uploadStarted,remoteDatabase});
