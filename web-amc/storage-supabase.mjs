@@ -1,6 +1,7 @@
 const MODES=new Set(['off','mirror','prefer-storage']);
 const READ_TIMEOUT_MS=4000;
 const THUMB_TIMEOUT_MS=2500;
+const LIST_TIMEOUT_MS=6500;
 const WRITE_ATTEMPT_TIMEOUT_MS=3500;
 const WRITE_TOTAL_TIMEOUT_MS=7500;
 const WRITE_RETRY_DELAY_MS=150;
@@ -45,7 +46,7 @@ export function fileStorageConfig(env=process.env){
 
 export function createSupabaseFileStore({env=process.env,fetchImpl=globalThis.fetch,clock=Date.now,timeouts={}}={}){
  const config=fileStorageConfig(env),writeEnabled=config.mode!=='off',preferStorage=config.mode==='prefer-storage';
- const readTimeoutMs=numericTimeout(timeouts.readMs,READ_TIMEOUT_MS),thumbTimeoutMs=numericTimeout(timeouts.thumbMs,THUMB_TIMEOUT_MS),writeAttemptMs=numericTimeout(timeouts.writeAttemptMs,WRITE_ATTEMPT_TIMEOUT_MS),writeTotalMs=numericTimeout(timeouts.writeTotalMs,WRITE_TOTAL_TIMEOUT_MS),writeRetryDelayMs=numericTimeout(timeouts.writeRetryDelayMs,WRITE_RETRY_DELAY_MS),deleteTimeoutMs=numericTimeout(timeouts.deleteMs,DELETE_TIMEOUT_MS);
+ const readTimeoutMs=numericTimeout(timeouts.readMs,READ_TIMEOUT_MS),thumbTimeoutMs=numericTimeout(timeouts.thumbMs,THUMB_TIMEOUT_MS),listTimeoutMs=numericTimeout(timeouts.listMs,LIST_TIMEOUT_MS),writeAttemptMs=numericTimeout(timeouts.writeAttemptMs,WRITE_ATTEMPT_TIMEOUT_MS),writeTotalMs=numericTimeout(timeouts.writeTotalMs,WRITE_TOTAL_TIMEOUT_MS),writeRetryDelayMs=numericTimeout(timeouts.writeRetryDelayMs,WRITE_RETRY_DELAY_MS),deleteTimeoutMs=numericTimeout(timeouts.deleteMs,DELETE_TIMEOUT_MS);
  let readFailures=0,readCircuitUntil=0;
  const diagnostics=()=>({
   readFailures,
@@ -54,7 +55,7 @@ export function createSupabaseFileStore({env=process.env,fetchImpl=globalThis.fe
  });
  if(!writeEnabled)return {
   mode:config.mode,writeEnabled:false,preferStorage:false,diagnostics,
-  upload:async()=>false,download:async()=>{throw Object.assign(Error('Object Storage desactivado.'),{status:404,code:'AMC_STORAGE_DISABLED'});},remove:async()=>0
+  upload:async()=>false,download:async()=>{throw Object.assign(Error('Object Storage desactivado.'),{status:404,code:'AMC_STORAGE_DISABLED'});},list:async()=>[],remove:async()=>0
  };
  if(typeof fetchImpl!=='function')throw Error('No hay cliente HTTP disponible para Object Storage.');
  const objectUrl=(id,authenticated=false)=>config.base+'/storage/v1/object/'+(authenticated?'authenticated/':'')+safeSegment(config.bucket)+'/'+objectPath(id).split('/').map(safeSegment).join('/');
@@ -122,6 +123,26 @@ export function createSupabaseFileStore({env=process.env,fetchImpl=globalThis.fe
     catch(error){throw storageError('No pudimos leer el archivo del almacenamiento externo.',{operation:'download',reason:failureReason(error)});}
     recordReadSuccess();return bytes;
    }catch(error){recordReadFailure(error);throw error;}
+  },
+  async list(prefix='files',{pageSize=100}={}){
+   const normalizedPrefix=String(prefix||'').replace(/^\/+|\/+$/g,''),limit=Math.max(1,Math.min(1000,Number(pageSize)||100));
+   const items=[];let offset=0;
+   while(true){
+    const response=await request(config.base+'/storage/v1/object/list/'+safeSegment(config.bucket),{
+     method:'POST',
+     headers:{...authHeaders(config),'Content-Type':'application/json'},
+     body:JSON.stringify({prefix:normalizedPrefix,limit,offset,sortBy:{column:'name',order:'asc'}})
+    },'No pudimos listar los archivos del almacenamiento externo.',{operation:'list',timeoutMs:listTimeoutMs});
+    let page;
+    try{page=await response.json();}
+    catch{throw storageError('Object Storage devolvió un inventario inválido.',{operation:'list',reason:'invalid-response'});}
+    if(!Array.isArray(page))throw storageError('Object Storage devolvió un inventario inválido.',{operation:'list',reason:'invalid-response'});
+    items.push(...page);
+    if(page.length<limit)break;
+    offset+=page.length;
+    if(offset>100000)throw storageError('El inventario de Object Storage superó el límite operativo.',{operation:'list',reason:'limit'});
+   }
+   return items;
   },
   async remove(ids,{timeoutMs=deleteTimeoutMs}={}){
    const prefixes=[...new Set((ids||[]).filter(Boolean).map(objectPath))];
