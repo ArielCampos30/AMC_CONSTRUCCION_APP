@@ -1,12 +1,14 @@
 import {Worker} from 'node:worker_threads';
-// Transitional synchronous contract preserves atomic legacy transactions. Networking
-// runs in a worker; the caller waits. Deploy one instance and measure latency before
-// expanding beyond the initial pilot. No local fallback and no mutation retry.
+import {PostgresAsyncReader} from './postgres-async-reader.mjs';
+// Transitional synchronous contract preserves atomic legacy transactions. Mutations
+// keep using the worker contract; high-frequency read paths may use queryAsync(),
+// which owns a separate read-only PostgreSQL connection and never blocks Node.
 const command=sql=>String(sql||'').trim().match(/^([A-Za-z]+)/)?.[1]?.toUpperCase()||'';
 export class PostgresDatabase{
  constructor(url,{schema='amc_data',test=false,caFile}={}){
   this.control=new SharedArrayBuffer(8);this.bytes=new SharedArrayBuffer(32*1024*1024);this.state=new Int32Array(this.control);
   this.workerData={url,schema,test,caFile,control:this.control,bytes:this.bytes};this.closed=false;this.failed=false;this.transactionOpen=false;
+  this.reader=new PostgresAsyncReader(url,{schema,test,caFile});
   this.startWorker();
  }
  startWorker(){
@@ -33,7 +35,8 @@ export class PostgresDatabase{
   if(begin)this.transactionOpen=true;else if(finish)this.transactionOpen=false;
   return result;
  }
+ queryAsync(sql,params=[]){if(this.closed)return Promise.reject(Object.assign(Error('Base de datos cerrada.'),{status:503}));return this.reader.query(sql,params);}
  exec(sql){return this.query(sql);}
  prepare(sql){return {get:(...p)=>this.query(sql,p).rows[0],all:(...p)=>this.query(sql,p).rows,run:(...p)=>this.query(sql,p)};}
- close(){if(this.closed)return;if(!this.failed){try{this.query('__close');}catch{}}this.closed=true;this.transactionOpen=false;try{this.worker?.terminate();}catch{}}
+ close(){if(this.closed)return;if(!this.failed){try{this.query('__close');}catch{}}this.closed=true;this.transactionOpen=false;this.reader.close();try{this.worker?.terminate();}catch{}}
 }
