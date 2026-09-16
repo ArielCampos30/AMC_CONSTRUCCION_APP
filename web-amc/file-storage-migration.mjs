@@ -8,12 +8,14 @@ const sameBytes=(left,right)=>{
 export async function migrateHistoricalFiles({db,objectStore}={}){
  if(!db?.prepare)throw Error('La migración de archivos necesita una base de datos válida.');
  if(!objectStore?.writeEnabled)throw Error('Object Storage debe estar activo en mirror o prefer-storage para migrar archivos.');
- const rows=db.prepare('SELECT id,mime,body FROM files ORDER BY id').all();
+ const rows=db.prepare('SELECT id,mime,length(body) AS bytes FROM files ORDER BY id').all();
  const started=Date.now();
- const summary={total:rows.length,bytes:0,alreadyPresent:0,migrated:0,repaired:0,verified:0,durationMs:0};
+ const summary={total:rows.length,bytes:rows.reduce((total,row)=>total+Number(row.bytes||0),0),alreadyPresent:0,migrated:0,repaired:0,verified:0,durationMs:0};
  for(const row of rows){
-  const body=toBuffer(row.body);
-  summary.bytes+=body.length;
+  const local=db.prepare('SELECT body FROM files WHERE id=?').get(row.id);
+  if(!local?.body)throw Object.assign(Error('No se pudo leer el archivo local durante la migración.'),{code:'AMC_STORAGE_SOURCE_MISSING',fileId:row.id});
+  const body=toBuffer(local.body);
+  if(Number(row.bytes||0)!==body.length)throw Object.assign(Error('El tamaño del archivo local cambió durante la migración.'),{code:'AMC_STORAGE_SOURCE_CHANGED',fileId:row.id});
   let remote=null,found=false;
   try{
    remote=await objectStore.download(row.id);
