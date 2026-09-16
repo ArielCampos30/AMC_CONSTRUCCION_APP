@@ -12,17 +12,23 @@ test('production security headers, cookies and origin checks are enforced',async
  }finally{await new Promise(r=>app.server.close(r));}
 });
 
-test('security hardening keeps account throttling and a bounded session count in source',async()=>{
- const [source,auth,authCore,stateRoutes,httpServer]=await Promise.all([
+test('security hardening keeps persistent account throttling and a bounded session count in source',async()=>{
+ const [source,auth,authCore,stateRoutes,httpServer,requestRuntime]=await Promise.all([
   readFile(new URL('../server.mjs',import.meta.url),'utf8'),
   readFile(new URL('../auth-routes.mjs',import.meta.url),'utf8'),
   readFile(new URL('../auth-core.mjs',import.meta.url),'utf8'),
   readFile(new URL('../state-routes.mjs',import.meta.url),'utf8'),
-  readFile(new URL('../http-server.mjs',import.meta.url),'utf8')
+  readFile(new URL('../http-server.mjs',import.meta.url),'utf8'),
+  readFile(new URL('../request-runtime.mjs',import.meta.url),'utf8')
  ]);
  assert.match(auth,/login-account:/);
- assert.match(auth,/checkRate\(accountRate,12\)/);
+ assert.match(auth,/createPersistentRateLimiter/);
+ assert.match(auth,/persistentRate\.check\(accountRate,12\)/);
+ assert.match(auth,/persistentRate\.clear\(accountRate\)/);
  assert.match(auth,/sessions\.slice\(8\)/);
+ assert.match(requestRuntime,/auth_rate_limits/);
+ assert.match(requestRuntime,/ON CONFLICT\(rateKey\) DO UPDATE/);
+ assert.match(requestRuntime,/clientIpFromRequest/);
  assert.match(authCore,/weakPasswords/);
  assert.match(authCore,/scryptSync/);
  assert.match(authCore,/timingSafeEqual/);
