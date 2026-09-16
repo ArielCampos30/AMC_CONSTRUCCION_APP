@@ -113,6 +113,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-back-contract.py
+      - name: Deep links protegidos y sesión vencida
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-protected-deep-links.py
       - name: Contrato real de toast
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}

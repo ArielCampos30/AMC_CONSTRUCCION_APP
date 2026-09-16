@@ -7,11 +7,11 @@ function documentMock(){
  const listeners=[];
  return {listeners,addEventListener(type,handler){listeners.push({type,handler});}};
 }
-function formMock({valid=true,message=false}={}){
+function formMock({valid=true,message=false,id='',register=false}={}){
  const submitButton={disabled:false,textContent:'Enviando…'};
  const otherButton={disabled:false,textContent:'Otro'};
  return {
-  submitButton,otherButton,
+  id,dataset:register?{register:'true'}:{},submitButton,otherButton,
   reportValidity(){return valid;},
   querySelectorAll(selector){assert.equal(selector,'button');return [submitButton,otherButton];},
   querySelector(selector){assert.equal(selector,'button[type=submit]');return submitButton;},
@@ -46,11 +46,34 @@ test('preserva datos y submitter y bloquea botones durante la operación',async(
  assert.equal(form.submitButton.disabled,false);assert.equal(form.otherButton.disabled,false);
 });
 
-test('error llega al callback y siempre rehabilita botones',async()=>{
- const form=formMock();const failure=Error('falló');let captured;
- const controller=createAppShellSubmitController({documentRef:documentMock(),serializeForm:()=>({}),onSubmit:async()=>{throw failure;},onError:error=>captured=error});
+test('login exitoso reanuda el deep link protegido que originó Ingresar',async()=>{
+ const locationRef={hash:'#obra-admin/work-1'},form=formMock({id:'auth'});
+ const controller=createAppShellSubmitController({documentRef:documentMock(),locationRef,serializeForm:()=>({}),onSubmit:async()=>{locationRef.hash='#inicio';}});
  await controller.handler({target:form,preventDefault(){}});
- assert.equal(captured,failure);
+ assert.equal(locationRef.hash,'#obra-admin/work-1');
+});
+
+test('primer paso de 2FA conserva el deep link sin forzar una navegación prematura',async()=>{
+ const locationRef={hash:'#presupuesto/quote-1'},form=formMock({id:'auth'});
+ const controller=createAppShellSubmitController({documentRef:documentMock(),locationRef,serializeForm:()=>({}),onSubmit:async()=>{}});
+ await controller.handler({target:form,preventDefault(){}});
+ assert.equal(locationRef.hash,'#presupuesto/quote-1');
+});
+
+test('login normal y registro no inventan destino protegido',async()=>{
+ for(const setup of [{hash:'#ingresar',register:false},{hash:'#registro',register:true}]){
+  const locationRef={hash:setup.hash},form=formMock({id:'auth',register:setup.register});
+  const controller=createAppShellSubmitController({documentRef:documentMock(),locationRef,serializeForm:()=>({}),onSubmit:async()=>{locationRef.hash='#inicio';}});
+  await controller.handler({target:form,preventDefault(){}});
+  assert.equal(locationRef.hash,'#inicio');
+ }
+});
+
+test('error llega al callback y nunca reanuda una ruta antes de autenticar',async()=>{
+ const locationRef={hash:'#trabajo/task-1'},form=formMock({id:'auth'}),failure=Error('falló');let captured;
+ const controller=createAppShellSubmitController({documentRef:documentMock(),locationRef,serializeForm:()=>({}),onSubmit:async()=>{throw failure;},onError:error=>captured=error});
+ await controller.handler({target:form,preventDefault(){}});
+ assert.equal(captured,failure);assert.equal(locationRef.hash,'#trabajo/task-1');
  assert.equal(form.submitButton.disabled,false);assert.equal(form.otherButton.disabled,false);
 });
 
@@ -74,6 +97,7 @@ test('app.js delega la mecánica global de submit y conserva la lógica de negoc
  assert.match(app,/f\.id==='auth'/);
  assert.match(app,/f\.id==='request'/);
  assert.doesNotMatch(controller,/\/api\/|\bfetch\(|\breload\b|\brender\b|\bnavigate\b/);
+ assert.match(controller,/isProtectedPage/);
  assert.match(controller,/form\.reportValidity\(\)/);
  assert.match(controller,/buttons\.forEach\(button=>button\.disabled=true\)/);
  assert.match(controller,/button\[type=submit\]/);

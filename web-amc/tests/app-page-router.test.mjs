@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {pageFromHash,normalizeInitialPage,normalizePageForRole,resolveAppPage} from '../public/app-page-router.js';
+import {pageFromHash,normalizeInitialPage,normalizePageForRole,isProtectedPage,resolveAppPage} from '../public/app-page-router.js';
 
 const stateFor=role=>role?{user:{id:role+'-1',role},quotes:[{id:'quote-1',requestId:'request-1'}],works:[{id:'work-1',requestId:'request-1'}],requests:[{id:'request-1'}]}:{quotes:[],works:[],requests:[]};
 
@@ -20,14 +20,26 @@ test('normalización pura conserva hashes, recuperación e alias Admin',()=>{
  assert.equal(normalizePageForRole('admin','employee'),'admin');
 });
 
+test('contrato de protección cubre rutas estáticas y deep links de cada rol',()=>{
+ const protectedRoutes=[
+  'clientes','calendario','perfil','presupuestos','avisos','cotizador','solicitudes','obras','chat-admin','mas-admin','respaldos','resumen','inicio-empleado','mis-trabajos','mis-trabajos-cliente','chat-cliente',
+  'mi-trabajo/request-1','solicitud/request-1','presupuesto/quote-1','obra/work-1','chat/request-1','presupuesto-admin/quote-1','obra-admin/work-1','chat-admin/request-1','chat-equipo/employee-1','cliente/client-1','trabajo/task-1'
+ ];
+ for(const page of protectedRoutes){
+  assert.equal(isProtectedPage(page),true,page);
+  assert.deepEqual(resolveAppPage(page,stateFor()),{view:'auth',returnTo:page},page);
+ }
+ for(const page of ['inicio','servicios','ideas','resenas','ingresar','registro','recuperar','restablecer','ruta-inexistente'])assert.equal(isProtectedPage(page),false,page);
+});
+
 test('matriz pública conserva páginas abiertas, autenticación y fallbacks',()=>{
  const state=stateFor();
  const matrix=[
   ['inicio','home'],['servicios','services'],['ideas','ideas'],['ingresar','auth'],['registro','auth-register'],
   ['recuperar','accounts'],['restablecer','accounts'],['clientes','auth'],['pedir','auth'],['visita','auth'],
   ['perfil','auth'],['presupuestos','auth'],['obra','auth'],['avisos','auth'],['favoritos','auth'],['referidos','auth'],
-  ['mensajes','auth'],['cotizador','auth'],['solicitud/request-1','auth'],['presupuesto/quote-1','home'],
-  ['obra/work-1','home'],['trabajo/task-1','home'],['ruta-inexistente','home']
+  ['mensajes','auth'],['cotizador','auth'],['solicitud/request-1','auth'],['presupuesto/quote-1','auth'],
+  ['obra/work-1','auth'],['trabajo/task-1','auth'],['presupuesto-admin/quote-1','auth'],['obra-admin/work-1','auth'],['cliente/client-1','auth'],['ruta-inexistente','home']
  ];
  for(const [page,view] of matrix)assert.equal(resolveAppPage(page,state).view,view,page);
 });
@@ -78,5 +90,5 @@ test('el resolver no hace fetch, render, listeners, cambios de location ni mutac
 
 test('app.js delega la resolución sin conservar la cadena de decisiones anterior',async()=>{
  const [app,router]=await Promise.all([readFile(new URL('../public/app.js',import.meta.url),'utf8'),readFile(new URL('../public/app-page-router.js',import.meta.url),'utf8')]);
- assert.match(app,/resolveAppPage\(page,state\)/);assert.match(app,/normalizeInitialPage\(pageFromHash\(location\.hash,recoveryRoute\(\)\)\)/);assert.match(app,/normalizePageForRole\(requested,state\.user\?\.role\)/);assert.doesNotMatch(app,/const protectedPages=|state\.user\?\.role==='client'&&page\.startsWith\('solicitud\/'\)|isAdmin\(\)&&page\.startsWith\('presupuesto-admin\/'\)/);assert.match(router,/PROTECTED_PAGES/);assert.match(router,/role==='client'&&page\.startsWith\('solicitud\/'\)/);assert.match(router,/role==='admin'&&page\.startsWith\('presupuesto-admin\/'\)/);
+ assert.match(app,/resolveAppPage\(page,state\)/);assert.match(app,/normalizeInitialPage\(pageFromHash\(location\.hash,recoveryRoute\(\)\)\)/);assert.match(app,/normalizePageForRole\(requested,state\.user\?\.role\)/);assert.doesNotMatch(app,/const protectedPages=|state\.user\?\.role==='client'&&page\.startsWith\('solicitud\/'\)|isAdmin\(\)&&page\.startsWith\('presupuesto-admin\/'\)/);assert.match(router,/PROTECTED_PAGES/);assert.match(router,/PROTECTED_PREFIXES/);assert.match(router,/isProtectedPage/);assert.match(router,/role==='client'&&page\.startsWith\('solicitud\/'\)/);assert.match(router,/role==='admin'&&page\.startsWith\('presupuesto-admin\/'\)/);
 });
