@@ -1,4 +1,7 @@
+import {createDatabaseIntegrity} from './database-integrity.mjs';
+
 export function createSystemHealth({db,version,remoteUrl,objectStore,recentErrorCount,startedAt,performanceHealth=()=>({}),clock=Date.now}){
+ const integrity=createDatabaseIntegrity({db,remoteUrl});
  const emptyBackup=()=>({status:'unknown',lastSuccessAt:null,lastAttemptAt:null,restoreStatus:'unknown',lastRestoreVerifiedAt:null,lastRestoreAttemptAt:null,secondaryStatus:'unknown',secondaryLastSuccessAt:null,secondaryLastAttemptAt:null,secondaryRestoreStatus:'unknown',secondaryLastRestoreVerifiedAt:null,secondaryLastRestoreAttemptAt:null});
  const backupMonitor=()=>{
   const row=db.prepare("SELECT body FROM docs WHERE kind='monitor' AND id='backup-status'").get();
@@ -43,6 +46,7 @@ export function createSystemHealth({db,version,remoteUrl,objectStore,recentError
  const systemStatus=()=>{
   const deliveryRows=db.prepare("SELECT status,count(*) AS n FROM delivery GROUP BY status").all();
   const delivery=Object.fromEntries(deliveryRows.map(r=>[r.status,Number(r.n||0)]));
+  const databaseIntegrity=integrity.health();
   return {
    version,
    database:remoteUrl?'PostgreSQL':'SQLite',
@@ -53,6 +57,7 @@ export function createSystemHealth({db,version,remoteUrl,objectStore,recentError
    fileStorageMode:objectStore.mode,
    devices:Number(db.prepare('SELECT count(*) AS n FROM devices').get().n||0),
    delivery,
+   databaseIntegrity,
    errors5xx15m:recentErrorCount(),
    ...performanceHealth(),
    ...backupHealth(),
