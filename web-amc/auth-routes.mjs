@@ -1,6 +1,8 @@
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
+import {clientIpFromRequest,createPersistentRateLimiter} from './request-runtime.mjs';
 
-export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,clientIp,checkPersistentRate,clearPersistentRate,text,sha,send,fail,origin,readBody}){
+export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,text,sha,send,fail,origin,readBody}){
+ const persistentRate=createPersistentRateLimiter({db,fail});
  const resolve=req=>{
   const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('amc_session='))?.slice(12);
   const row=cookie?db.prepare(`SELECT s.token AS session_token,s.userId AS session_user_id,s.expires AS session_expires,s.csrf AS session_csrf,
@@ -13,11 +15,11 @@ export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate
  const handlePublic=async({p,method,req,res})=>{
   if(p!=='/api/login'&&p!=='/api/register')return false;
   if(method!=='POST')fail(405,'Método no permitido.');
-  const ip=clientIp(req);
+  const ip=clientIpFromRequest(req);
   checkRate('ip:'+ip+':login',30);
   const b=await readBody(req),email=text(b.email).toLowerCase(),password=typeof b.password==='string'?b.password:'',
    accountRate='login-account:'+sha(email||'empty');
-  checkPersistentRate(accountRate,12);
+  persistentRate.check(accountRate,12);
   if(password.length>200)fail(400,'Contraseña inválida.');
   let u;
   if(p.endsWith('register')){
@@ -35,7 +37,7 @@ export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate
   db.prepare('INSERT INTO sessions VALUES(?,?,?,?)').run(sha(raw),u.id,Date.now()+7*86400000,csrf);
   const sessions=db.prepare('SELECT token FROM sessions WHERE userId=? ORDER BY expires DESC').all(u.id);
   for(const stale of sessions.slice(8))db.prepare('DELETE FROM sessions WHERE token=?').run(stale.token);
-  clearPersistentRate(accountRate);
+  persistentRate.clear(accountRate);
   res.setHeader('Set-Cookie',`amc_session=${raw}; HttpOnly; SameSite=Strict; Path=/; Max-Age=604800${origin.startsWith('https:')?'; Secure':''}`);
   send(res,200,{user:userView(u),csrf});
   return true;
