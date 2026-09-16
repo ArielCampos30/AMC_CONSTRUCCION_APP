@@ -143,8 +143,9 @@ def confirm_dialog():
 
 def attach_png(selector,name="piloto.png"):
     path=os.path.join('/tmp',name)
+    encoded=PNG_1X1 + "=" * (-len(PNG_1X1) % 4)
     with open(path,'wb') as handle:
-        handle.write(base64.b64decode(PNG_1X1))
+        handle.write(base64.b64decode(encoded))
     element=call('POST',prefix+'/element',{'using':'css selector','value':selector})
     element_id=element.get(ELEMENT_KEY) if isinstance(element,dict) else None
     assert element_id,"No se encontró input de archivo "+selector
@@ -207,7 +208,7 @@ try:
 
     go(BASE+"/#cotizador")
     wait("return !!document.querySelector('.quote-wizard-page') && !!document.querySelector('[data-qw-client]')")
-    wait("return [...document.querySelectorAll('[data-qw-client] option')].some(o=>o.value===arguments[0])".replace('arguments[0]',json.dumps('user:'+client_id)),20)
+    wait("return [...document.querySelectorAll('[data-qw-client] option')].some(o=>o.value==="+json.dumps('user:'+client_id)+")",20)
     set_value('[data-qw-client]','user:'+client_id)
     wait("return !!document.querySelector('[data-qw-request]')")
     set_value('[data-qw-request]',request_id)
