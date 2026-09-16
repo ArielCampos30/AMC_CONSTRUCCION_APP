@@ -4,10 +4,11 @@ export const chatViewport={
  capture(id){const log=document.querySelector('.message-log');if(log&&thread===id){top=log.scrollTop;follow=log.scrollHeight-log.clientHeight-top<90;}},
  mount(page,id){resize?.disconnect();if(page!=='mensajes'){force=true;return;}const log=document.querySelector('.message-log');if(!log)return;const opening=force||thread!==id;thread=id;force=false;if(opening)follow=true;
   const bottom=()=>{if(follow)log.scrollTop=log.scrollHeight;};
+  const settled=()=>{bottom();log.dispatchEvent(new Event('scroll'));};
   log.scrollTop=follow?log.scrollHeight:top;
   log.addEventListener('scroll',()=>{top=log.scrollTop;follow=log.scrollHeight-log.clientHeight-top<90;},{passive:true});
-  log.querySelectorAll('img').forEach(img=>img.addEventListener('load',bottom,{once:true}));
-  resize=new ResizeObserver(bottom);resize.observe(log);requestAnimationFrame(()=>{bottom();log.dispatchEvent(new Event('scroll'));if(opening&&!log.closest('#amc-chat-dialog'))log.scrollIntoView({block:'center'});});
+  log.querySelectorAll('img').forEach(img=>img.addEventListener('load',settled,{once:true}));
+  resize=new ResizeObserver(settled);resize.observe(log);requestAnimationFrame(()=>{settled();if(opening&&!log.closest('#amc-chat-dialog'))log.scrollIntoView({block:'center'});});
  }
 };
 const previewUrls=new WeakMap();
