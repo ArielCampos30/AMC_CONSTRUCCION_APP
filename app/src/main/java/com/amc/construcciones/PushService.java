@@ -8,12 +8,15 @@ import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import androidx.core.app.NotificationCompat;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 public class PushService extends FirebaseMessagingService {
-    private static final String URGENT="amc_urgent_v2",UPDATES="amc_updates_v2",SILENT="amc_silent_v2";
+    static final String URGENT="amc_urgent_v2",UPDATES="amc_updates_v2",SILENT="amc_silent_v2";
+
+    static boolean isNoticeChannel(String channel){return URGENT.equals(channel)||UPDATES.equals(channel)||SILENT.equals(channel);}
 
     @Override public void onNewToken(String token) { getSharedPreferences("amc",MODE_PRIVATE).edit().putString("fcm",token).apply(); }
 
@@ -41,7 +44,8 @@ public class PushService extends FirebaseMessagingService {
         Intent open=new Intent(this,MainActivity.class).putExtra("amc_url",url).setData(Uri.parse("amc://notice/"+Uri.encode(id))).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
         int notificationId=id.hashCode();
         PendingIntent pending=PendingIntent.getActivity(this,notificationId,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-        NotificationCompat.Builder builder=new NotificationCompat.Builder(this,channel).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setAutoCancel(true).setContentIntent(pending);
+        Bundle extras=new Bundle();extras.putString("amc_notice_id",id);
+        NotificationCompat.Builder builder=new NotificationCompat.Builder(this,channel).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setAutoCancel(true).setContentIntent(pending).addExtras(extras);
         if(sound)builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));else builder.setSilent(true);
         manager.notify(notificationId,builder.build());
     }
