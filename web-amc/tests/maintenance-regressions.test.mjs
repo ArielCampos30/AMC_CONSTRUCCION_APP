@@ -31,12 +31,15 @@ test('chat flotante conserva layout, cierre exterior y supresión por ruta activ
 test('chat flotante de empleado hidrata historial desde runtime dedicado y abre mostrando el final',()=>{
  const runtime=source('public/app-admin-staff-chat-runtime.js');
  const index=source('public/index.html');
+ const roleAssets=source('public/app-role-assets.js');
  assert.match(runtime,/staff-chat\/messages\?employeeId=/);
  assert.match(runtime,/credentials:'same-origin'/);
  assert.match(runtime,/scrollTop=log\.scrollHeight/);
  assert.match(runtime,/empty-conversation/);
  assert.match(runtime,/floating-staff-message/);
- assert.match(index,/app-mobile-runtime\.js[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
+ assert.match(index,/app-bootstrap\.js/);
+ assert.doesNotMatch(index,/app-admin-staff-chat-runtime\.js|app-employee-staff-chat-runtime\.js/);
+ assert.match(roleAssets,/employee[\s\S]*app-admin-staff-chat-runtime\.js[\s\S]*app-employee-staff-chat-runtime\.js/);
  assert.doesNotMatch(index,/mobile-runtime-fixes\.js|admin-maintenance-ui\.js/);
 });
 
@@ -46,12 +49,14 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
  const planning=source('planning.mjs');
  const menu=source('public/admin-system-ui.js');
  const index=source('public/index.html');
+ const roleAssets=source('public/app-role-assets.js');
  const controller=source('public/app-admin-appearance-controller.js');
  assert.match(menu,/\['Sitio público',\[\['portada','Portada pública'\]\]\]/);
  assert.match(menu,/const uniqueMoreSections=/);
  assert.match(menu,/if\(routes\.has\(route\)\)return false/);
  assert.doesNotMatch(index,/admin-menu-extras\.js|admin-maintenance-ui\.js/);
- assert.match(index,/admin-appearance\.css/);
+ assert.doesNotMatch(index,/admin-appearance\.css/);
+ assert.match(roleAssets,/admin[\s\S]*\/admin-appearance\.css/);
  assert.match(ui,/VISTA PREVIA ACTUAL/);
  assert.match(ui,/Usar como portada/);
  assert.match(ui,/Dejar sólo el logo AMC/);
