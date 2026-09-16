@@ -3,19 +3,27 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('cotizador nativo usa cuatro etapas de página completa sin importmap ni iframe',()=>{
+test('cotizador nativo usa cuatro etapas de página completa y se carga bajo demanda',()=>{
  const index=read('../public/index.html');
  const app=read('../public/app.js');
  const wrapper=read('../public/features-ui.js');
+ const runtime=read('../public/quote-tools-runtime.js');
+ const loader=read('../public/quote-tools-loader.js');
  const chat=read('../public/chat-features.js');
  const wizard=read('../public/quote-wizard.js');
  assert.doesNotMatch(index,/type="importmap"/);
  assert.doesNotMatch(index,/\/estimator-shell\.js/);
- assert.match(index,/quote-builder-review\.css/);
+ assert.doesNotMatch(index,/quote-builder-review\.css/);
+ assert.doesNotMatch(index,/quote-wizard-autocomplete\.js/);
  assert.match(app,/import \{createFeatures\} from '\.\/features-ui\.js'/);
  assert.doesNotMatch(wrapper,/features-ui-legacy\.js|createLegacyFeatures/);
- assert.match(wrapper,/createQuoteWizard/);
- assert.match(wrapper,/if\(name==='cotizador'\)return wizard\.render\(\)/);
+ assert.doesNotMatch(wrapper,/from '\.\/quote-wizard\.js'/);
+ assert.match(wrapper,/prepareQuoteToolsPage/);
+ assert.match(runtime,/createQuoteWizard/);
+ assert.match(runtime,/if\(name==='cotizador'\)return wizard\.render\(\)/);
+ assert.match(loader,/quote-wizard\.css/);
+ assert.match(loader,/quote-builder-review\.css/);
+ assert.match(loader,/quote-wizard-autocomplete\.css/);
  assert.match(chat,/createFloatingChat/);
  assert.doesNotMatch(wizard,/<iframe/i);
  assert.match(wizard,/const PHASES=\['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'\]/);
