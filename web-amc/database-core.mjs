@@ -12,6 +12,7 @@ const schema=`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS devices(id TEXT PRIMARY KEY,userId TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS delivery(id TEXT PRIMARY KEY,deviceId TEXT NOT NULL,noticeId TEXT NOT NULL,body TEXT NOT NULL,attempts INTEGER DEFAULT 0,nextAt INTEGER DEFAULT 0,status TEXT DEFAULT 'pending',error TEXT DEFAULT '');
  CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT NOT NULL);`;
+const STATE_SNAPSHOT_SQL="SELECT 'doc' AS source,CAST(rowid AS TEXT) AS position,id,kind,owner,body,NULL AS email,NULL AS name,NULL AS phone,NULL AS town,NULL AS role,NULL AS active FROM docs WHERE kind!='estimator' UNION ALL SELECT 'user' AS source,NULL AS position,id,NULL AS kind,NULL AS owner,NULL AS body,email,name,phone,town,role,active FROM users";
 
 export function createDatabaseCore({dbPath,id,sha,now,fail}){
  if(dbPath!==':memory:')mkdirSync(path.dirname(dbPath),{recursive:true});
@@ -57,15 +58,19 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
  });
  const migrateCompletion=()=>transaction(()=>{for(const work of all('work').filter(w=>['Pendiente de cierre','Pendiente de conformidad'].includes(w.status))){const closure=all('closure').filter(c=>c.workId===work.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0],closureStatus=closure?.status||(work.status==='Pendiente de conformidad'?'Pendiente de conformidad':'Pendiente');put('work',work.userId,{...work,status:'Finalizado',closureStatus,completedAt:work.completedAt||work.updatedAt||now()});if(work.requestId){const request=all('request').find(r=>r.id===work.requestId);if(request)put('request',request.userId,{...request,status:'Cerrada',statusUpdatedAt:request.statusUpdatedAt||now()});}if(work.calendarBookingId){const booking=all('calendarBooking').find(b=>b.id===work.calendarBookingId);if(booking&&booking.status!=='Cancelada'&&booking.status!=='Finalizada')put('calendarBooking','',{...booking,status:'Finalizada',completedAt:booking.completedAt||now(),updatedAt:now()});}}});
  const runMigrations=()=>{migrateRelations();migrateCompletion();};
- const beginStateSnapshot=()=>{
-  const rows=db.prepare("SELECT 'doc' AS source,CAST(rowid AS TEXT) AS position,id,kind,owner,body,NULL AS email,NULL AS name,NULL AS phone,NULL AS town,NULL AS role,NULL AS active FROM docs WHERE kind!='estimator' UNION ALL SELECT 'user' AS source,NULL AS position,id,NULL AS kind,NULL AS owner,NULL AS body,email,name,phone,town,role,active FROM users").all();
+ const hydrateStateSnapshot=rows=>{
   stateRows=new Map();statePositions=new Map();stateUsers=[];stateUsersById=new Map();
   const docs=rows.filter(row=>row.source==='doc').sort((a,b)=>Number(b.position)-Number(a.position));
   for(const row of docs){if(!stateRows.has(row.kind))stateRows.set(row.kind,[]);stateRows.get(row.kind).push({id:row.id,owner:row.owner,value:JSON.parse(row.body)});statePositions.set(row.id,Number(row.position)||0);}
   for(const row of rows)if(row.source==='user'){const user={id:row.id,name:row.name,email:row.email,phone:row.phone,town:row.town,role:row.role,active:Number(row.active)!==0};stateUsers.push(user);stateUsersById.set(user.id,user);}
   return stateRows;
  };
+ const beginStateSnapshot=()=>hydrateStateSnapshot(db.prepare(STATE_SNAPSHOT_SQL).all());
+ const beginStateSnapshotAsync=async()=>{
+  if(remoteUrl&&typeof db.queryAsync==='function')return hydrateStateSnapshot((await db.queryAsync(STATE_SNAPSHOT_SQL)).rows);
+  return beginStateSnapshot();
+ };
  const endStateSnapshot=()=>{stateRows=null;statePositions=null;stateUsers=null;stateUsersById=null;};
  runMigrations();
- return {db,remoteUrl,all,allEntries,activeUsers,usersByRoles,userById,docPosition,get,put,transaction,runMigrations,beginStateSnapshot,endStateSnapshot};
+ return {db,remoteUrl,all,allEntries,activeUsers,usersByRoles,userById,docPosition,get,put,transaction,runMigrations,beginStateSnapshot,beginStateSnapshotAsync,endStateSnapshot};
 }
