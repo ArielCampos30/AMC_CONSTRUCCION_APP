@@ -32,26 +32,22 @@ test('migración regional valida TLS y admite CA por origen y destino',async()=>
  assert.match(source,/ssl:tlsConfig\(targetCaFile\)/);
 });
 
-test('preparación regional conserva origen y destino antes del corte',async()=>{
+test('arranque normal no contiene lógica de migración ni corte regional',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/const sourceUrl=process\.env\.AMC_DATABASE_URL/);
- assert.match(server,/const targetUrl=process\.env\.AMC_REGION_MIGRATION_TARGET_URL/);
- assert.match(server,/AMC_REGION_MIGRATION_PREPARE==='1'/);
- assert.match(server,/sourceUrl,/);
- assert.match(server,/targetUrl,/);
- assert.match(server,/sourceCaFile,/);
- assert.match(server,/targetCaFile,/);
+ assert.doesNotMatch(server,/region-migration/);
+ assert.doesNotMatch(server,/AMC_REGION_MIGRATION_/);
+ assert.doesNotMatch(server,/AMC_REGION_TARGET_ACTIVE/);
+ assert.doesNotMatch(server,/process\.env\.AMC_DATABASE_URL=/);
+ assert.match(server,/startServer\(\{createApp,root:ROOT\}\)/);
 });
 
-test('corte a Virginia sólo ocurre con bandera explícita y es reversible por entorno',async()=>{
- const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/AMC_REGION_TARGET_ACTIVE==='1'/);
- assert.match(server,/if\(!targetUrl\)throw Error/);
- assert.match(server,/process\.env\.AMC_DATABASE_URL=targetUrl/);
- assert.match(server,/process\.env\.AMC_DATABASE_CA_FILE=targetCaFile/);
- assert.match(server,/region-database-target-active/);
- assert.match(server,/startServer\(\{createApp,root:ROOT\}\)/);
- const migrationIndex=server.indexOf("AMC_REGION_MIGRATION_PREPARE==='1'");
- const cutoverIndex=server.indexOf("AMC_REGION_TARGET_ACTIVE==='1'");
- assert.ok(migrationIndex>=0&&cutoverIndex>migrationIndex,'la sincronización final debe ocurrir antes del corte');
+test('migrador regional queda aislado en CLI con confirmación y URLs explícitas',async()=>{
+ const cli=await readFile(new URL('../region-migration-cli.mjs',import.meta.url),'utf8');
+ assert.match(cli,/AMC_REGION_MIGRATION_CONFIRM!=='MIGRATE'/);
+ assert.match(cli,/AMC_REGION_MIGRATION_SOURCE_URL/);
+ assert.match(cli,/AMC_REGION_MIGRATION_TARGET_URL/);
+ assert.match(cli,/AMC_REGION_MIGRATION_SOURCE_CA_FILE/);
+ assert.match(cli,/AMC_REGION_MIGRATION_TARGET_CA_FILE/);
+ assert.match(cli,/migrateRegionDatabase\(\{sourceUrl,targetUrl,sourceCaFile,targetCaFile,logger\}\)/);
+ assert.doesNotMatch(cli,/env\.AMC_DATABASE_URL/);
 });

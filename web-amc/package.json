@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node server.mjs",
     "demo": "node server.mjs --demo",
+    "migrate:region": "node region-migration-cli.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

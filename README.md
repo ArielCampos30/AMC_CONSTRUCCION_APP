@@ -22,7 +22,7 @@ Aplicación conectada para administrar clientes, solicitudes, presupuestos, obra
 - Producción: `https://amc-o0xb.onrender.com`
 - Render mantiene el auto-deploy desactivado; sólo se despliega manualmente después de que CI queda verde.
 
-La base de producción es PostgreSQL externa mediante `AMC_DATABASE_URL`. Render no debe usar SQLite local para producción.
+La base canónica de producción es PostgreSQL en Supabase Virginia y se configura directamente mediante `AMC_DATABASE_URL`. El arranque normal de `server.mjs` no ejecuta migraciones regionales ni cambia la URL de base en memoria. Render no debe usar SQLite local para producción.
 
 ## Desarrollo y pruebas
 
@@ -34,6 +34,20 @@ npm start
 ```
 
 Para la suite PostgreSQL, definir `AMC_TEST_DATABASE_URL` apuntando exclusivamente a una base descartable. GitHub Actions ejecuta ambos motores y un smoke test de Chrome.
+
+## Migración regional de emergencia
+
+El migrador regional está separado del servidor y sólo se ejecuta de forma explícita:
+
+```bash
+cd web-amc
+AMC_REGION_MIGRATION_CONFIRM=MIGRATE \
+AMC_REGION_MIGRATION_SOURCE_URL='postgresql://...' \
+AMC_REGION_MIGRATION_TARGET_URL='postgresql://...' \
+npm run migrate:region
+```
+
+El comando exige origen y destino separados, verifica tablas, conteos y hashes antes del `COMMIT`, y hace `ROLLBACK` ante una diferencia. Nunca debe formar parte del comando normal de arranque de producción.
 
 ## Android
 
@@ -64,5 +78,7 @@ AMC_SUPABASE_URL='https://PROYECTO.supabase.co' \
 AMC_SUPABASE_SERVICE_ROLE_KEY='...' \
 node backup-supabase.mjs
 ```
+
+El servicio web y el cron `AMC Backup` deben apuntar a la misma base canónica mediante `AMC_DATABASE_URL`.
 
 Las contraseñas, claves de servicio y credenciales de base nunca se guardan en Git.
