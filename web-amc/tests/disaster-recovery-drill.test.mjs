@@ -19,9 +19,9 @@ test('9.6 restaura un backup aislado, levanta AMC y valida roles/permisos',async
  const source=createApp({dbPath:':memory:',origin:'https://source.test',twoFactorKey:'source-two-factor-key-not-production'});
  try{
   source.addUser('existing-admin@amc.test','Existing-Admin-2026!','Existing Admin','admin');
-  source.addUser('existing-client@amc.test','Existing-Client-2026!','Existing Client','client');
-  source.db.prepare("INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?)").run('drill-doc','request','existing-client@amc.test',JSON.stringify({id:'drill-doc',title:'Dato real restaurable'}));
-  source.db.prepare('INSERT INTO files(id,owner,mime,body) VALUES(?,?,?,?)').run('drill-file','existing-client@amc.test','image/jpeg',Buffer.from('recovery-file'));
+  const existingClient=source.addUser('existing-client@amc.test','Existing-Client-2026!','Existing Client','client');
+  source.db.prepare("INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?)").run('drill-doc','recoveryFixture',existingClient.id,JSON.stringify({id:'drill-doc',title:'Dato real restaurable'}));
+  source.db.prepare('INSERT INTO files(id,owner,mime,body) VALUES(?,?,?,?)').run('drill-file',existingClient.id,'image/jpeg',Buffer.from('recovery-file'));
   const exported=exportBackup(source.db,sourceFile,password);
   const latest='daily/amc-2026-09-16T06-00-18-658Z.amcbak';
   const store={
