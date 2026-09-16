@@ -1,9 +1,12 @@
+import {createDatabaseIntegrity} from './database-integrity.mjs';
+
 export function publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,performanceHealth=()=>({}),startedAt,demo,keys,services,send}){
+ const integrity=createDatabaseIntegrity({db,remoteUrl});
  return function route({p,method,res}){
   if((p==='/health'||p==='/healthz')&&method==='GET'){
    const before=Date.now();
    db.prepare('SELECT 1 AS ok').get();
-   send(res,200,{ok:true,database:'available',driver:remoteUrl?'postgresql':'sqlite',databaseMs:Date.now()-before,version,errors5xx15m:recentErrorCount(),...performanceHealth(),...backupHealth(),uptimeSeconds:Math.floor((Date.now()-startedAt)/1000)});
+   send(res,200,{ok:true,database:'available',driver:remoteUrl?'postgresql':'sqlite',databaseMs:Date.now()-before,version,errors5xx15m:recentErrorCount(),...integrity.publicHealth(),...performanceHealth(),...backupHealth(),uptimeSeconds:Math.floor((Date.now()-startedAt)/1000)});
    return true;
   }
   if(p==='/api/config'){
