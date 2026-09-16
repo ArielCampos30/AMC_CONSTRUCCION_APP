@@ -1,6 +1,6 @@
 # Revisión de seguridad — AMC
 
-Estado operativo actualizado al 15 de septiembre de 2026. No equivale a una auditoría independiente ni garantiza ausencia de fallos.
+Estado operativo actualizado al 16 de septiembre de 2026. No equivale a una auditoría independiente ni garantiza ausencia de fallos.
 
 ## Verificado y reforzado
 
@@ -26,6 +26,7 @@ Comandos para el operador, desde la carpeta del servidor:
 node backup-cli.mjs export /ruta/externa/amc-fecha.amcbak
 node backup-cli.mjs verify /ruta/externa/amc-fecha.amcbak
 node backup-cli.mjs restore /ruta/externa/amc-fecha.amcbak /ruta/base-nueva.sqlite
+npm run recovery:drill
 ```
 
 Para restaurar PostgreSQL se usa **AMC_RESTORE_DATABASE_URL** hacia una base vacía y el certificado correspondiente en **AMC_DATABASE_CA_FILE**. La herramienta rechaza destinos con datos.
@@ -51,6 +52,19 @@ A partir del Bloque 9.5, cada proveedor se considera sano solamente si completa 
 La falla de un proveedor no impide intentar el otro. El cron termina con error si cualquiera de las dos copias falla, para que el incidente no pase inadvertido aunque la otra copia haya quedado sana.
 
 `/healthz` expone estados y antigüedad tanto de la copia primaria como de la secundaria. El monitor de producción alerta por fallo o por más de 30 horas sin una copia/restauración verificada en cualquiera de los dos destinos.
+
+## Simulacro de recuperación 9.6
+
+`disaster-recovery-drill.mjs` agrega una prueba operativa independiente del cron diario. Lee el último backup válido desde R2 y trabaja sólo con archivos y una base temporales.
+
+El simulacro valida cifrado, paridad de datos, reinicio del estado operativo, arranque real de AMC, `/healthz`, configuración, login y separación de permisos Admin/Empleado/Cliente. Para ejercer autenticación sin utilizar contraseñas reales, crea cuentas descartables únicamente después de comprobar la integridad completa de la copia restaurada y las elimina junto con el entorno temporal al finalizar.
+
+El reporte incluye:
+
+- RPO observado: antigüedad del backup R2 más reciente al iniciar el ejercicio;
+- RTO de aplicación: descarga, descifrado, restauración y aplicación lista con comprobaciones básicas.
+
+Ese RTO no incluye aprovisionar nuevos proveedores, DNS, secretos ni infraestructura administrada. El procedimiento completo está en `RECUPERACION-ANTE-DESASTRE.md`.
 
 ## Independencia del segundo proveedor
 
