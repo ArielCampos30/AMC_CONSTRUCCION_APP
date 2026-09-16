@@ -26,10 +26,11 @@ test('admin v3 conserva destinos, filtros y vistas responsivas',async()=>{
 });
 
 test('editar abre el presupuesto exacto y restaura el modelo persistido',async()=>{
- const [app,features,wizard,quotesUI]=await Promise.all([source('app.js'),source('features-ui.js'),source('quote-wizard.js'),source('admin-quotes-ui.js')]);
+ const [app,features,runtime,wizard,quotesUI]=await Promise.all([source('app.js'),source('features-ui.js'),source('quote-tools-runtime.js'),source('quote-wizard.js'),source('admin-quotes-ui.js')]);
  assert.match(quotesUI,/data-action="editor".*data-quote=/s);
  assert.match(app,/features\.openEditor\(b\.dataset\.id\|\|'',b\.dataset\.quote\|\|''\)/);
- assert.match(features,/openEditor\(requestId='',quoteId='',mode=''\).*wizard\.open\(requestId,quoteId,mode\).*cotizador/s);
+ assert.match(features,/openEditor\(requestId='',quoteId='',mode=''\).*ensureQuoteTools\('cotizador'\).*runtime\.openEditor\(requestId,quoteId,mode\)/s);
+ assert.match(runtime,/openEditor\(requestId='',quoteId='',mode=''\)\{wizard\.open\(requestId,quoteId,mode\);deps\.navigate\('cotizador'\);\}/);
  assert.match(wizard,/const quote=quoteId\?quotes\(\)\.find\(item=>item\.id===quoteId\):null/);
  assert.match(wizard,/const quoteItems=editable\?\.works\|\|quote\?\.items\|\|\[\]/);
  assert.match(wizard,/const stored=amount\(editable\?\.finalPrice\?\?quote\.amcClientPrice\?\?quote\.total,0\)/);
@@ -79,8 +80,8 @@ test('chat de pantalla completa no apila el flotante y bloquea doble envío',asy
 });
 
 test('presupuesto rápido usa datos directos y cuatro etapas nativas',async()=>{
- const [app,features,wizard,dialogs]=await Promise.all([source('app.js'),source('features-ui.js'),source('quote-wizard.js'),source('admin-client-dialogs-ui.js')]);
- assert.match(app,/case'manual-admin':openClientDialog\('budget'\)/);assert.match(dialogs,/data-use-existing/);assert.match(wizard,/const PHASES=\['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'\]/);assert.match(wizard,/ETAPA 1 DE 4/);assert.match(wizard,/ETAPA 4 DE 4/);assert.match(features,/wizard\.open/);assert.doesNotMatch(features,/<iframe|presupuestos\?embed|features-ui-legacy/);
+ const [app,features,runtime,wizard,dialogs]=await Promise.all([source('app.js'),source('features-ui.js'),source('quote-tools-runtime.js'),source('quote-wizard.js'),source('admin-client-dialogs-ui.js')]);
+ assert.match(app,/case'manual-admin':openClientDialog\('budget'\)/);assert.match(dialogs,/data-use-existing/);assert.match(wizard,/const PHASES=\['Cliente','Trabajos y precios','Costos y rentabilidad','Revisión'\]/);assert.match(wizard,/ETAPA 1 DE 4/);assert.match(wizard,/ETAPA 4 DE 4/);assert.match(runtime,/wizard\.open/);assert.match(features,/ensureQuoteTools\('cotizador'\)/);assert.doesNotMatch(features,/<iframe|presupuestos\?embed|features-ui-legacy/);
 });
 
 test('precio sugerido y rentabilidad pertenecen al Cotizador canónico',async()=>{
@@ -101,7 +102,7 @@ test('compartir PDF envía un archivo real',async()=>{
 
 test('PDF pendiente se regenera directamente y permite reintento',async()=>{
  const [features,controller,generation,quotesUI]=await Promise.all([source('features-ui.js'),source('quote-pdf-controller.js'),source('quote-pdf-generation.js'),source('admin-quotes-ui.js')]);
- assert.match(features,/createQuotePdfController/);assert.match(features,/generatePdf:pdf\.generatePdf/);assert.match(controller,/const jobs=new Map\(\)/);assert.match(controller,/Preparando PDF…/);assert.match(controller,/Generar PDF/);assert.match(controller,/createAndAttach/);assert.match(generation,/\/api\/quotes\/'\+quoteId\+'\/pdf/);assert.match(quotesUI,/generate-pdf-admin/);assert.doesNotMatch(controller,/iframe|postMessage|amc:pdf-ready|amc:pdf-error/);
+ assert.match(features,/import\('\.\/quote-pdf-controller\.js'\)/);assert.match(features,/ensurePdfController\(\)\.then\(controller=>controller\.generatePdf\(requestId,quoteId\)\)/);assert.match(controller,/const jobs=new Map\(\)/);assert.match(controller,/Preparando PDF…/);assert.match(controller,/Generar PDF/);assert.match(controller,/createAndAttach/);assert.match(generation,/\/api\/quotes\/'\+quoteId\+'\/pdf/);assert.match(quotesUI,/generate-pdf-admin/);assert.doesNotMatch(controller,/iframe|postMessage|amc:pdf-ready|amc:pdf-error/);
 });
 
 test('detalle admin abre presupuesto exacto y mantiene un solo menú de acciones',async()=>{
