@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createRequestRuntime} from '../request-runtime.mjs';
+import {DatabaseSync} from 'node:sqlite';
+import {clientIpFromRequest,createPersistentRateLimiter,createRequestRuntime} from '../request-runtime.mjs';
 
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
 const request=chunks=>({async *[Symbol.asyncIterator](){for(const chunk of chunks)yield Buffer.from(chunk);}});
@@ -35,6 +36,28 @@ test('rate limiter mantiene contador por clave y mensaje 429',()=>{
  assert.throws(()=>checkRate('u:api',2),error=>error.status===429&&error.message==='Demasiados intentos. Probá en unos minutos.');
  assert.equal(rate.get('u:api').count,3);
  assert.doesNotThrow(()=>checkRate('otra:api',1));
+});
+
+test('IP real prioriza X-Forwarded-For de Render y valida direcciones',()=>{
+ assert.equal(clientIpFromRequest({headers:{'x-forwarded-for':'203.0.113.7, 10.0.0.8'},socket:{remoteAddress:'10.0.0.2'}}),'203.0.113.7');
+ assert.equal(clientIpFromRequest({headers:{'x-forwarded-for':'no-es-ip'},socket:{remoteAddress:'::ffff:127.0.0.1'}}),'127.0.0.1');
+ assert.equal(clientIpFromRequest({headers:{},socket:{remoteAddress:'[2001:db8::1]'}}),'2001:db8::1');
+});
+
+test('rate persistente sobrevive recreación del runtime y se limpia explícitamente',()=>{
+ const db=new DatabaseSync(':memory:');
+ let now=1000;
+ try{
+  const first=createPersistentRateLimiter({db,fail,clock:()=>now});
+  first.check('login-account:test',2);
+  first.check('login-account:test',2);
+  const afterRestart=createPersistentRateLimiter({db,fail,clock:()=>now});
+  assert.throws(()=>afterRestart.check('login-account:test',2),error=>error.status===429);
+  afterRestart.clear('login-account:test');
+  assert.doesNotThrow(()=>afterRestart.check('login-account:test',2));
+  now+=15*60*1000+1;
+  assert.doesNotThrow(()=>afterRestart.check('login-account:test',2));
+ }finally{db.close();}
 });
 
 test('server delega utilidades HTTP sin duplicarlas',async()=>{
