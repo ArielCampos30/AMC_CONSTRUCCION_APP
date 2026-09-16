@@ -5,11 +5,13 @@ import {readFile} from 'node:fs/promises';
 const source=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 
 test('rutas históricas y actuales de chat abren el chat flotante del cliente',async()=>{
- const [compat,index]=await Promise.all([
+ const [compat,index,bootstrap]=await Promise.all([
   source('public/chat-route-compat.js'),
-  source('public/index.html')
+  source('public/index.html'),
+  source('public/app-bootstrap.js')
  ]);
- assert.match(index,/chat-route-compat\.js[^]*app\.js/);
+ assert.match(index,/chat-route-compat\.js[^]*app-bootstrap\.js/);
+ assert.match(bootstrap,/await import\('\.\/app\.js'\)/);
  assert.match(compat,/\(\?:chat\|chat-admin\|chat-user\|conversacion\)/);
  assert.match(compat,/AMCOpenChatRequest/);
  assert.match(compat,/chat-cliente/);
