@@ -50,7 +50,7 @@ export function createAppShellClickController({
       const employeeId=employee.dataset.adminEmployee;
       onAdminEmployee?.(employeeId);
       render?.();
-      api('/api/staff-chat/read',{employeeId}).then(result=>applyNoticeRead?.(result.noticeIds||[])).catch(()=>{});
+      api('/api/staff-chat/read',{employeeId}).then(result=>applyNoticeRead?.(result.noticeIds||[])).catch(error=>{if(error?.name!=='AbortError')onError?.(error);});
       return;
     }
 
