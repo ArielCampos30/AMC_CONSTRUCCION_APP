@@ -6,6 +6,7 @@ export function createRequestDispatcher({
  authentication,
  fail,
  checkRate,
+ clientIp,
  readBody,
  recovery,
  handlePublicSystem,
@@ -44,7 +45,7 @@ export function createRequestDispatcher({
    }
    if(['/api/forgot-password','/api/reset-password'].includes(p)){
     if(method!=='POST')fail(405,'Método no permitido.');
-    checkRate(req.socket.remoteAddress+':recovery',8);
+    checkRate('ip:'+clientIp(req)+':recovery',8);
     const b=await readBody(req);
     if(await recovery.route({p,method,b,user,res}))return;
    }
