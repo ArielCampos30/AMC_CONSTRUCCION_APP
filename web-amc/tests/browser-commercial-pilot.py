@@ -1,4 +1,4 @@
-import json, os, time, urllib.request
+import base64, json, os, time, urllib.request
 
 DRIVER="http://127.0.0.1:9515"
 BASE="http://localhost:4180"
@@ -11,6 +11,7 @@ REQUEST_TEXT="Revoque y pintura integral piloto comercial"
 CHAT_TEXT="Avance piloto: trabajo iniciado y foto enviada a Administración."
 CLOSURE_TEXT="Piloto comercial finalizado, limpieza y revisión completadas."
 PNG_1X1="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zx8AAAAASUVORK5CYII="
+ELEMENT_KEY="element-6066-11e4-a52e-4f735466cecf"
 
 
 def call(method,path,payload=None):
@@ -141,13 +142,14 @@ def confirm_dialog():
 
 
 def attach_png(selector,name="piloto.png"):
-    count=js("""
-      const input=document.querySelector(arguments[0]);if(!input)return -1;
-      const raw=atob(arguments[2]),bytes=new Uint8Array(raw.length);
-      for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-      const file=new File([bytes],arguments[1],{type:'image/png'}),dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
-      input.dispatchEvent(new Event('change',{bubbles:true}));return input.files.length;
-    """,[selector,name,PNG_1X1])
+    path=os.path.join('/tmp',name)
+    with open(path,'wb') as handle:
+        handle.write(base64.b64decode(PNG_1X1))
+    element=call('POST',prefix+'/element',{'using':'css selector','value':selector})
+    element_id=element.get(ELEMENT_KEY) if isinstance(element,dict) else None
+    assert element_id,"No se encontró input de archivo "+selector
+    call('POST',prefix+'/element/'+element_id+'/value',{'text':path,'value':list(path)})
+    count=js("const input=document.querySelector(arguments[0]);return input?.files?.length||0;",[selector])
     assert count==1,(selector,count)
 
 
