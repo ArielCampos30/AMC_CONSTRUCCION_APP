@@ -43,13 +43,20 @@ La WebView release sólo carga `BuildConfig.AMC_BACKEND_URL`; enlaces HTTP exter
 
 `secure-backup.mjs` usa AES-256-GCM y valida cada frame. El backup contiene cuentas, documentos, configuración y archivos, pero no restaura sesiones ni dispositivos.
 
-El cron **AMC Backup** ejecuta `backup-supabase.mjs` diariamente a las 06:00 UTC. Crea el archivo cifrado, lo verifica, lo sube al bucket privado y después vuelve a descargar esa misma copia. La copia descargada se restaura en una base temporal vacía y se comparan usuarios, documentos, archivos, configuración y bytes multimedia con el origen. Sólo una ejecución que supera esa prueba deja `backupRestoreStatus=ok`.
+El cron **AMC Backup** ejecuta `backup-supabase.mjs` diariamente a las 06:00 UTC. Crea una única copia lógica cifrada y la guarda en dos proveedores independientes:
 
-Por defecto se conservan 30 días; el valor se controla con `AMC_BACKUP_RETENTION_DAYS`. El monitor de producción alerta si el último backup correcto o la última restauración verificada superan 30 horas, o si una ejecución falla.
+- Supabase Storage, bucket privado `amc-backups`;
+- Cloudflare R2, bucket privado `amc-backups-secondary`.
+
+Cada proveedor vuelve a entregar su copia recién subida. AMC restaura cada descarga por separado en una base temporal vacía y compara usuarios, documentos, archivos, configuración y bytes multimedia con el origen. Sólo una copia que supera esa prueba queda marcada `ok`.
+
+Por defecto se conservan 30 días; el valor se controla con `AMC_BACKUP_RETENTION_DAYS`. El monitor de producción alerta si cualquiera de los backups/restauraciones verificadas supera 30 horas o si una ejecución falla.
 
 Nunca restaurar sobre producción con datos. La herramienta de restauración exige una base vacía. Para rollback de código, volver al commit anterior; restaurar base solamente si los datos están dañados o se perdió información y se aceptó el punto de recuperación elegido.
 
-El bucket de backup está actualmente en el mismo proyecto Supabase que la base. Para pérdida total del proyecto/proveedor todavía hace falta una segunda copia cifrada independiente. Ver `web-amc/RECUPERACION-ANTE-DESASTRE.md`.
+El simulacro operativo se ejecuta con `npm run recovery:drill`. Toma el backup diario válido más reciente de R2, lo descarga, valida, restaura en un entorno temporal, vuelve a levantar AMC y comprueba health, login y aislamiento de roles sin escribir en producción. El reporte separa RPO observado de RTO de aplicación.
+
+Ver `web-amc/RECUPERACION-ANTE-DESASTRE.md` para el procedimiento completo y las limitaciones del RTO medido.
 
 ## Protección de la rama principal
 
