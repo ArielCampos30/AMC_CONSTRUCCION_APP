@@ -5,16 +5,18 @@ import {readFile} from 'node:fs/promises';
 const source=name=>readFile(new URL('../'+name,import.meta.url),'utf8');
 
 test('portada pública no usa observadores profundos ni parches legacy',async()=>{
- const [appearance,index,system]=await Promise.all([
+ const [appearance,index,roleAssets,system]=await Promise.all([
   source('public/app-admin-appearance-controller.js'),
   source('public/index.html'),
+  source('public/app-role-assets.js'),
   source('public/admin-system-ui.js')
  ]);
  assert.doesNotMatch(appearance,/observe\(document\.documentElement,\{subtree:true,childList:true\}\)/);
  assert.match(appearance,/observe\(appRoot,\{childList:true\}\)/);
  assert.match(appearance,/badge&&badge\.textContent!==next/);
  assert.doesNotMatch(index,/admin-menu-extras\.js|admin-maintenance-ui\.js/);
- assert.match(index,/admin-appearance\.css/);
+ assert.doesNotMatch(index,/admin-appearance\.css/);
+ assert.match(roleAssets,/admin[\s\S]*\/admin-appearance\.css/);
  assert.match(system,/uniqueMoreSections\(\)\.map/);
 });
 
