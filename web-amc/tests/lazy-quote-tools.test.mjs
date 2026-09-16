@@ -43,11 +43,12 @@ test('arranque común no referencia estáticamente el árbol pesado de presupues
  assert.doesNotMatch(index,/quote-wizard\.css|quote-builder-review\.css|quote-wizard-autocomplete\.css|quote-wizard-autocomplete\.js/);
 });
 
-test('bootstrap prepara ruta directa y hashchange antes del render de app',()=>{
+test('app prepara explícitamente ruta directa y hashchange antes del render sin monkey patch',()=>{
  const bootstrap=read('../public/app-bootstrap.js');
- assert.match(bootstrap,/prepareQuoteToolsPage\(location\.hash\)/);
- assert.match(bootstrap,/type==='hashchange'/);
- assert.match(bootstrap,/pageFromHash\(location\.hash,recoveryRoute\(\)\)/);
- assert.match(bootstrap,/await prepareQuoteToolsPage\(location\.hash\)/);
- assert.match(bootstrap,/await import\('\.\/app\.js'\)/);
+ const app=read('../public/app.js');
+ assert.equal(bootstrap.trim(),"await import('./app.js');");
+ assert.doesNotMatch(bootstrap,/prepareQuoteToolsPage|head\.append|window\.addEventListener|Function\.prototype/);
+ assert.match(app,/async function preparePageForRender\(target,label\)[\s\S]*features\.preparePage\(target\)/);
+ assert.match(app,/window\.addEventListener\('hashchange',async\(\)=>\{[\s\S]*await preparePageForRender\(page,'route'\);[\s\S]*render\(\)/);
+ assert.match(app,/Promise\.all\(\[[\s\S]*preparePageForRender\(page,'bootstrap'\)[\s\S]*\]\)/);
 });
