@@ -2,9 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {migrateHistoricalFiles} from '../file-storage-migration.mjs';
 
-const fakeDb=rows=>({prepare(sql){assert.equal(sql,'SELECT id,mime,body FROM files ORDER BY id');return {all:()=>rows};}});
+const fakeDb=rows=>({prepare(sql){
+ if(sql==='SELECT id,mime,length(body) AS bytes FROM files ORDER BY id')return {all:()=>rows.map(row=>({id:row.id,mime:row.mime,bytes:row.body.length}))};
+ if(sql==='SELECT body FROM files WHERE id=?')return {get:id=>{const row=rows.find(item=>item.id===id);return row?{body:row.body}:undefined;}};
+ assert.fail('Consulta inesperada en migración: '+sql);
+}});
 
-test('historical storage migration uploads only missing files and verifies every byte',async()=>{
+test('historical storage migration uploads only missing files and verifies every byte without loading all BLOBs together',async()=>{
  const rows=[
   {id:'present',mime:'image/jpeg',body:Buffer.from([1,2,3])},
   {id:'missing',mime:'application/pdf',body:Buffer.from([4,5,6,7])}
@@ -55,4 +59,14 @@ test('historical storage migration fails closed when post-upload verification di
   async upload(){return true;}
  };
  await assert.rejects(migrateHistoricalFiles({db:fakeDb(rows),objectStore}),error=>error.code==='AMC_STORAGE_VERIFY'&&error.fileId==='bad-verify');
+});
+
+test('historical storage migration aborts if the PostgreSQL source changes during the run',async()=>{
+ const row={id:'changed',mime:'image/jpeg',body:Buffer.from([1,2,3])};
+ const db={prepare(sql){
+  if(sql==='SELECT id,mime,length(body) AS bytes FROM files ORDER BY id')return {all:()=>[{id:row.id,mime:row.mime,bytes:3}]};
+  if(sql==='SELECT body FROM files WHERE id=?')return {get:()=>({body:Buffer.from([1,2,3,4])})};
+  assert.fail('Consulta inesperada: '+sql);
+ }};
+ await assert.rejects(migrateHistoricalFiles({db,objectStore:{writeEnabled:true}}),error=>error.code==='AMC_STORAGE_SOURCE_CHANGED'&&error.fileId==='changed');
 });
