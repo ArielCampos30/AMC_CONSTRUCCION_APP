@@ -50,15 +50,14 @@ test('carga sólo el rol activo, limpia al salir y puede reinsertar CSS sin reim
 });
 
 test('HTML y runtime inicial ya no descargan los assets de todos los roles',async()=>{
- const [html,bootstrap,stateRuntime,sw]=await Promise.all([source('index.html'),source('app-bootstrap.js'),source('app-state-runtime.js'),source('sw.js')]);
+ const [html,bootstrap,app,stateRuntime,sw]=await Promise.all([source('index.html'),source('app-bootstrap.js'),source('app.js'),source('app-state-runtime.js'),source('sw.js')]);
  assert.match(html,/src="__AMC_ASSET_BASE__\/app-bootstrap\.js"/);
  assert.doesNotMatch(html,/href="\/(?:admin-v3|admin-appearance|employee-v4|employee-staff-chat|client-v5)\.css"/);
  assert.doesNotMatch(html,/src="\/(?:app-admin|app-employee)-staff-chat-runtime\.js"/);
  assert.doesNotMatch(html,/src="\/app\.js"/);
- assert.match(bootstrap,/getAttribute\?\.\('href'\)==='\/admin-v3\.css'/);
- assert.match(bootstrap,/!node\.dataset\?\.amcRoleStyle/);
- assert.match(bootstrap,/await import\('\.\/app\.js'\)/);
- assert.match(bootstrap,/delete head\.append/);
+ assert.equal(bootstrap.trim(),"await import('./app.js');");
+ assert.doesNotMatch(bootstrap,/head\.append|window\.addEventListener|admin-v3\.css/);
+ assert.doesNotMatch(app,/adminStyle|href='\/admin-v3\.css'|href="\/admin-v3\.css"/);
  assert.match(stateRuntime,/import \{syncRoleAssets\} from '\.\/app-role-assets\.js'/);
  assert.match(stateRuntime,/await syncRoleAssets\(next\?\.user\?\.role\)[\s\S]*applyState\(next\)/);
  assert.match(sw,/AMC-offline-shell-v12/);
