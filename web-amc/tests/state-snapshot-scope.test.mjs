@@ -17,6 +17,7 @@ function setup(){
  put('post','admin-scope','post-public',{demo:false});
  put('review','client-b','review-public',{approved:true});
  put('calendarBooking','','booking-global',{requestId:'request-a'});
+ put('calendarBooking','','booking-foreign',{requestId:'request-b'});
  put('leadClient','','lead-internal');
  put('recoveryRequest','','recovery-internal');
  put('fileUpload','client-a','upload-internal');
@@ -52,8 +53,10 @@ test('snapshot de cliente conserva datos propios, públicos y recibos de lectura
   assert.equal(ids(core,'review').has('review-public'),true);
   assert.equal(ids(core,'post').has('post-public'),true);
   assert.equal(ids(core,'calendarBooking').has('booking-global'),true);
+  assert.equal(ids(core,'calendarBooking').has('booking-foreign'),false);
   assert.equal(ids(core,'chatRead').has('chat-read-admin'),true);
   assert.equal(ids(core,'clientChatRead').has('client-read-admin'),true);
+  assert.equal(core.docPosition('request-b'),0);
   assert.equal(core.all('leadClient').length,0);
   assert.equal(core.all('recoveryRequest').length,0);
   assert.equal(core.all('fileUpload').length,0);
@@ -94,6 +97,7 @@ test('snapshot admin conserva estado operativo global pero omite documentos que 
   assert.equal(ids(core,'leadClient').has('lead-internal'),true);
   assert.equal(ids(core,'recoveryRequest').has('recovery-internal'),true);
   assert.equal(ids(core,'calendarBooking').has('booking-global'),true);
+  assert.equal(ids(core,'calendarBooking').has('booking-foreign'),true);
   assert.equal(core.all('staffMessage').length,0);
   assert.equal(core.all('staffRead').length,0);
   assert.equal(core.all('staffAdminRead').length,0);
