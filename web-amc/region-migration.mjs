@@ -51,6 +51,16 @@ async function insertRows(client,table,rows){
  }
 }
 
+async function syncIdentitySequence(client,table){
+ if(!table.identity)return;
+ const sequenceResult=await client.query('SELECT pg_get_serial_sequence($1,$2) AS name',[`amc_data.${table.name}`,'rowid']);
+ const sequence=sequenceResult.rows[0]?.name;
+ if(!sequence)throw Error('No encontramos la secuencia de identidad de '+table.name+'.');
+ const maxResult=await client.query(`SELECT COALESCE(MAX("rowid"),0) AS max FROM ${tableName(table.name)}`);
+ const max=Number(maxResult.rows[0]?.max||0);
+ await client.query('SELECT setval($1::regclass,$2,$3)',[sequence,Math.max(max,1),max>0]);
+}
+
 export async function migrateRegionDatabase({sourceUrl,targetUrl,caFile,sourceCaFile=caFile,targetCaFile=caFile,logger=()=>{}}={}){
  if(!sourceUrl||!targetUrl)throw Error('Faltan conexiones para la migración regional.');
  if(sourceUrl===targetUrl)throw Error('Origen y destino no pueden ser la misma base.');
@@ -68,6 +78,7 @@ export async function migrateRegionDatabase({sourceUrl,targetUrl,caFile,sourceCa
   try{
    for(const table of [...TABLES].reverse())await target.query(`TRUNCATE TABLE ${tableName(table.name)} RESTART IDENTITY`);
    for(const table of TABLES)await insertRows(target,table,sourceData.get(table.name));
+   for(const table of TABLES.filter(table=>table.identity))await syncIdentitySequence(target,table);
    for(const table of TABLES){
     const rows=await readTable(target,table),expected=copied[table.name];
     if(rows.length!==expected.rows||digestRows(rows)!==expected.hash)throw Error('La verificación de datos migrados no coincidió.');
