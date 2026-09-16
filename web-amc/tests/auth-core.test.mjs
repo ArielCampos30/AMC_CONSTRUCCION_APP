@@ -47,14 +47,14 @@ test('auth core preserves ownership, admin checks and employee work access',()=>
  }finally{database.db.close();}
 });
 
-test('admin verifier keeps rate limiting and password verification behavior',()=>{
+test('admin verifier persists failed attempts and clears the counter after success',()=>{
  const {database,auth}=setup();
  try{
   const admin=auth.addUser('admin@amc.test','Admin-segura-2026!','Admin AMC','admin');
-  const calls=[];
-  const verify=auth.createAdminVerifier((key,limit)=>calls.push([key,limit]));
+  const verify=auth.createAdminVerifier();
   assert.doesNotThrow(()=>verify(admin,'Admin-segura-2026!'));
-  assert.deepEqual(calls,[[admin.id+':sensitive',5]]);
-  assert.throws(()=>verify(admin,'Clave-incorrecta!'),error=>error.status===403);
+  assert.equal(database.db.prepare('SELECT count FROM auth_rate_limits WHERE rateKey=?').get('admin-sensitive:'+admin.id),undefined);
+  for(let i=0;i<5;i++)assert.throws(()=>verify(admin,'Clave-incorrecta!'),error=>error.status===403);
+  assert.throws(()=>verify(admin,'Clave-incorrecta!'),error=>error.status===429);
  }finally{database.db.close();}
 });
