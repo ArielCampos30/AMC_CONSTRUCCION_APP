@@ -11,6 +11,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.service.notification.StatusBarNotification;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -26,6 +27,9 @@ import androidx.core.content.ContextCompat;
 import com.google.firebase.messaging.FirebaseMessaging;
 import java.io.File;
 import java.io.OutputStream;
+import java.util.HashSet;
+import java.util.Set;
+import org.json.JSONArray;
 
 public class MainActivity extends Activity {
     private static final int FILE_CHOOSER = 6001;
@@ -115,6 +119,20 @@ public class MainActivity extends Activity {
     private void clearUnusedCameraFile(){if(cameraFile!=null&&cameraFile.exists())cameraFile.delete();cameraFile=null;cameraUri=null;}
     @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);loadRequestedUrl(intent);}
     private void sendPushToken(boolean manual){if(webView==null||!isTrusted(Uri.parse(webView.getUrl()==null?BuildConfig.AMC_BACKEND_URL:webView.getUrl())))return;FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token->{String safe=token.replace("\\","\\\\").replace("\"","\\\"");webView.evaluateJavascript("window.amcNativeToken&&window.amcNativeToken(\""+safe+"\","+manual+")",null);});}
+    private void reconcileNotifications(String unreadIdsJson){
+        runOnUiThread(()->{try{
+            JSONArray values=new JSONArray(unreadIdsJson==null?"[]":unreadIdsJson);
+            Set<String> unreadIds=new HashSet<>();Set<Integer> unreadHashes=new HashSet<>();
+            for(int i=0;i<values.length();i++){String id=values.optString(i,"");if(!id.isEmpty()){unreadIds.add(id);unreadHashes.add(id.hashCode());}}
+            NotificationManager manager=getSystemService(NotificationManager.class);
+            for(StatusBarNotification active:manager.getActiveNotifications()){
+                if(!PushService.isNoticeChannel(active.getNotification().getChannelId()))continue;
+                String noticeId=active.getNotification().extras==null?null:active.getNotification().extras.getString("amc_notice_id");
+                boolean keep=noticeId!=null&&!noticeId.isEmpty()?unreadIds.contains(noticeId):unreadHashes.contains(active.getId());
+                if(!keep)manager.cancel(active.getId());
+            }
+        }catch(Exception ignored){}});
+    }
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] results){super.onRequestPermissionsResult(requestCode,permissions,results);if(requestCode==NOTIFICATIONS&&results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)sendPushToken(true);}
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -144,6 +162,7 @@ public class MainActivity extends Activity {
     public class AndroidBridge {
         @JavascriptInterface public void clearNotifications(){getSystemService(NotificationManager.class).cancelAll();}
         @JavascriptInterface public void clearNotification(String id){if(id!=null&&!id.isEmpty())getSystemService(NotificationManager.class).cancel(id.hashCode());}
+        @JavascriptInterface public void reconcileNotifications(String unreadIdsJson){MainActivity.this.reconcileNotifications(unreadIdsJson);}
         @JavascriptInterface public void requestNotifications(){runOnUiThread(()->{if(Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.POST_NOTIFICATIONS},NOTIFICATIONS);else sendPushToken(true);});}
         @JavascriptInterface public void refreshPushToken(){runOnUiThread(()->sendPushToken(false));}
         @JavascriptInterface public void setActiveChatRoute(String route){String safe=route!=null&&route.startsWith("/#chat")?route:"";getSharedPreferences("amc",MODE_PRIVATE).edit().putString("activeChatRoute",safe).apply();}
