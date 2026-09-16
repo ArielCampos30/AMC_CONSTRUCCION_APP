@@ -14,7 +14,7 @@ test('estado de la aplicación queda fuera del router principal',async()=>{
  assert.match(dispatcher,/if\(await handleState\(\{p,method,user,session,res\}\)\)return/);
  assert.doesNotMatch(server,/if\(p==='\/api\/state'&&method==='GET'\)/);
  assert.match(stateRoutes,/p!=='\/api\/state'\|\|method!=='GET'/);
- assert.match(stateRoutes,/await beginStateSnapshot\(\)/);
+ assert.match(stateRoutes,/await beginStateSnapshot\(user\)/);
  assert.match(stateRoutes,/endStateSnapshot/);
  assert.match(stateRoutes,/pendingReviews/);
  assert.match(stateRoutes,/staffReadByEmployee/);
