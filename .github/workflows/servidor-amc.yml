@@ -105,6 +105,10 @@ jobs:
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
         run: python3 tests/browser-active-chat-route.py
+      - name: Lectura de chat persiste al reabrir
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-chat-read-reopen.py
       - name: Contrato real de Volver global
         env:
           AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
