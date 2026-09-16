@@ -57,7 +57,7 @@ jobs:
           const problems=[];
           if(h.ok!==true)problems.push('El servidor no informa estado saludable.');
           if(h.database!=='available')problems.push('La base de datos no está disponible.');
-          if(h.databaseIntegrityStatus!=='ok')problems.push('La integridad interna de PostgreSQL requiere revisión ('+(h.databaseIntegrityStatus||'sin datos')+', '+Number(h.databaseIntegrityIssues||0)+' problema(s)).');
+          if('databaseIntegrityStatus' in h&&h.databaseIntegrityStatus!=='ok')problems.push('La integridad interna de PostgreSQL requiere revisión ('+(h.databaseIntegrityStatus||'sin datos')+', '+Number(h.databaseIntegrityIssues||0)+' problema(s)).');
           if(Number(h.errors5xx15m||0)>=5)problems.push('Se detectaron '+Number(h.errors5xx15m)+' errores 5xx en los últimos 15 minutos.');
           if(Number(h.stateRequests15m||0)>=3&&typeof h.stateP95Ms==='number'&&h.stateP95Ms>2500)problems.push('/api/state tiene P95 de '+h.stateP95Ms+' ms en los últimos 15 minutos.');
           if(Number(h.mediaRequests15m||0)>=2&&typeof h.mediaP95Ms==='number'&&h.mediaP95Ms>5000)problems.push('Las lecturas multimedia tienen P95 de '+h.mediaP95Ms+' ms en los últimos 15 minutos.');
