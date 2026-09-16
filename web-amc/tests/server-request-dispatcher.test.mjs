@@ -13,8 +13,10 @@ function response(){
  };
 }
 
-function request({url='/api/example',method='GET',origin='https://amc.test',csrf='csrf',contentType='application/json'}={}){
- return {url,method,headers:{origin,'x-csrf-token':csrf,'content-type':contentType},socket:{remoteAddress:'127.0.0.1'},amcRequestId:'test-request'};
+function request({url='/api/example',method='GET',origin='https://amc.test',csrf='csrf',contentType='application/json',forwardedFor}={}){
+ const headers={origin,'x-csrf-token':csrf,'content-type':contentType};
+ if(forwardedFor)headers['x-forwarded-for']=forwardedFor;
+ return {url,method,headers,socket:{remoteAddress:'127.0.0.1'},amcRequestId:'test-request'};
 }
 
 function makeDeps(overrides={}){
@@ -72,14 +74,14 @@ test('dispatcher serves early static files before resolving authentication',asyn
  assert.equal(res.headers.get('x-content-type-options'),'nosniff');
 });
 
-test('dispatcher preserves recovery route before public and authenticated routing',async()=>{
+test('dispatcher preserves recovery route and uses Render forwarded client IP',async()=>{
  const {events,deps}=makeDeps();
  deps.authentication={...deps.authentication,resolve(){events.push('resolve');return {session:null,user:null};}};
  deps.recovery={async route(){events.push('recovery');return true;}};
  deps.handlePublicSystem=()=>{events.push('public-system');return false;};
  const res=response();
- await createRequestDispatcher(deps)(request({url:'/api/forgot-password',method:'POST',csrf:''}),res);
- assert.deepEqual(events,['resolve','rate:127.0.0.1:recovery:8','read-body','recovery']);
+ await createRequestDispatcher(deps)(request({url:'/api/forgot-password',method:'POST',csrf:'',forwardedFor:'203.0.113.9, 10.0.0.1'}),res);
+ assert.deepEqual(events,['resolve','rate:ip:203.0.113.9:recovery:8','read-body','recovery']);
 });
 
 test('dispatcher keeps authenticated API order around body parsing and route chain',async()=>{
