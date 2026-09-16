@@ -1,3 +1,5 @@
+import {assetUrl,canonicalAssetPath} from './asset-url.js';
+
 const QUOTE_PAGE='cotizador',TARIFF_PAGE='tarifario';
 export const QUOTE_TOOL_STYLES=Object.freeze(['/quote-wizard.css','/quote-builder-review.css','/quote-wizard-autocomplete.css']);
 
@@ -8,14 +10,14 @@ export const isQuoteWizardPage=value=>pageName(value)===QUOTE_PAGE;
 export function createQuoteToolsLoader({documentRef=globalThis.document,locationRef=globalThis.location,importModule=specifier=>import(specifier),logger=globalThis.console}={}){
  let runtimeModule=null,runtimePromise=null,autocompletePromise=null;
  const stylePromises=new Map();
- const hrefPath=link=>{try{return new URL(link?.href||link?.getAttribute?.('href')||'',locationRef?.origin||'http://localhost').pathname;}catch{return String(link?.getAttribute?.('href')||'');}};
+ const hrefPath=link=>canonicalAssetPath(link?.href||link?.getAttribute?.('href')||'');
  const existingStyle=href=>[...(documentRef?.querySelectorAll?.('link[rel="stylesheet"]')||[])].find(link=>hrefPath(link)===href);
  const ensureStyle=href=>{
   const existing=existingStyle(href);if(existing)return Promise.resolve(existing);
   if(stylePromises.has(href))return stylePromises.get(href);
   const promise=new Promise((resolve,reject)=>{
    if(!documentRef?.head||!documentRef?.createElement){resolve(null);return;}
-   const link=documentRef.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.amcQuoteStyle='1';
+   const link=documentRef.createElement('link');link.rel='stylesheet';link.href=assetUrl(href);link.dataset.amcQuoteStyle='1';
    link.onload=()=>resolve(link);link.onerror=()=>reject(Error('No se pudo cargar '+href));documentRef.head.append(link);
   }).catch(error=>{stylePromises.delete(href);throw error;});
   stylePromises.set(href,promise);return promise;

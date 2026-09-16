@@ -9,7 +9,8 @@ test('photo viewer is compact, preloads display media and never swaps visible qu
   readFile(new URL('../public/index.html',import.meta.url),'utf8'),
   readFile(new URL('../public/floating-chat.js',import.meta.url),'utf8')
  ]);
- assert.match(index,/href="\/media-viewer\.css"/);
+ assert.match(index,/href="__AMC_ASSET_BASE__\/media-viewer\.css"/);
+ assert.doesNotMatch(index,/href="\/media-viewer\.css"/);
  assert.doesNotMatch(source,/document\.createElement\('style'\)/);
  assert.match(styles,/\.amc-photo-viewer\{box-sizing:border-box;position:fixed;inset:3dvh 2vw;width:auto;max-width:1400px/);
  assert.match(styles,/background:rgba\(0,0,0,\.82\)/);

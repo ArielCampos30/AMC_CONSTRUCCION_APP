@@ -14,7 +14,8 @@ test('8.8H usa un entrypoint móvil formal y retira el nombre legacy',async()=>{
   "import './mobile-chat-viewport-runtime.js';",
   "import './native-push-registration-runtime.js';"
  ].join('\n'));
- assert.match(index,/type="module" src="\/app-mobile-runtime\.js"/);
+ assert.match(index,/type="module" src="__AMC_ASSET_BASE__\/app-mobile-runtime\.js"/);
+ assert.doesNotMatch(index,/type="module" src="\/app-mobile-runtime\.js"/);
  assert.doesNotMatch(index,/mobile-runtime-fixes\.js/);
  await assert.rejects(access(publicUrl('mobile-runtime-fixes.js')));
  assert.doesNotMatch(entrypoint,/function\s|addEventListener|AMCNative|visualViewport|MutationObserver|setTimeout/);

@@ -93,7 +93,7 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
  const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,performanceHealth:performance.health,startedAt,demo,keys,services,send});
  const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
- const staticFiles=staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fail});
+ const staticFiles=staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fail,version});
  const handle=createRequestDispatcher({origin,staticFiles,authentication,fail,checkRate,readBody,recovery,handlePublicSystem,handleState,mediaAccess,readMultipart,twoFactor,chat,planning,handleAdminUtility,appearance,closure,fieldwork,team,purchases,handleFeature,clientRequests,handleProfile,handleMediaUpload,handleQuoteWork,handleCommunity,notificationRoutes,handleDevices,handleEstimatorPage,send});
  const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount,recordPerformance:performance.record});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
 }

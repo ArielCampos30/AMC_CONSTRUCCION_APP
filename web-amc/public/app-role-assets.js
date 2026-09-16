@@ -1,3 +1,5 @@
+import {assetUrl,canonicalAssetPath} from './asset-url.js';
+
 export const ROLE_ASSETS=Object.freeze({
  admin:Object.freeze({styles:Object.freeze(['/admin-v3.css','/admin-appearance.css']),modules:Object.freeze(['./app-admin-staff-chat-runtime.js'])}),
  employee:Object.freeze({styles:Object.freeze(['/employee-v4.css','/employee-staff-chat.css']),modules:Object.freeze(['./app-admin-staff-chat-runtime.js','./app-employee-staff-chat-runtime.js'])}),
@@ -9,7 +11,7 @@ const KNOWN_ROLE_STYLES=new Set(Object.values(ROLE_ASSETS).flatMap(config=>confi
 const moduleLoads=new Map(),styleLoads=new Map();
 
 function normalizedRole(role){return Object.prototype.hasOwnProperty.call(ROLE_ASSETS,role)?role:'public';}
-function stylesheetPath(link){try{return new URL(link.href||link.getAttribute?.('href')||'',globalThis.location?.origin||'http://localhost').pathname;}catch{return String(link.getAttribute?.('href')||'');}}
+function stylesheetPath(link){return canonicalAssetPath(link.href||link.getAttribute?.('href')||'');}
 function stylesheetLinks(documentRef){return [...(documentRef?.querySelectorAll?.('link[rel="stylesheet"]')||[])];}
 function existingStylesheet(documentRef,href){return stylesheetLinks(documentRef).find(link=>stylesheetPath(link)===href);}
 function pruneRoleStyles(documentRef,keep){
@@ -24,7 +26,7 @@ function ensureStylesheet(documentRef,href){
  if(styleLoads.has(href))return styleLoads.get(href);
  const promise=new Promise((resolve,reject)=>{
   const link=documentRef.createElement('link');
-  link.rel='stylesheet';link.href=href;link.dataset.amcRoleStyle='1';
+  link.rel='stylesheet';link.href=assetUrl(href);link.dataset.amcRoleStyle='1';
   link.onload=()=>resolve(link);link.onerror=()=>reject(Error('No se pudo cargar '+href));
   documentRef.head.append(link);
  }).catch(error=>{styleLoads.delete(href);throw error;});

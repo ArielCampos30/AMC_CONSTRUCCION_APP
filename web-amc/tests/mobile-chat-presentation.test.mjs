@@ -14,8 +14,9 @@ test('la presentación móvil del chat tiene ownership CSS formal sin !important
   source('index.html'),
   source('floating-chat.js')
  ]);
- assert.match(index,/<link rel="stylesheet" href="\/mobile-chat\.css">/);
- assert.match(index,/app-mobile-runtime\.js/);
+ assert.match(index,/<link rel="stylesheet" href="__AMC_ASSET_BASE__\/mobile-chat\.css">/);
+ assert.doesNotMatch(index,/<link rel="stylesheet" href="\/mobile-chat\.css">/);
+ assert.match(index,/__AMC_ASSET_BASE__\/app-mobile-runtime\.js/);
  assert.doesNotMatch(index,/mobile-runtime-fixes\.js/);
  assert.match(styles,/#amc-chat-dialog \.compact-composer/);
  assert.match(styles,/#amc-chat-dialog\.amc-keyboard-open/);
