@@ -76,6 +76,8 @@ test('templates de arranque y offline no dejan JS/CSS críticos sin versionar',a
  const [html,offline,sw]=await Promise.all([source('index.html'),source('offline.html'),source('sw.js')]);
  assert.match(html,/__AMC_ASSET_BASE__\/app-bootstrap\.js/);
  assert.match(html,/__AMC_ASSET_BASE__\/styles\.css/);
+ assert.match(html,/href="__AMC_ASSET_BASE__\/assets\/amc-logo\.webp"/);
+ assert.doesNotMatch(html,/amc-logo\.webp\?v=\d+/);
  assert.doesNotMatch(html,/(?:src|href)="\/(?:app-bootstrap|styles|connected|unified|welcome|team|planning|aqua|amc-theme|notice-ui|mobile-chat|media-viewer)\.(?:js|css)"/);
  assert.match(offline,/__AMC_ASSET_BASE__\/offline\.js/);
  assert.match(offline,/__AMC_ASSET_BASE__\/offline\.css/);
