@@ -330,13 +330,14 @@ try:
     assert any(r.get('photos') for r in task.get('reports',[])),task
 
     go(BASE+"/#chat-equipo")
-    wait("return !!document.querySelector('.staff-message')")
-    set_value('.staff-message textarea[name="text"]',CHAT_TEXT)
-    attach_png('.staff-message input[name="photos"]','chat-avance-piloto.png')
-    submit('.staff-message')
-    wait("return document.body.innerText.includes("+json.dumps(CHAT_TEXT)+")",25)
-    employee_state=api('/api/state',None,'GET')
-    assert any(m.get('text')==CHAT_TEXT and m.get('photos') for m in employee_state.get('staffMessages',[])),employee_state.get('staffMessages',[])
+    wait("return location.hash==='#inicio-empleado'",20)
+    wait("return !!document.querySelector('#amc-chat-dialog[open] .floating-staff-message')",20)
+    set_value('#amc-chat-dialog .floating-staff-message textarea[name="text"]',CHAT_TEXT)
+    attach_png('#amc-chat-dialog .floating-staff-message input[name="photos"]','chat-avance-piloto.png')
+    submit('#amc-chat-dialog .floating-staff-message')
+    wait("return document.querySelector('#amc-chat-dialog .message-log')?.innerText.includes("+json.dumps(CHAT_TEXT)+")",25)
+    staff_chat=api('/api/staff-chat/messages',None,'GET')
+    assert any(m.get('text')==CHAT_TEXT and m.get('photos') for m in staff_chat.get('messages',[])),staff_chat
 
     go(BASE+"/#trabajo/"+assignment_id)
     wait("return !!document.querySelector('.task-report') && document.body.innerText.includes('Finalizar trabajo')")
