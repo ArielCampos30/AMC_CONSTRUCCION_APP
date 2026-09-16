@@ -1,0 +1,52 @@
+name: AMC - Piloto comercial integral
+on:
+  pull_request:
+    branches: [main]
+    paths: ['web-amc/**', '.github/workflows/bloque13-piloto-comercial.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  commercial-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: web-amc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+        with:
+          install-chromedriver: true
+      - name: Iniciar AMC de prueba
+        run: |
+          nohup node server.mjs --demo > /tmp/amc-piloto-server.log 2>&1 &
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4180/healthz >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/amc-piloto-server.log
+          exit 1
+      - name: Iniciar ChromeDriver
+        run: |
+          nohup "${{ steps.chrome.outputs.chromedriver-path }}" --port=9515 > /tmp/amc-piloto-chromedriver.log 2>&1 &
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:9515/status >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/amc-piloto-chromedriver.log
+          exit 1
+      - name: Piloto comercial Cliente Admin Empleado
+        env:
+          AMC_CHROME_BINARY: ${{ steps.chrome.outputs.chrome-path }}
+        run: python3 tests/browser-commercial-pilot.py
+      - name: Mostrar logs si falla
+        if: failure()
+        run: |
+          cat /tmp/amc-piloto-server.log || true
+          cat /tmp/amc-piloto-chromedriver.log || true
