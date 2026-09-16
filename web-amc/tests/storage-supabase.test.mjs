@@ -73,6 +73,13 @@ test('upload hard deadline returns even when fetch ignores AbortSignal completel
  assert.ok(Date.now()-started<180,'AMC debe cortar el upload colgado sin esperar al fetch subyacente');
 });
 
+test('download hard deadline returns even when fetch ignores AbortSignal completely',async()=>{
+ const store=createSupabaseFileStore({env,fetchImpl:()=>new Promise(()=>{}),timeouts:{readMs:15}});
+ const started=Date.now();
+ await assert.rejects(store.download('read-never-settles'),error=>error.code==='AMC_STORAGE'&&error.storageOperation==='download'&&error.storageReason==='timeout');
+ assert.ok(Date.now()-started<120,'AMC debe cortar una lectura colgada sin esperar al fetch subyacente');
+});
+
 test('private storage read reports 404 without exposing credentials',async()=>{
  const store=createSupabaseFileStore({env,fetchImpl:async()=>new Response('missing',{status:404})});
  await assert.rejects(store.download('missing-file'),error=>error.status===404&&error.code==='AMC_STORAGE_NOT_FOUND'&&error.storageOperation==='download'&&error.storageReason==='not-found'&&!error.message.includes('sb_secret'));
