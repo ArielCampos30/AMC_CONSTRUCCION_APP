@@ -1,6 +1,6 @@
 # AMC · Render + Supabase
 
-La aplicación ya usa `main` como rama de producción y Render sirve `web-amc`. Esta guía documenta la conexión PostgreSQL/Supabase y el paso siguiente de almacenamiento externo.
+La aplicación ya usa `main` como rama de producción y Render sirve `web-amc`. Esta guía documenta la conexión PostgreSQL/Supabase y el almacenamiento externo de archivos.
 
 ## PostgreSQL
 
@@ -16,14 +16,15 @@ El doble factor TOTP necesita además `AMC_2FA_KEY`, un secreto de servidor larg
 
 ## Archivos
 
-Actualmente la tabla `files` de PostgreSQL sigue siendo la copia compatible de fotos/PDF. Object Storage se activa de forma gradual y nunca expone una clave privilegiada al navegador o a la APK.
+La tabla `files` de PostgreSQL continúa siendo la copia compatible de fotos/PDF. Object Storage se activa de forma gradual y nunca expone una clave privilegiada al navegador o a la APK.
 
-Variables del servicio Web para la etapa de Storage:
+Variables del servicio Web para Storage:
 
 - `AMC_SUPABASE_URL`
 - `AMC_SUPABASE_FILES_KEY`: clave secreta de servidor independiente de la del job de backup.
 - `AMC_FILES_BUCKET` (por defecto `amc-files`)
 - `AMC_FILE_STORAGE_MODE`: `off`, `mirror` o `prefer-storage`
+- `AMC_FILE_STORAGE_MIGRATE_ON_START`: normalmente `0`; usar temporalmente `1` sólo para una migración histórica controlada.
 
 Modos:
 
@@ -35,11 +36,34 @@ El bucket `amc-files` debe permanecer privado, con máximo de 5 MB y sólo JPEG/
 
 La limpieza de uploads huérfanos conserva el plazo de siete días. Cuando Storage está activo, elimina primero la copia externa y sólo después borra la copia PostgreSQL, de modo que un fallo externo no deje a la base sin su archivo recuperable.
 
-La migración de archivos históricos sigue separada. No retirar BYTEA hasta completar dual-write, una migración verificada, lectura `prefer-storage`, comparación de conteos/tamaños y una prueba de recuperación.
+### Migración histórica verificada
+
+La migración histórica usa PostgreSQL como fuente de verdad y es idempotente:
+
+1. Recorre cada fila de `files`.
+2. Lee el objeto equivalente en el bucket privado.
+3. Si ya coincide byte por byte, no vuelve a escribirlo.
+4. Si falta, lo sube con el mismo ID y MIME.
+5. Si existe pero difiere, lo repara desde PostgreSQL.
+6. Después de cada escritura vuelve a descargar el objeto y exige igualdad byte por byte.
+7. No elimina objetos ni filas de PostgreSQL.
+
+En Render, la ejecución controlada se habilita temporalmente con `AMC_FILE_STORAGE_MIGRATE_ON_START=1`. La aplicación arranca normalmente y deja en logs `file-storage-migration-start`, seguido por `file-storage-migration-complete` con totales, bytes y cantidad verificada. Si falla, registra `file-storage-migration-failed` y mantiene el modo actual; no debe cambiarse a `prefer-storage` hasta resolverlo.
+
+Después de una migración exitosa:
+
+- comparar cantidad total de filas de `amc_data.files` contra objetos `files/*` del bucket;
+- comparar suma de bytes;
+- comprobar que no falte ningún ID;
+- volver `AMC_FILE_STORAGE_MIGRATE_ON_START` a `0`;
+- recién entonces activar `AMC_FILE_STORAGE_MODE=prefer-storage`;
+- verificar lecturas reales y ausencia de fallbacks inesperados.
+
+No retirar BYTEA de PostgreSQL hasta completar dual-write, migración verificada, lectura `prefer-storage`, comparación de conteos/tamaños y una prueba de recuperación. El retiro de la copia PostgreSQL es una decisión posterior y separada.
 
 ## Backup externo preparado
 
-`backup-supabase.mjs` permite guardar el backup cifrado fuera de la base usando un bucket privado de Supabase Storage.
+`backup-supabase.mjs` permite guardar el backup cifrado fuera de la base usando un bucket privado de Supabase Storage y una segunda copia independiente en Cloudflare R2.
 
 Variables del job de backup:
 
@@ -56,4 +80,4 @@ No poner la service-role key en el servicio Web si sólo la necesita un cron de 
 
 ## Límite actual
 
-El puente PostgreSQL conserva una API síncrona de compatibilidad. Es adecuado para el volumen piloto/actual, pero una futura etapa de escala debe convertir servicios de datos a I/O asíncrono y mover los BLOB a Object Storage después de una migración comprobada.
+El puente PostgreSQL conserva una API síncrona de compatibilidad. Es adecuado para el volumen piloto/actual, pero una futura etapa de escala debe convertir servicios de datos a I/O asíncrono. Mientras se valida `prefer-storage`, PostgreSQL conserva los BLOB como copia de compatibilidad y recuperación.
