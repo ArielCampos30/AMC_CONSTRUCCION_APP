@@ -74,7 +74,7 @@ test('server delegates database initialization and migrations to database core',
  const composition=await readFile(new URL('../app-composition.mjs',import.meta.url),'utf8');
  assert.match(composition,/from '.\/database-core\.mjs'/);
  assert.match(composition,/createDatabaseCore\(\{dbPath,id,sha,now,fail\}\)/);
- assert.match(stateRoutes,/await beginStateSnapshot\(\)/);
+ assert.match(stateRoutes,/await beginStateSnapshot\(user\)/);
  assert.match(stateRoutes,/endStateSnapshot\(\)/);
  assert.doesNotMatch(server,/CREATE TABLE IF NOT EXISTS users/);
  assert.doesNotMatch(server,/const migrateRelations=/);
