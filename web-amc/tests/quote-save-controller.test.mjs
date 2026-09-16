@@ -7,9 +7,11 @@ import {createQuoteSaveController,parseQuoteClientRef,resolveQuoteClientRef,buil
 test('controlador Guardar/Enviar usa estado local y PDF directo sin refresh ni iframe',()=>{
  const controller=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
  const wrapper=readFileSync(new URL('../public/features-ui.js',import.meta.url),'utf8');
+ const runtime=readFileSync(new URL('../public/quote-tools-runtime.js',import.meta.url),'utf8');
  const pdfController=readFileSync(new URL('../public/quote-pdf-controller.js',import.meta.url),'utf8');
- assert.match(wrapper,/createQuotePdfController/);
- assert.match(wrapper,/generatePdf:pdf\.generatePdf/);
+ assert.match(wrapper,/import\('\.\/quote-pdf-controller\.js'\)/);
+ assert.match(wrapper,/ensurePdfController\(\)\.then\(controller=>controller\.generatePdf\(requestId,quoteId\)\)/);
+ assert.match(runtime,/createQuoteSaveController\(\{getState:deps\.getState,api:deps\.api,navigate:deps\.navigate,toast:deps\.toast,wizard,generatePdf:deps\.generatePdf\}\)/);
  assert.doesNotMatch(wrapper,/generatePdf:legacy\.generatePdf/);
  assert.match(controller,/\/api\/admin\/requests/);
  assert.match(controller,/\/api\/quotes/);
