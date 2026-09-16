@@ -56,5 +56,7 @@ test('flujo activo del cotizador no usa refresh completo ni iframe para guardar 
  assert.doesNotMatch(save,/\brefresh\b|\/api\/state|iframe|postMessage/i);
  assert.doesNotMatch(clients,/\brefresh\b|\/api\/state|iframe/i);
  assert.doesNotMatch(pdf,/\/api\/state|iframe|postMessage|AMCBusy/i);
- assert.match(wrapper,/generatePdf:pdf\.generatePdf/);assert.doesNotMatch(wrapper,/generatePdf:legacy\.generatePdf/);
+ assert.match(wrapper,/import\('\.\/quote-pdf-controller\.js'\)/);
+ assert.match(wrapper,/ensurePdfController\(\)\.then\(controller=>controller\.generatePdf\(requestId,quoteId\)\)/);
+ assert.doesNotMatch(wrapper,/generatePdf:legacy\.generatePdf/);
 });

@@ -12,9 +12,11 @@ const actor=base=>({cookie:'',csrf:'',async call(path,body,status=200){
 
 test('Cotizador usa API autenticada para cliente nuevo, actualiza estado local y limpia el asistente tras guardar',()=>{
  const wrapper=readFileSync(new URL('../public/features-ui.js',import.meta.url),'utf8');
+ const runtime=readFileSync(new URL('../public/quote-tools-runtime.js',import.meta.url),'utf8');
  const clientController=readFileSync(new URL('../public/quote-client-create-controller.js',import.meta.url),'utf8');
  const saver=readFileSync(new URL('../public/quote-save-controller.js',import.meta.url),'utf8');
- assert.match(wrapper,/createQuoteClientCreateController/);
+ assert.match(wrapper,/prepareQuoteToolsPage/);
+ assert.match(runtime,/createQuoteClientCreateController/);
  assert.match(clientController,/api\('\/api\/admin\/clients',draft\)/);
  assert.match(clientController,/stopImmediatePropagation\(\)/);
  assert.match(clientController,/upsertClient/);

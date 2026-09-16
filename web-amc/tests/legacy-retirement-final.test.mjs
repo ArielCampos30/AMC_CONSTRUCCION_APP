@@ -4,15 +4,20 @@ import {readFileSync,existsSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
-test('Tarifario y Cotizador quedan como herramientas independientes',()=>{
+test('Tarifario y Cotizador quedan como herramientas independientes y diferidas',()=>{
  const system=read('../public/admin-system-ui.js');
  const features=read('../public/features-ui.js');
+ const runtime=read('../public/quote-tools-runtime.js');
+ const loader=read('../public/quote-tools-loader.js');
  const tariff=read('../public/tariff-ui.js');
  assert.match(system,/\['tarifario','Tarifario'\]/);
  assert.match(system,/\['cotizador','Cotizador'\]/);
  assert.doesNotMatch(system,/Tarifario y cotizador/);
- assert.match(features,/createTariffUI/);
- assert.match(features,/tariff\.afterRender\(page\)/);
+ assert.doesNotMatch(features,/from '\.\/tariff-ui\.js'/);
+ assert.match(features,/prepareQuoteToolsPage/);
+ assert.match(runtime,/createTariffUI/);
+ assert.match(runtime,/tariff\.afterRender\(page\)/);
+ assert.match(loader,/importModule\('\.\/quote-tools-runtime\.js'\)/);
  assert.match(tariff,/page!=='tarifario'/);
  assert.match(tariff,/\/api\/estimator-tariffs/);
  assert.match(tariff,/amc-tariff-search/);
