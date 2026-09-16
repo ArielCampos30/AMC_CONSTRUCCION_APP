@@ -1,4 +1,5 @@
 import {reconcileNativeNotifications} from './native-notification-reconcile-runtime.js';
+import {syncRoleAssets} from './app-role-assets.js';
 
 export function createAppStateRuntime({api,applyState,cacheEmployeeSnapshot}){
  let sessionEpoch=0,offlineSnapshotSignature='';
@@ -12,7 +13,10 @@ export function createAppStateRuntime({api,applyState,cacheEmployeeSnapshot}){
  async function reload(){
   const epoch=sessionEpoch;
   const next=await api('/api/state',null,'GET');
-  if(epoch===sessionEpoch){applyState(next);reconcileNativeNotifications(next);syncEmployeeOffline(next);}
+  if(epoch===sessionEpoch){
+   await syncRoleAssets(next?.user?.role);
+   if(epoch===sessionEpoch){applyState(next);reconcileNativeNotifications(next);syncEmployeeOffline(next);}
+  }
   return next;
  }
  return {
