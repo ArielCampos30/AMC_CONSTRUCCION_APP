@@ -14,7 +14,7 @@ const schema=`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT NOT NULL);`;
 const SNAPSHOT_ALWAYS_EXCLUDED=['estimator','fileUpload','tariffCatalog','admin2fa','monitor','teamAssignmentBatch','employeeAudit'];
 const SNAPSHOT_ADMIN_EXCLUDED=[...SNAPSHOT_ALWAYS_EXCLUDED,'staffMessage','staffRead','staffAdminRead'];
-const SNAPSHOT_CLIENT_SHARED=['appearance','post','review','calendarBooking','chatRead','clientChatRead'];
+const SNAPSHOT_CLIENT_SHARED=['appearance','post','review','chatRead','clientChatRead'];
 const SNAPSHOT_EMPLOYEE_SHARED=['appearance','post','review','message','quote','work'];
 const marks=values=>values.map(()=>'?').join(',');
 const stateSnapshotQuery=user=>{
@@ -23,8 +23,8 @@ const stateSnapshotQuery=user=>{
  if(role==='admin'){
   docsWhere=`kind NOT IN (${marks(SNAPSHOT_ADMIN_EXCLUDED)})`;docParams=[...SNAPSHOT_ADMIN_EXCLUDED];
  }else if(role==='client'&&id){
-  docsWhere=`kind NOT IN (${marks(SNAPSHOT_ALWAYS_EXCLUDED)}) AND (owner=? OR kind IN (${marks(SNAPSHOT_CLIENT_SHARED)}))`;
-  docParams=[...SNAPSHOT_ALWAYS_EXCLUDED,id,...SNAPSHOT_CLIENT_SHARED];usersWhere="id=? OR role='admin'";userParams=[id];
+  docsWhere=`kind NOT IN (${marks(SNAPSHOT_ALWAYS_EXCLUDED)}) AND (owner=? OR kind IN (${marks(SNAPSHOT_CLIENT_SHARED)}) OR (kind='calendarBooking' AND EXISTS (SELECT 1 FROM docs request_doc WHERE request_doc.kind='request' AND request_doc.owner=? AND docs.body LIKE '%"requestId":"' || request_doc.id || '"%')))`;
+  docParams=[...SNAPSHOT_ALWAYS_EXCLUDED,id,...SNAPSHOT_CLIENT_SHARED,id];usersWhere="id=? OR role='admin'";userParams=[id];
  }else if(role==='employee'&&id){
   docsWhere=`kind NOT IN (${marks(SNAPSHOT_ALWAYS_EXCLUDED)}) AND (owner=? OR kind IN (${marks(SNAPSHOT_EMPLOYEE_SHARED)}))`;
   docParams=[...SNAPSHOT_ALWAYS_EXCLUDED,id,...SNAPSHOT_EMPLOYEE_SHARED];usersWhere='id=?';userParams=[id];
@@ -62,7 +62,7 @@ export function createDatabaseCore({dbPath,id,sha,now,fail}){
   return db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE role IN ('+list.map(()=>'?').join(',')+') ORDER BY name').all(...list).map(user=>({...user,active:Number(user.active)!==0}));
  };
  const userById=key=>stateUsersById?stateUsersById.get(key):(()=>{const user=db.prepare('SELECT id,name,email,phone,town,role,active FROM users WHERE id=?').get(key);return user?{...user,active:Number(user.active)!==0}:undefined;})();
- const docPosition=key=>statePositions?.get(key)||db.prepare('SELECT rowid FROM docs WHERE id=?').get(key)?.rowid||0;
+ const docPosition=key=>statePositions?(statePositions.get(key)||0):(db.prepare('SELECT rowid FROM docs WHERE id=?').get(key)?.rowid||0);
  const get=(kind,key)=>{if(stateRows){const row=(stateRows.get(kind)||[]).find(item=>item.id===key);if(!row)fail(404,'No encontrado.');return row.value;}const r=db.prepare('SELECT body FROM docs WHERE kind=? AND id=?').get(kind,key);if(!r)fail(404,'No encontrado.');return JSON.parse(r.body);};
  const put=(kind,owner,body)=>{db.prepare('INSERT INTO docs(id,kind,owner,body) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET body=excluded.body,owner=excluded.owner').run(body.id,kind,owner,JSON.stringify(body));return body;};
  const transaction=fn=>{db.exec('BEGIN IMMEDIATE');try{const value=fn();db.exec('COMMIT');return value;}catch(e){db.exec('ROLLBACK');throw e;}};
