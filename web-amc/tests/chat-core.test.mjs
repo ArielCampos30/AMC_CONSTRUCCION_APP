@@ -57,13 +57,13 @@ test('chat core keeps request visibility, unread counters and read receipts',()=
  }finally{database.db.close();}
 });
 
-test('chat summary conserva no leídos y recibos dentro del snapshot',()=>{
+test('chat summary conserva no leídos y recibos dentro del snapshot',async()=>{
  const {database,chat,put}=setup();
  try{
   const admin={id:'admin',role:'admin',name:'AMC'};
   put('request','client',{id:'r-snapshot',userId:'client',name:'Cliente',service:'Pintura',town:'La Falda'});
   put('message','client',{id:'m-snapshot',userId:'client',requestId:'r-snapshot',senderId:'client',date:'2026-09-10T10:00:00.000Z',text:'Hola'});
-  database.beginStateSnapshot();
+  await database.beginStateSnapshot();
   const summary=chat.chatSummary(admin);
   assert.equal(summary.chatUnread['r-snapshot'],1);
   assert.equal(summary.clientChatUnread.client,1);
