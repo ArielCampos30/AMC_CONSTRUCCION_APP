@@ -52,14 +52,16 @@ test('recurso web de eliminación publica una solicitud sin exponer si la cuenta
  }
 });
 
-test('landing publica privacidad y eliminación de cuenta',async()=>{
- const [privacy,deletion,script]=await Promise.all([
+test('landing publica privacidad y eliminación de cuenta y la app enlaza la política',async()=>{
+ const [privacy,deletion,script,accountUi]=await Promise.all([
   readFile(new URL('../../docs/privacidad.html',import.meta.url),'utf8'),
   readFile(new URL('../../docs/eliminar-cuenta.html',import.meta.url),'utf8'),
-  readFile(new URL('../../docs/assets/js/account-deletion.js',import.meta.url),'utf8')
+  readFile(new URL('../../docs/assets/js/account-deletion.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/account-ui.js',import.meta.url),'utf8')
  ]);
  assert.match(privacy,/Política de privacidad/);
  assert.match(privacy,/eliminar-cuenta\.html/);
  assert.match(deletion,/accountDeletionForm/);
  assert.match(script,/api\/public\/account-deletion/);
+ assert.match(accountUi,/amc-construcciones\.onrender\.com\/privacidad\.html/);
 });
