@@ -10,6 +10,7 @@ export function createRequestDispatcher({
  readBody,
  recovery,
  landingProspects,
+ whatsappCloud,
  handlePublicSystem,
  handleState,
  mediaAccess,
@@ -41,6 +42,7 @@ export function createRequestDispatcher({
   if(staticFiles.serveEarly({req,res,p,method}))return;
   const {session,user}=authentication.resolve(req);
   try{
+   if(await whatsappCloud.publicRoute({req,res,p,method,url}))return;
    if(p==='/api/public/prospects'){
     const requestOrigin=String(req.headers.origin||'').replace(/\/+$/,'');
     if(requestOrigin!==landingOrigin)fail(403,'Origen no permitido.');
@@ -88,6 +90,7 @@ export function createRequestDispatcher({
    if(p.startsWith('/api/')){
     if(!user)fail(401,'Ingresá a tu cuenta para continuar.');
     checkRate(user.id+':api',400);
+    if(whatsappCloud.adminRoute({p,method,user,res}))return;
     if(p.startsWith('/api/admin/2fa/')){
      const twoFactorBody=method==='GET'?{}:await readBody(req);
      if(await twoFactor.route({p,method,b:twoFactorBody,user,res,session}))return;
