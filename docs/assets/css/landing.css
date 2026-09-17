@@ -46,7 +46,8 @@ header {
   width: 54px;
   height: 54px;
   object-fit: contain;
-  filter: grayscale(1) sepia(1) saturate(12) hue-rotate(354deg) brightness(1.08) contrast(1.18);
+  filter: none;
+  mix-blend-mode: screen;
 }
 .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: .95rem; }
 .nav-links > a:not(.btn):hover { color: var(--text); }
