@@ -12,7 +12,7 @@ const schema=`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS devices(id TEXT PRIMARY KEY,userId TEXT NOT NULL,kind TEXT NOT NULL,body TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS delivery(id TEXT PRIMARY KEY,deviceId TEXT NOT NULL,noticeId TEXT NOT NULL,body TEXT NOT NULL,attempts INTEGER DEFAULT 0,nextAt INTEGER DEFAULT 0,status TEXT DEFAULT 'pending',error TEXT DEFAULT '');
  CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT NOT NULL);`;
-const SNAPSHOT_ALWAYS_EXCLUDED=['estimator','fileUpload','tariffCatalog','admin2fa','monitor','teamAssignmentBatch','employeeAudit'];
+const SNAPSHOT_ALWAYS_EXCLUDED=['estimator','fileUpload','tariffCatalog','admin2fa','monitor','teamAssignmentBatch','employeeAudit','whatsappMessage','whatsappStatus','whatsappMetaState'];
 const SNAPSHOT_ADMIN_EXCLUDED=[...SNAPSHOT_ALWAYS_EXCLUDED,'staffMessage','staffRead','staffAdminRead'];
 const SNAPSHOT_CLIENT_SHARED=['appearance','post','review','chatRead','clientChatRead'];
 const SNAPSHOT_EMPLOYEE_SHARED=['appearance','post','review','message','quote','work'];
