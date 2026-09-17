@@ -1,6 +1,4 @@
-// Mantener vacío hasta definir el WhatsApp Business comercial.
-// Formato futuro: código de país + característica + número, sin +, espacios ni guiones.
-const WHATSAPP_NUMBER = "";
+const WHATSAPP_NUMBER = "5493548633464";
 const PROSPECT_API = "https://amc-o0xb.onrender.com/api/public/prospects";
 const CAMPAIGN_STORAGE_KEY = "amc_landing_campaign_v1";
 
@@ -59,22 +57,27 @@ for (const element of document.querySelectorAll("[data-measure]")) {
   element.addEventListener("click", () => measure(element.dataset.measure || "interaction"));
 }
 
+const buildWhatsAppUrl = lines => {
+  if (!WHATSAPP_NUMBER) return "";
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.filter(Boolean).join("\n"))}`;
+};
+
 const baseMessage = [
-  "Hola AMC, quisiera pedir un presupuesto.",
+  "Hola AMC Construcciones, quisiera pedir un presupuesto.",
   "Mi localidad es: _____.",
   "El trabajo que necesito es: _____."
 ];
 
 if (campaignLabel) {
-  baseMessage.push(`Origen de la consulta: ${campaignLabel}`);
+  baseMessage.push(`Vengo desde la web (${campaignLabel}).`);
 }
 
-const message = encodeURIComponent(baseMessage.join("\n"));
+const genericWhatsAppUrl = buildWhatsAppUrl(baseMessage);
 const notice = document.getElementById("waNotice");
 
 for (const link of document.querySelectorAll(".js-wa")) {
-  if (WHATSAPP_NUMBER) {
-    link.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+  if (genericWhatsAppUrl) {
+    link.href = genericWhatsAppUrl;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     continue;
@@ -96,6 +99,27 @@ const makeSubmissionId = () => {
 };
 let submissionId = makeSubmissionId();
 let formStarted = false;
+
+const renderSuccessWithWhatsApp = payload => {
+  status.className = "form-status is-success";
+  status.replaceChildren(document.createTextNode("Consulta enviada. Ya ingresó a AMC y la vamos a revisar para continuar el contacto."));
+  const url = buildWhatsAppUrl([
+    "Hola AMC Construcciones, ya envié una consulta desde la web.",
+    `Soy ${payload.name}.`,
+    `Localidad: ${payload.town}.`,
+    `Trabajo: ${payload.service}.`,
+    "Quisiera continuar por WhatsApp."
+  ]);
+  if (!url) return;
+  const link = document.createElement("a");
+  link.className = "form-status-link";
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "Continuar por WhatsApp";
+  link.addEventListener("click", () => measure("whatsapp_after_form"));
+  status.append(document.createTextNode(" "), link);
+};
 
 form?.addEventListener("focusin", event => {
   if (formStarted || event.target?.closest?.(".form-honeypot")) return;
@@ -146,8 +170,7 @@ form?.addEventListener("submit", async event => {
     form.reset();
     submissionId = makeSubmissionId();
     formStarted = false;
-    status.className = "form-status is-success";
-    status.textContent = "Consulta enviada. Ya ingresó a AMC y la vamos a revisar para continuar el contacto.";
+    renderSuccessWithWhatsApp(payload);
     measure("form_submit_success", { status: responseStatus });
   } catch (error) {
     status.className = "form-status is-error";

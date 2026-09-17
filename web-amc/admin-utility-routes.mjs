@@ -5,13 +5,15 @@ export function adminUtilityRoutes({db,all,get,put,transaction,requireAdmin,safe
  const trash=adminTrashRoutes({db,get,put,transaction,requireAdmin,send,fail,now,id});
  const commercialFollowup=(user,requestId,b,res)=>{
   requireAdmin(user);
-  const request=get('request',requestId),action=['save','contacted'].includes(b.action)?b.action:'save',nextAction=text(b.nextAction,200),nextActionDay=text(b.nextActionDay,20),note=text(b.note,2000);
+  const request=get('request',requestId),action=['save','contacted','whatsapp_opened'].includes(b.action)?b.action:'save',nextAction=text(b.nextAction,200),nextActionDay=text(b.nextActionDay,20),note=text(b.note,2000);
   if(nextActionDay&&!/^\d{4}-\d{2}-\d{2}$/.test(nextActionDay))fail(400,'Elegí una fecha válida para el próximo seguimiento.');
   const followupId='commercial-followup-'+request.id,previous=all('commercialFollowup').find(item=>item.id===followupId),changed=!previous||previous.nextAction!==nextAction||previous.nextActionDay!==nextActionDay||previous.note!==note,stamp=now();
   const history=[...(previous?.history||[])];
   if(action==='contacted')history.push({type:'contacted',date:stamp,actor:user.id,note,nextAction,nextActionDay});
+  else if(action==='whatsapp_opened')history.push({type:'whatsapp_opened',channel:'WhatsApp',date:stamp,actor:user.id,note,nextAction,nextActionDay});
   else if(changed)history.push({type:'updated',date:stamp,actor:user.id,note,nextAction,nextActionDay});
-  const result=put('commercialFollowup','',{id:followupId,requestId:request.id,lastContactAt:action==='contacted'?stamp:previous?.lastContactAt||'',nextAction,nextActionDay,note,updatedAt:stamp,updatedBy:user.id,history:history.slice(-50)});
+  const isContact=action==='contacted'||action==='whatsapp_opened';
+  const result=put('commercialFollowup','',{id:followupId,requestId:request.id,lastContactAt:isContact?stamp:previous?.lastContactAt||'',nextAction,nextActionDay,note,updatedAt:stamp,updatedBy:user.id,history:history.slice(-50)});
   send(res,200,result);return true;
  };
  return function route({p,method,b,user,res}){
