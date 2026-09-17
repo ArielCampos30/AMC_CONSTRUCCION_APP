@@ -39,6 +39,34 @@ const followupFor=(request,latestQuote,work)=>{
  return null;
 };
 
+export function whatsappTargetFor(value){
+ let digits=String(value||'').replace(/\D/g,'');
+ if(!digits)return '';
+ if(digits.startsWith('54'))digits=digits.slice(2);
+ if(digits.startsWith('9')&&digits.length===11)digits=digits.slice(1);
+ if(digits.startsWith('0'))digits=digits.slice(1);
+ if(digits.length===12){
+  for(const pos of [2,3,4]){
+   if(digits.slice(pos,pos+2)!=='15')continue;
+   const candidate=digits.slice(0,pos)+digits.slice(pos+2);
+   if(candidate.length===10){digits=candidate;break;}
+  }
+ }
+ if(digits.startsWith('15')&&digits.length===12)digits=digits.slice(2);
+ return /^\d{10}$/.test(digits)?'549'+digits:'';
+}
+
+const whatsappMessageFor=item=>{
+ const name=String(item.request?.name||'').trim()||'¿cómo estás?';
+ const service=(item.request?.services||[item.request?.service]).filter(Boolean).join(' · ')||'tu consulta';
+ const town=String(item.request?.town||'').trim();
+ const intro=`Hola ${name}, soy Ariel de AMC Construcciones.`;
+ const context=`Te escribo por ${service}${town?' en '+town:''}.`;
+ const step=item.followup?.label==='Esperando respuesta'?'Quería hacer seguimiento del presupuesto y saber si pudiste revisarlo.':'Quería continuar con tu consulta y coordinar el próximo paso.';
+ return [intro,context,step].join('\n');
+};
+const whatsappUrlFor=item=>{const target=whatsappTargetFor(item.request?.phone);return target?`https://wa.me/${target}?text=${encodeURIComponent(whatsappMessageFor(item))}`:'';};
+
 export function commercialPeriodFromPage(page='comercial'){
  const normalized=normalizePage(page),raw=normalized.startsWith('comercial/')?normalized.slice('comercial/'.length):'30';
  return PERIODS.some(([value])=>value===raw)?raw:'30';
@@ -77,14 +105,15 @@ export function createAdminCommercialUI({getState,heading,esc,date}){
  const followupLink=item=>item.latestQuote?`#presupuesto-admin/${encodeURIComponent(item.latestQuote.id)}`:`#solicitud/${encodeURIComponent(item.request.id)}`;
  const followupMeta=item=>[item.source,item.campaign,item.request?.town].filter(Boolean).map(esc).join(' · ');
  const actionOptions=value=>FOLLOWUP_ACTIONS.map(item=>`<option value="${esc(item)}" ${item===value?'selected':''}>${esc(item||'Sin próxima acción')}</option>`).join('');
- const historyRows=item=>(item.tracking?.history||[]).slice(-5).reverse().map(event=>`<li><strong>${event.type==='contacted'?'Contacto registrado':'Seguimiento actualizado'}</strong><span>${esc(date(event.date))}</span>${event.note?`<p>${esc(event.note)}</p>`:''}${event.nextAction||event.nextActionDay?`<small>${esc([event.nextAction,event.nextActionDay?date(event.nextActionDay):''].filter(Boolean).join(' · '))}</small>`:''}</li>`).join('');
+ const historyLabel=event=>event.type==='contacted'?'Contacto registrado':event.type==='whatsapp_opened'?'WhatsApp iniciado':'Seguimiento actualizado';
+ const historyRows=item=>(item.tracking?.history||[]).slice(-5).reverse().map(event=>`<li><strong>${historyLabel(event)}</strong><span>${esc(date(event.date))}</span>${event.note?`<p>${esc(event.note)}</p>`:''}${event.nextAction||event.nextActionDay?`<small>${esc([event.nextAction,event.nextActionDay?date(event.nextActionDay):''].filter(Boolean).join(' · '))}</small>`:''}</li>`).join('');
  const trackingSummary=item=>{
   const tracking=item.tracking,last=tracking?.lastContactAt?date(tracking.lastContactAt):'Sin registrar',next=[tracking?.nextAction,tracking?.nextActionDay?date(tracking.nextActionDay):''].filter(Boolean).join(' · ')||'Sin programar';
   return `<div class="commercial-tracking-summary"><span><b>Último contacto:</b> ${esc(last)}</span><span><b>Próxima acción:</b> ${esc(next)}</span>${item.overdue?'<strong class="commercial-overdue">Seguimiento vencido</strong>':item.dueToday?'<strong class="commercial-due-today">Vence hoy</strong>':''}</div>`;
  };
  const trackingEditor=item=>{
-  const tracking=item.tracking||{};
-  return `<details class="commercial-followup-editor"><summary>Gestionar seguimiento</summary><form class="commercial-followup-form" data-id="${esc(item.request.id)}"><div class="commercial-followup-fields"><label>Próxima acción<select name="nextAction">${actionOptions(tracking.nextAction||'')}</select></label><label>Fecha<input type="date" name="nextActionDay" value="${esc(tracking.nextActionDay||'')}"></label></div><label>Nota comercial<textarea name="note" maxlength="2000" placeholder="Qué se habló, objeciones, próximos pasos…">${esc(tracking.note||'')}</textarea></label><div class="commercial-followup-actions"><button type="submit" value="save" class="outline">Guardar seguimiento</button><button type="submit" value="contacted" class="primary">Registrar contacto ahora</button></div></form>${tracking.history?.length?`<details class="commercial-history"><summary>Historial · ${tracking.history.length}</summary><ol>${historyRows(item)}</ol></details>`:''}</details>`;
+  const tracking=item.tracking||{},whatsappUrl=whatsappUrlFor(item),whatsappButton=whatsappUrl?`<button type="submit" value="whatsapp" data-whatsapp-url="${esc(whatsappUrl)}" class="whatsapp-action">Abrir WhatsApp</button>`:'';
+  return `<details class="commercial-followup-editor"><summary>Gestionar seguimiento</summary><form class="commercial-followup-form" data-id="${esc(item.request.id)}"><div class="commercial-followup-fields"><label>Próxima acción<select name="nextAction">${actionOptions(tracking.nextAction||'')}</select></label><label>Fecha<input type="date" name="nextActionDay" value="${esc(tracking.nextActionDay||'')}"></label></div><label>Nota comercial<textarea name="note" maxlength="2000" placeholder="Qué se habló, objeciones, próximos pasos…">${esc(tracking.note||'')}</textarea></label><div class="commercial-followup-actions">${whatsappButton}<button type="submit" value="save" class="outline">Guardar seguimiento</button><button type="submit" value="contacted" class="primary">Registrar contacto ahora</button></div></form>${tracking.history?.length?`<details class="commercial-history"><summary>Historial · ${tracking.history.length}</summary><ol>${historyRows(item)}</ol></details>`:''}</details>`;
  };
  function render(page='comercial'){
   const model=buildCommercialModel(getState(),{page}),periodLabel=PERIODS.find(([value])=>value===model.period)?.[1]||'30 días';
