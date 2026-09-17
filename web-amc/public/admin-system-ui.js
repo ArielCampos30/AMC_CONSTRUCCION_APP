@@ -1,5 +1,9 @@
+import {createAdminCommercialUI} from './admin-commercial-ui.js';
+
 export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  let system=null,loading=false,loadedAt=0;
+ const commercial=createAdminCommercialUI({getState,heading,esc,date});
+ const currentPage=()=>String(globalThis.location?.hash||'').replace(/^#/,'').split('?')[0];
  const current=()=>system||{};
  const integrityText=sys=>{const integrity=sys.databaseIntegrity||{},status=integrity.status||'unknown';if(status==='ok')return 'Correcta';if(status==='failed')return 'Atención · '+Number(integrity.issues?.length||0)+' problema'+(Number(integrity.issues?.length||0)===1?'':'s');return 'Sin datos';};
  const statusContent=()=>{const sys=current(),config=getConfig(),mb=Number(sys.storageBytes||0)/1024/1024,ready=!!system;return `<h2>Estado de AMC</h2><p><strong>Versión:</strong> ${esc(config.version||sys.version||'local')}</p><p><strong>Base:</strong> ${esc(ready?(sys.database||''):'Cargando…')}</p><p><strong>Integridad de datos:</strong> ${ready?esc(integrityText(sys)):'Cargando…'}</p><p><strong>Datos:</strong> ${ready?Number(sys.documents||0)+' registros · '+Number(sys.files||0)+' archivos · '+mb.toFixed(1)+' MB':'Cargando…'}</p><p><strong>Dispositivos con avisos:</strong> ${ready?Number(sys.devices||0):'Cargando…'}</p><p class="muted">La integridad comprueba que el orden interno y las secuencias de PostgreSQL no puedan reutilizar posiciones antiguas después de una migración.</p><p class="muted">Este identificador permite saber exactamente qué versión está usando el servidor cuando reportás un problema.</p>`;};
@@ -8,14 +12,14 @@ export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  const load=async()=>{if(getState().user?.role!=='admin'||loading||Date.now()-loadedAt<30000)return;loading=true;try{const response=await fetch('/api/state/system',{credentials:'same-origin'});if(!response.ok)return;const data=await response.json();if(getState().user?.role!=='admin')return;system=data.system||{};loadedAt=Date.now();paint();}catch{}finally{loading=false;}};
  const scheduleLoad=()=>queueMicrotask(load);
  const moreSections=[
-  ['Gestión',[['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
+  ['Gestión',[['comercial','Comercial'],['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
   ['Sitio público',[['portada','Portada pública']]],
   ['Herramientas',[['tarifario','Tarifario'],['cotizador','Cotizador'],['resumen-diario','Resumen diario']]],
   ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]
  ];
  const uniqueMoreSections=()=>{const routes=new Set();return moreSections.map(([title,items])=>[title,items.filter(([route])=>{if(routes.has(route))return false;routes.add(route);return true;})]);};
  // Compatibilidad de cobertura histórica: ['Gestión' 'Chat' 'Clientes' 'Empleados']. Chat ahora se usa sólo desde el botón flotante.
- const more=()=>{scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
+ const more=()=>{const route=currentPage();if(route==='comercial'||route.startsWith('comercial/'))return commercial.render(route);scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
    uniqueMoreSections().map(([title,items])=>`<section class="admin-v3-more"><h2>${title}</h2>${items.map(([p,t])=>`<a href="#${p}"><span>${t}</span><b>›</b></a>`).join('')}</section>`).join('')+
    `<section id="amc-system-status" class="panel">${statusContent()}</section>`;};
  const backups=()=>{scheduleLoad();return heading('SISTEMA','Respaldos','Protección y recuperación de los datos de AMC.')+`<div id="amc-backup-content">${backupContent()}</div><a class="inline-action" href="#mas-admin">← Volver a Más</a>`;};

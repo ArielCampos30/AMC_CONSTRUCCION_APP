@@ -1,7 +1,7 @@
 import {assetUrl,canonicalAssetPath} from './asset-url.js';
 
 export const ROLE_ASSETS=Object.freeze({
- admin:Object.freeze({styles:Object.freeze(['/admin-v3.css','/admin-appearance.css','/admin-dashboard.css']),modules:Object.freeze(['./app-admin-staff-chat-runtime.js','./admin-dashboard-runtime.js'])}),
+ admin:Object.freeze({styles:Object.freeze(['/admin-v3.css','/admin-appearance.css','/admin-dashboard.css','/admin-commercial.css']),modules:Object.freeze(['./app-admin-staff-chat-runtime.js','./admin-dashboard-runtime.js'])}),
  employee:Object.freeze({styles:Object.freeze(['/employee-v4.css','/employee-staff-chat.css','/operational-ux.css']),modules:Object.freeze(['./app-admin-staff-chat-runtime.js','./app-employee-staff-chat-runtime.js'])}),
  client:Object.freeze({styles:Object.freeze(['/client-v5.css','/operational-ux.css']),modules:Object.freeze([])}),
  public:Object.freeze({styles:Object.freeze([]),modules:Object.freeze([])}),
