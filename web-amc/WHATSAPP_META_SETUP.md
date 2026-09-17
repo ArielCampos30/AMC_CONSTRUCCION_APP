@@ -30,7 +30,7 @@ D.5A no necesita guardar un access token porque todavía no envía mensajes desd
 
 - El GET de verificación sólo devuelve el challenge cuando el Verify Token coincide.
 - Cada POST exige firma HMAC SHA-256 válida con el App Secret antes de parsear o persistir el JSON.
-- Los mensajes viven en tablas dedicadas y no forman parte de `/api/state`.
+- Los mensajes se guardan en el almacenamiento canónico respaldado de AMC, pero quedan excluidos de `/api/state` y se leen únicamente por el endpoint Admin dedicado.
 - `/api/admin/whatsapp/inbox` exige rol Admin.
 - Los mensajes repetidos por reintentos de Meta se deduplican por `wamid`.
 - Mensajes multimedia se registran en D.5A como tipo/caption o descriptor; el archivo no se descarga todavía.
