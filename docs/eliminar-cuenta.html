@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Solicitá la eliminación de tu cuenta AMC Construcciones y los datos asociados." />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="color-scheme" content="dark" />
+  <title>Eliminar cuenta | AMC Construcciones</title>
+  <link rel="canonical" href="https://amc-construcciones.onrender.com/eliminar-cuenta.html" />
+  <link rel="icon" href="assets/img/amc-logo.webp" type="image/webp" />
+  <link rel="stylesheet" href="assets/css/landing.css" />
+  <link rel="stylesheet" href="assets/css/landing-theme-amc.css" />
+  <link rel="stylesheet" href="assets/css/legal.css" />
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/" aria-label="AMC Construcciones">
+      <img class="brand-logo" src="assets/img/amc-logo.webp" alt="" width="54" height="54" />
+      <span class="brand-name">AMC Construcciones</span>
+    </a>
+    <nav class="nav-links" aria-label="Navegación">
+      <a href="privacidad.html">Privacidad</a>
+      <a class="btn" href="https://amc-o0xb.onrender.com/" target="_blank" rel="noopener noreferrer">Acceso clientes</a>
+    </nav>
+  </div>
+</header>
+
+<main class="legal-main">
+  <div class="wrap legal-shell">
+    <div class="legal-hero">
+      <div class="eyebrow">Cuenta AMC</div>
+      <h1>Solicitar eliminación de cuenta</h1>
+      <p>Si podés ingresar a AMC, la forma más segura es hacerlo desde <strong>Mi perfil → Privacidad y cuenta</strong>, porque la aplicación puede verificar tu contraseña. Si no podés acceder, podés iniciar la solicitud desde esta página.</p>
+    </div>
+
+    <section class="legal-panel">
+      <h2>Qué ocurre después</h2>
+      <ul>
+        <li>AMC recibe la solicitud y verifica que corresponda a la persona titular de la cuenta.</li>
+        <li>La cuenta y los datos que puedan eliminarse se procesan de acuerdo con la política de privacidad.</li>
+        <li>Algunos documentos pueden conservarse cuando exista una obligación legal, contable, contractual, de seguridad o de defensa de derechos.</li>
+        <li>Enviar este formulario no borra datos de forma instantánea ni permite a terceros eliminar una cuenta sólo conociendo un correo.</li>
+      </ul>
+    </section>
+
+    <section class="legal-panel">
+      <h2>Pedido desde la web</h2>
+      <form id="accountDeletionForm" class="legal-form" novalidate>
+        <label>Correo de la cuenta AMC
+          <input name="email" type="email" autocomplete="email" maxlength="254" required />
+        </label>
+        <label>Motivo u observación (opcional)
+          <textarea name="reason" rows="4" maxlength="1000" placeholder="Podés contarnos brevemente el motivo o dejarlo vacío."></textarea>
+        </label>
+        <label class="legal-honeypot" aria-hidden="true">Sitio web
+          <input name="website" type="text" tabindex="-1" autocomplete="off" />
+        </label>
+        <label class="legal-check">
+          <input name="confirm" type="checkbox" required />
+          <span>Confirmo que estoy solicitando la eliminación de una cuenta AMC asociada a este correo y entiendo que AMC puede pedirme una verificación adicional de identidad.</span>
+        </label>
+        <button class="btn" type="submit">Enviar solicitud</button>
+        <p id="accountDeletionStatus" class="legal-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="legal-panel">
+      <h2>Más información</h2>
+      <div class="legal-links">
+        <a href="privacidad.html">Política de privacidad</a>
+        <a href="/">Volver al sitio de AMC</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-row">
+    <span>© 2026 AMC Construcciones · Valle Hermoso, Córdoba.</span>
+    <span class="legal-links"><a href="privacidad.html">Privacidad</a><a href="/">Inicio</a></span>
+  </div>
+</footer>
+<script src="assets/js/account-deletion.js" defer></script>
+</body>
+</html>

@@ -56,6 +56,21 @@ export function createRequestDispatcher({
     if(await landingProspects.route({p,method,b,res}))return;
     fail(404,'Acción no encontrada.');
    }
+   if(p==='/api/public/account-deletion'){
+    const requestOrigin=String(req.headers.origin||'').replace(/\/+$/,'');
+    if(requestOrigin!==landingOrigin)fail(403,'Origen no permitido.');
+    res.setHeader('Access-Control-Allow-Origin',landingOrigin);
+    res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers','Content-Type');
+    res.setHeader('Access-Control-Max-Age','600');
+    res.setHeader('Vary','Origin');
+    if(method==='OPTIONS'){res.writeHead(204);res.end();return;}
+    if(method!=='POST')fail(405,'Método no permitido.');
+    checkRate('ip:'+clientIpFromRequest(req)+':landing-account-deletion',5);
+    const b=await readBody(req);
+    if(await recovery.route({p,method,b,user:null,res}))return;
+    fail(404,'Acción no encontrada.');
+   }
    if(!['GET','HEAD'].includes(method)){
     if(req.headers.origin!==origin)fail(403,'Origen no permitido.');
     if(!['/api/login','/api/register','/api/forgot-password','/api/reset-password'].includes(p)&&(!session||req.headers['x-csrf-token']!==session.csrf))fail(403,'Sesión vencida. Volvé a ingresar.');

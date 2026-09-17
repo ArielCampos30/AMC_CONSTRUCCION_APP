@@ -6,12 +6,24 @@ export function recoveryFeatures({db,all,put,transaction,requireAdmin,verifyAdmi
  db.exec('CREATE TABLE IF NOT EXISTS recovery_codes(challenge TEXT PRIMARY KEY,userId TEXT NOT NULL,codehash TEXT NOT NULL,expires INTEGER NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,fingerprint TEXT NOT NULL)');
  const persistentRate=createPersistentRateLimiter({db,fail,clock});
  const generic='Si la cuenta está activa, vas a recibir un código por correo. Vence en 10 minutos.';
+ const deletionGeneric={ok:true,message:'Recibimos la solicitud. AMC va a verificar la identidad de la cuenta antes de procesarla.'};
  function issueLink(u){const token=randomBytes(32).toString('hex');db.prepare('DELETE FROM password_resets WHERE userId=? OR expires<=?').run(u.id,clock());db.prepare('INSERT INTO password_resets VALUES(?,?,?,?)').run(sha(token),u.id,clock()+900000,sha(u.password));return origin+'/#restablecer?token='+token;}
  function issueCode(u){const challenge=randomBytes(32).toString('hex'),code=String(randomInt(0,1000000)).padStart(6,'0');db.prepare('DELETE FROM recovery_codes WHERE userId=? OR expires<=?').run(u.id,clock());db.prepare('INSERT INTO recovery_codes(challenge,userId,codehash,expires,attempts,fingerprint) VALUES(?,?,?,?,?,?)').run(sha(challenge),u.id,sha(challenge+':'+code),clock()+600000,0,sha(u.password));return {challenge,code};}
  function passwordMatches(u,password){if(!u||typeof password!=='string'||password.length>200)return false;const [salt,expected]=String(u.password||'').split(':');if(!salt||!expected)return false;const actual=scryptSync(password,salt,64),stored=Buffer.from(expected,'hex');return stored.length===actual.length&&timingSafeEqual(stored,actual);}
  function finish(u){db.prepare('DELETE FROM password_resets WHERE userId=?').run(u.id);db.prepare('DELETE FROM recovery_codes WHERE userId=?').run(u.id);db.prepare('DELETE FROM sessions WHERE userId=?').run(u.id);db.prepare('DELETE FROM delivery WHERE deviceId IN (SELECT id FROM devices WHERE userId=?)').run(u.id);db.prepare('DELETE FROM devices WHERE userId=?').run(u.id);const prior=all('recoveryRequest').find(x=>x.userId===u.id);if(prior)put('recoveryRequest','',{...prior,status:'Resuelta'});}
  function pendingDeletion(userId){return all('accountDeletionRequest',userId).find(item=>item.userId===userId&&item.status==='Pendiente')||null;}
  async function route({p,method,b,user,res}){
+  if(p==='/api/public/account-deletion'&&method==='POST'){
+   const submissionId=text(b.submissionId,120),website=text(b.website,300),email=text(b.email,254).trim().toLowerCase(),reason=text(b.reason,1000);
+   if(website){send(res,202,deletionGeneric);return true;}
+   if(!/^[\w-]{8,120}$/.test(submissionId||''))fail(400,'Referencia inválida.');
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))fail(400,'Ingresá el correo de tu cuenta AMC.');
+   const rate='account-deletion-web:'+sha(email);persistentRate.check(rate,4);
+   const existing=all('accountDeletionRequest').find(item=>String(item.email||'').toLowerCase()===email&&item.status==='Pendiente');
+   if(existing){persistentRate.clear(rate);send(res,200,deletionGeneric);return true;}
+   const record={id:'account-deletion-web-'+sha(submissionId),userId:null,email,name:'Solicitud web',status:'Pendiente',source:'web',verification:'Pendiente',reason,date:new Date(clock()).toISOString()};
+   put('accountDeletionRequest','',record);notifyAdmins('Solicitud web de eliminación de cuenta',email+' pidió eliminar una cuenta de AMC. Verificá la identidad antes de procesarla.','/#clientes');persistentRate.clear(rate);send(res,201,deletionGeneric);return true;
+  }
   if(p==='/api/change-password'&&method==='POST'){
    if(!user)fail(401,'Ingresá a tu cuenta para continuar.');const rate='password-change:'+user.id;persistentRate.check(rate,5);
    if(!passwordMatches(user,b.currentPassword))fail(403,'La contraseña actual no es correcta.');if(b.currentPassword===b.password)fail(400,'La nueva contraseña debe ser diferente de la actual.');

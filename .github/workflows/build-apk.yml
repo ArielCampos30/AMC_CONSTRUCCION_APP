@@ -40,10 +40,10 @@ jobs:
         with:
           packages: ""
 
-      - name: Instalar Android API 35
+      - name: Instalar Android API 36
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Verificar firma privada
         env:
@@ -102,7 +102,7 @@ jobs:
 
       - name: Verificar firma release
         run: |
-          export PATH="$ANDROID_HOME/build-tools/35.0.0:$PATH"
+          export PATH="$ANDROID_HOME/build-tools/36.0.0:$PATH"
           apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
           jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
 
