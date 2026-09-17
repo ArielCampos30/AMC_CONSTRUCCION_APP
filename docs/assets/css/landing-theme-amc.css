@@ -2,60 +2,59 @@
  * La identidad visual vive separada de la estructura para mantener el layout independiente.
  */
 :root {
-  --accent: #0b675f;
-  --accent-2: #6fc5b8;
+  --accent: #f2b705;
+  --accent-2: #ffd75d;
+  --brand-logo: #d7ba63;
 }
 
-/* El logo conserva sus colores originales. Con screen, el negro del archivo se
- * integra al header oscuro y deja de percibirse como un bloque cuadrado. */
 .brand-logo {
   filter: none;
-  mix-blend-mode: screen;
+  mix-blend-mode: normal;
   background: transparent;
 }
 
 .btn {
-  color: #fff;
+  color: #111;
 }
 
 .btn:hover {
-  color: #071b18;
+  color: #111;
 }
 
 .btn:focus-visible,
 a:focus-visible {
-  outline-color: rgba(11,103,95,.5);
+  outline-color: rgba(242,183,5,.45);
 }
 
 .eyebrow {
-  color: var(--accent-2);
+  color: var(--accent);
 }
 
 .hero-chip {
-  border-color: rgba(111,197,184,.5);
-  color: #c5eee8;
+  border-color: rgba(242,183,5,.42);
+  color: #ffe59a;
 }
 
 .notice {
-  background: #102622;
-  border-color: rgba(111,197,184,.28);
-  color: #cbece7;
+  background: #2a2310;
+  border-color: rgba(242,183,5,.24);
+  color: #ffe7a3;
 }
 
 .step::before {
-  color: #fff;
+  color: #111;
 }
 
 .cta {
-  color: #fff;
+  color: #111;
 }
 
 .cta .btn {
-  background: #f5f7f6;
-  color: #102521;
+  background: #111;
+  color: #fff;
 }
 
 .cta .btn:hover {
-  background: #dfe9e7;
-  color: #102521;
+  background: #272727;
+  color: #fff;
 }
