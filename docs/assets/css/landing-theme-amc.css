@@ -7,10 +7,10 @@
   --brand-logo: #d7ba63;
 }
 
-/* Mantener el logo AMC original, pero llevarlo visualmente a la paleta cálida de la landing.
- * El tinte es visible sin borrar los detalles ni convertir el arte en una mancha monocroma. */
+/* Mantener el logo AMC original, eliminar los verdes y llevarlo a una gama amarillo/dorado suave.
+ * Se conservan luces, sombras y volumen para evitar un resultado plano o invasivo. */
 .brand-logo {
-  filter: grayscale(.18) sepia(.62) saturate(1.48) hue-rotate(348deg) brightness(1.06) contrast(1.02);
+  filter: grayscale(1) sepia(.95) saturate(2.05) hue-rotate(354deg) brightness(1.07) contrast(1.05);
   mix-blend-mode: screen;
   opacity: .96;
   background: transparent;
