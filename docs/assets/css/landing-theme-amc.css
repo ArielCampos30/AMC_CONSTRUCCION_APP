@@ -60,27 +60,6 @@
     background-color .24s ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .btn.secondary:hover {
-    border-color: rgba(11, 103, 95, .98);
-    box-shadow:
-      0 0 0 1px rgba(11, 103, 95, .30),
-      0 0 22px rgba(11, 103, 95, .22);
-  }
-
-  .card:hover,
-  .step:hover,
-  .proof-box:hover,
-  .contact-form:hover {
-    transform: translateY(-4px);
-    border-color: rgba(11, 103, 95, .88);
-    box-shadow:
-      0 0 0 1px rgba(11, 103, 95, .22),
-      0 10px 28px rgba(0, 0, 0, .22),
-      0 0 20px rgba(11, 103, 95, .16);
-  }
-}
-
 /* Entrada discreta: sólo se activa cuando JS confirma soporte y respeta reduced-motion. */
 html.reveal-enabled .reveal-item {
   opacity: 0;
@@ -96,6 +75,28 @@ html.reveal-enabled .reveal-item {
 html.reveal-enabled .reveal-item.reveal-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn.secondary:hover {
+    border-color: rgba(11, 103, 95, .98);
+    box-shadow:
+      0 0 0 1px rgba(11, 103, 95, .30),
+      0 0 22px rgba(11, 103, 95, .22);
+  }
+
+  .card:hover,
+  .step:hover,
+  .proof-box:hover,
+  .contact-form:hover,
+  html.reveal-enabled .reveal-item.reveal-visible:hover {
+    transform: translateY(-4px);
+    border-color: rgba(11, 103, 95, .88);
+    box-shadow:
+      0 0 0 1px rgba(11, 103, 95, .22),
+      0 10px 28px rgba(0, 0, 0, .22),
+      0 0 20px rgba(11, 103, 95, .16);
+  }
 }
 
 .btn {
