@@ -5,7 +5,6 @@ export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,
   requireAdmin(user);
   const request=get('request',requestId),action=['save','contacted'].includes(b.action)?b.action:'save',nextAction=text(b.nextAction,200),nextActionDay=text(b.nextActionDay,20),note=text(b.note,2000);
   if(nextActionDay&&!/^\d{4}-\d{2}-\d{2}$/.test(nextActionDay))fail(400,'Elegí una fecha válida para el próximo seguimiento.');
-  if(nextActionDay&&nextActionDay<now().slice(0,10))fail(400,'La próxima acción debe quedar programada para hoy o una fecha futura.');
   const followupId='commercial-followup-'+request.id,previous=all('commercialFollowup').find(item=>item.id===followupId),changed=!previous||previous.nextAction!==nextAction||previous.nextActionDay!==nextActionDay||previous.note!==note,stamp=now();
   const history=[...(previous?.history||[])];
   if(action==='contacted')history.push({type:'contacted',date:stamp,actor:user.id,note,nextAction,nextActionDay});
