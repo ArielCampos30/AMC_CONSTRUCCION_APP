@@ -37,6 +37,68 @@
     0 0 20px rgba(11, 103, 95, .20);
 }
 
+/* El verde AMC une botones secundarios y tarjetas sin competir con el amarillo. */
+.btn.secondary {
+  border-color: rgba(11, 103, 95, .78);
+  box-shadow:
+    0 0 0 1px rgba(11, 103, 95, .20),
+    0 0 16px rgba(11, 103, 95, .14);
+}
+
+.card,
+.step,
+.proof-box,
+.contact-form {
+  border-color: rgba(11, 103, 95, .58);
+  box-shadow:
+    0 0 0 1px rgba(11, 103, 95, .12),
+    0 0 14px rgba(11, 103, 95, .08);
+  transition:
+    transform .24s ease,
+    border-color .24s ease,
+    box-shadow .24s ease,
+    background-color .24s ease;
+}
+
+/* Entrada discreta: sólo se activa cuando JS confirma soporte y respeta reduced-motion. */
+html.reveal-enabled .reveal-item {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity .55s ease,
+    transform .55s ease,
+    border-color .24s ease,
+    box-shadow .24s ease,
+    background-color .24s ease;
+}
+
+html.reveal-enabled .reveal-item.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn.secondary:hover {
+    border-color: rgba(11, 103, 95, .98);
+    box-shadow:
+      0 0 0 1px rgba(11, 103, 95, .30),
+      0 0 22px rgba(11, 103, 95, .22);
+  }
+
+  .card:hover,
+  .step:hover,
+  .proof-box:hover,
+  .contact-form:hover,
+  html.reveal-enabled .reveal-item.reveal-visible:hover {
+    transform: translateY(-4px);
+    border-color: rgba(11, 103, 95, .88);
+    box-shadow:
+      0 0 0 1px rgba(11, 103, 95, .22),
+      0 10px 28px rgba(0, 0, 0, .22),
+      0 0 20px rgba(11, 103, 95, .16);
+  }
+}
+
 .btn {
   color: #111;
 }
@@ -81,4 +143,13 @@ a:focus-visible {
 .cta .btn:hover {
   background: #272727;
   color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.reveal-enabled .reveal-item,
+  html.reveal-enabled .reveal-item.reveal-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
