@@ -1,5 +1,5 @@
 const LEGACY_ADMIN_ROUTES=new Set(['admin']);
-const PROTECTED_PAGES=new Set(['clientes','calendario','portada','pedir','visita','perfil','presupuestos','obra','avisos','favoritos','referidos','admin','mensajes','agenda','adicionales','comprobantes','cotizador','empleados','tareas','compras','estado-presupuestos','fichas','materiales','resumen','resumen-diario','cierre','recuperar-cuentas','inicio-empleado','mis-trabajos','chat-equipo','mis-trabajos-cliente','chat-cliente','solicitar','solicitudes','obras','chat-admin','mas-admin','respaldos']);
+const PROTECTED_PAGES=new Set(['clientes','calendario','portada','pedir','visita','perfil','presupuestos','obra','avisos','favoritos','referidos','admin','mensajes','agenda','adicionales','comprobantes','cotizador','empleados','tareas','compras','estado-presupuestos','fichas','materiales','resumen','resumen-diario','cierre','recuperar-cuentas','cambiar-contrasena','inicio-empleado','mis-trabajos','chat-equipo','mis-trabajos-cliente','chat-cliente','solicitar','solicitudes','obras','chat-admin','mas-admin','respaldos']);
 const PROTECTED_PREFIXES=['mi-trabajo/','solicitud/','presupuesto/','obra/','chat/','presupuesto-admin/','obra-admin/','chat-admin/','chat-equipo/','cliente/','trabajo/'];
 const EMPLOYEE_PAGES=new Set(['perfil','avisos','mensajes','inicio-empleado','mis-trabajos','chat-equipo']);
 const TEAM_PAGES=new Set(['empleados','tareas','compras','estado-presupuestos']);
@@ -25,6 +25,8 @@ export function isProtectedPage(page=''){
 export function resolveAppPage(page,state={}){
  const role=state.user?.role;
  if(!state.user&&isProtectedPage(page))return {view:'auth',returnTo:page};
+ if(state.user&&['ingresar','registro'].includes(page))return {view:'profile'};
+ if(state.user&&['recuperar','restablecer'].includes(page))return {view:'accounts',page:'cambiar-contrasena'};
  if(role==='client'&&page==='inicio')return {view:'client-home'};
  if(role==='client'&&(page==='obra'||page==='mis-trabajos-cliente'))return {view:'client-works'};
  if(role==='client'&&page.startsWith('mi-trabajo/'))return {view:'client-work-detail',id:page.slice(11)};
@@ -55,7 +57,7 @@ export function resolveAppPage(page,state={}){
  if(role==='employee'&&page==='chat-equipo')return {view:'team',page:'inicio-empleado',legacyEmployeeChat:true};
  if(role==='employee'&&['inicio-empleado','mis-trabajos'].includes(page))return {view:'team',page};
  if(page==='calendario'||page==='portada')return {view:'planning',page};
- if(['recuperar','restablecer','recuperar-cuentas','cierre'].includes(page))return {view:'accounts',page};
+ if(['recuperar','restablecer','cambiar-contrasena','recuperar-cuentas','cierre'].includes(page))return {view:'accounts',page};
  if(page==='resumen-diario')return {view:'fieldwork',page:'resumen'};
  if(page==='fichas'||page==='materiales')return {view:'fieldwork',page};
  if(role==='employee'&&!EMPLOYEE_PAGES.has(page))return ['inicio','tareas','estado-presupuestos'].includes(page)?{view:'team',page:page==='estado-presupuestos'?page:'tareas'}:{view:'employee-restricted'};
