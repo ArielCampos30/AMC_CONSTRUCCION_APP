@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createApp} from '../server.mjs';
 
-const parseDocs=(db,kind)=>db.prepare('SELECT owner,body FROM docs WHERE kind=? ORDER BY rowid').all(kind).map(row=>({owner:row.owner,value:JSON.parse(row.body)}));
+const parseDocs=(db,kind)=>db.prepare('SELECT owner,body FROM docs WHERE kind=?').all(kind).map(row=>({owner:row.owner,value:JSON.parse(row.body)}));
 
 test('landing publica crea prospecto y solicitud sin abrir la API privada',async()=>{
  const previousOrigin=process.env.AMC_LANDING_ORIGIN;
