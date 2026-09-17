@@ -7,29 +7,32 @@
   --brand-green: #0b675f;
 }
 
-/* Logo AMC original: sin filtros ni recoloreado. */
+/* Logo AMC original: sin filtros ni recoloreado. El recorte circular elimina
+ * el fondo negro cuadrado exterior sin alterar el arte ni sus colores. */
 .brand-logo {
   filter: none;
   mix-blend-mode: normal;
   opacity: 1;
   background: transparent;
+  border-radius: 50%;
+  clip-path: circle(49% at 50% 50%);
 }
 
-/* Las imágenes mantienen la paleta oscura de la landing y reciben sólo un marco
- * verde AMC con un brillo exterior sutil. */
+/* Las imágenes mantienen la paleta oscura de la landing y reciben un marco
+ * verde AMC un poco más visible, con brillo exterior moderado. */
 .hero-card,
 .visual {
-  border-color: rgba(11, 103, 95, .62);
+  border-color: rgba(11, 103, 95, .84);
   box-shadow:
-    0 0 0 1px rgba(11, 103, 95, .16),
-    0 0 18px rgba(11, 103, 95, .14),
+    0 0 0 1px rgba(11, 103, 95, .28),
+    0 0 24px rgba(11, 103, 95, .22),
     var(--shadow);
 }
 
 .visual {
   box-shadow:
-    0 0 0 1px rgba(11, 103, 95, .16),
-    0 0 16px rgba(11, 103, 95, .13);
+    0 0 0 1px rgba(11, 103, 95, .28),
+    0 0 20px rgba(11, 103, 95, .20);
 }
 
 .btn {
