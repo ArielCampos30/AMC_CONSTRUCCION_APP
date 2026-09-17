@@ -4,16 +4,32 @@
 :root {
   --accent: #f2b705;
   --accent-2: #ffd75d;
-  --brand-logo: #d7ba63;
+  --brand-green: #0b675f;
 }
 
-/* Mantener el logo AMC original, eliminar el verde y recuperar los blancos.
- * El amarillo queda como acento cálido, sin convertir todo el arte en dorado. */
+/* Logo AMC original: sin filtros ni recoloreado. */
 .brand-logo {
-  filter: grayscale(1) sepia(.28) saturate(1.55) hue-rotate(352deg) brightness(1.08) contrast(1.12);
-  mix-blend-mode: screen;
-  opacity: .97;
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
   background: transparent;
+}
+
+/* Las imágenes mantienen la paleta oscura de la landing y reciben sólo un marco
+ * verde AMC con un brillo exterior sutil. */
+.hero-card,
+.visual {
+  border-color: rgba(11, 103, 95, .62);
+  box-shadow:
+    0 0 0 1px rgba(11, 103, 95, .16),
+    0 0 18px rgba(11, 103, 95, .14),
+    var(--shadow);
+}
+
+.visual {
+  box-shadow:
+    0 0 0 1px rgba(11, 103, 95, .16),
+    0 0 16px rgba(11, 103, 95, .13);
 }
 
 .btn {
