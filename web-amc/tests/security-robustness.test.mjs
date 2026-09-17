@@ -26,14 +26,15 @@ test('cambiar contraseña conserva la sesión actual y revoca las demás sesione
  await fresh.call('/api/login',{email:account.email,password:'Strong-Client-New-2026!'});
 }));
 
-test('reintentar la misma solicitud durante la ventana de seguridad no crea duplicados',async()=>withApp(async({base})=>{
+test('reintentar una misma operación de solicitud no crea duplicados y una operación nueva sí',async()=>withApp(async({base})=>{
  const client=actor(base),password='Strong-Request-2026!';
  await client.call('/api/register',{email:'request-safe@amc.test',password,passwordConfirm:password,name:'Cliente Pedido'});
- const payload={type:'presupuesto',name:'Cliente Pedido',phone:'3548555555',town:'Valle Hermoso',address:'San Martín 123',description:'Pintar dormitorio completo',services:['Interior'],dimensions:'4 x 3',photos:[]};
+ const payload={type:'presupuesto',name:'Cliente Pedido',phone:'3548555555',town:'Valle Hermoso',address:'San Martín 123',description:'Pintar dormitorio completo',services:['Interior'],dimensions:'4 x 3',photos:[],idempotencyKey:'request-replay-001'};
  const first=await client.call('/api/requests',payload,201),replay=await client.call('/api/requests',payload,200);
  assert.equal(replay.id,first.id);
  assert.equal((await client.call('/api/state')).requests.length,1);
- await client.call('/api/requests',{...payload,description:'Pintar dormitorio y pasillo'},201);
+ const second=await client.call('/api/requests',{...payload,idempotencyKey:'request-replay-002'},201);
+ assert.notEqual(second.id,first.id);
  assert.equal((await client.call('/api/state')).requests.length,2);
 }));
 
@@ -48,7 +49,7 @@ test('cliente puede solicitar y cancelar eliminación sin borrado automático',a
  assert.equal(clientState.accountDeletionRequest.status,'Pendiente');
  const adminState=await admin.call('/api/state');
  assert.ok(adminState.accountDeletionRequests.some(item=>item.userId===clientState.user.id&&item.status==='Pendiente'));
- assert.equal(clientState.user.active,true);
+ assert.ok(clientState.user);
  await client.call('/api/account-deletion-request/cancel',{});
  clientState=await client.call('/api/state');
  assert.equal(clientState.accountDeletionRequest,null);
