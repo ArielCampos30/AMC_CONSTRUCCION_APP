@@ -20,8 +20,8 @@ function fakeDocument(){
 }
 
 test('mapa de assets mantiene separación estricta entre Admin, Empleado, Cliente y público',()=>{
- assert.deepEqual(ROLE_ASSETS.admin.styles,['/admin-v3.css','/admin-appearance.css']);
- assert.deepEqual(ROLE_ASSETS.admin.modules,['./app-admin-staff-chat-runtime.js']);
+ assert.deepEqual(ROLE_ASSETS.admin.styles,['/admin-v3.css','/admin-appearance.css','/admin-dashboard.css']);
+ assert.deepEqual(ROLE_ASSETS.admin.modules,['./app-admin-staff-chat-runtime.js','./admin-dashboard-runtime.js']);
  assert.deepEqual(ROLE_ASSETS.employee.styles,['/employee-v4.css','/employee-staff-chat.css','/operational-ux.css']);
  assert.deepEqual(ROLE_ASSETS.employee.modules,['./app-admin-staff-chat-runtime.js','./app-employee-staff-chat-runtime.js']);
  assert.deepEqual(ROLE_ASSETS.client.styles,['/client-v5.css','/operational-ux.css']);
@@ -47,13 +47,18 @@ test('carga sólo el rol activo, limpia al salir y puede reinsertar CSS sin reim
  await syncRoleAssets('client',{documentRef,importModule,logger:null});
  assert.deepEqual(links.map(link=>link.href).sort(),['/client-v5.css','/operational-ux.css']);
  assert.equal(imports.length,2);
+ await syncRoleAssets('admin',{documentRef,importModule,logger:null});
+ assert.deepEqual(links.map(link=>link.href).sort(),['/admin-appearance.css','/admin-dashboard.css','/admin-v3.css']);
+ assert.equal(imports.filter(item=>item==='./app-admin-staff-chat-runtime.js').length,1);
+ assert.equal(imports.filter(item=>item==='./admin-dashboard-runtime.js').length,1);
 });
 
 test('HTML y runtime inicial ya no descargan los assets de todos los roles',async()=>{
  const [html,bootstrap,app,stateRuntime,sw]=await Promise.all([source('index.html'),source('app-bootstrap.js'),source('app.js'),source('app-state-runtime.js'),source('sw.js')]);
  assert.match(html,/src="__AMC_ASSET_BASE__\/app-bootstrap\.js"/);
- assert.doesNotMatch(html,/href="\/(?:admin-v3|admin-appearance|employee-v4|employee-staff-chat|client-v5|operational-ux)\.css"/);
+ assert.doesNotMatch(html,/href="\/(?:admin-v3|admin-appearance|admin-dashboard|employee-v4|employee-staff-chat|client-v5|operational-ux)\.css"/);
  assert.doesNotMatch(html,/src="\/(?:app-admin|app-employee)-staff-chat-runtime\.js"/);
+ assert.doesNotMatch(html,/src="\/admin-dashboard-runtime\.js"/);
  assert.doesNotMatch(html,/src="\/app\.js"/);
  assert.equal(bootstrap.trim(),"await import('./app.js');");
  assert.doesNotMatch(bootstrap,/head\.append|window\.addEventListener|admin-v3\.css/);
@@ -62,5 +67,5 @@ test('HTML y runtime inicial ya no descargan los assets de todos los roles',asyn
  assert.match(stateRuntime,/await syncRoleAssets\(next\?\.user\?\.role\)[\s\S]*applyState\(next\)/);
  assert.match(sw,/AMC-offline-shell-v12/);
  assert.match(sw,/__AMC_ASSET_BASE__/);
- assert.doesNotMatch(sw,/admin-v3\.css|admin-appearance\.css|employee-v4\.css|employee-staff-chat\.css|client-v5\.css|operational-ux\.css/);
+ assert.doesNotMatch(sw,/admin-v3\.css|admin-appearance\.css|admin-dashboard\.css|employee-v4\.css|employee-staff-chat\.css|client-v5\.css|operational-ux\.css/);
 });

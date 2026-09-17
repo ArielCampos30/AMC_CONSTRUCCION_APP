@@ -17,6 +17,10 @@ export function createAppShellInputController({
    setDirty(false);
    return;
   }
+  if(target?.id==='admin-global-search-input'){
+   setDirty(false);
+   return;
+  }
   setDirty(true);
  }
  return {
