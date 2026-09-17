@@ -49,7 +49,8 @@ test('carga sólo el rol activo, limpia al salir y puede reinsertar CSS sin reim
  assert.equal(imports.length,2);
  await syncRoleAssets('admin',{documentRef,importModule,logger:null});
  assert.deepEqual(links.map(link=>link.href).sort(),['/admin-appearance.css','/admin-dashboard.css','/admin-v3.css']);
- assert.deepEqual(imports.slice(-2),['./app-admin-staff-chat-runtime.js','./admin-dashboard-runtime.js']);
+ assert.equal(imports.filter(item=>item==='./app-admin-staff-chat-runtime.js').length,1);
+ assert.equal(imports.filter(item=>item==='./admin-dashboard-runtime.js').length,1);
 });
 
 test('HTML y runtime inicial ya no descargan los assets de todos los roles',async()=>{
