@@ -28,6 +28,7 @@ import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
 import {chatFeatures} from './chat-core.mjs';
 import {clientRequestFeatures} from './client-requests.mjs';
+import {landingProspectFeatures} from './landing-prospects.mjs';
 import {notificationFeatures} from './notifications.mjs';
 import {mediaStorageFeatures} from './media-storage.mjs';
 import {mediaAccessFeatures} from './media-access.mjs';
@@ -83,6 +84,7 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const mediaAccess=mediaAccessFeatures({db,all,objectStore,appearance,team,purchases,fieldwork,closure,staffMessages,canAccessRequest,canAccessWork,clientChatIds,fail});
  const {canAccessPrivateFile}=mediaAccess;
  const clientRequests=clientRequestFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,services,serviceCatalog,planning});
+ const landingProspects=landingProspectFeatures({db,all,put,transaction,notifyAdmins,send,fail,text,now,id,sha,services});
  const handleQuoteWork=quoteWorkRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,optionalAmount,validDate,now,id,sha,lifecycle});
  const handleFeature=featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning,markNoticesForRoute});
  const handleState=stateRoutes({all,activeUsers,userView,chatSummary,appearance,planning,services,serviceCatalog,team,purchases,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
@@ -94,6 +96,6 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,performanceHealth:performance.health,startedAt,demo,keys,services,send});
  const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
  const staticFiles=staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fail,version});
- const handle=createRequestDispatcher({origin,staticFiles,authentication,fail,checkRate,readBody,recovery,handlePublicSystem,handleState,mediaAccess,readMultipart,twoFactor,chat,planning,handleAdminUtility,appearance,closure,fieldwork,team,purchases,handleFeature,clientRequests,handleProfile,handleMediaUpload,handleQuoteWork,handleCommunity,notificationRoutes,handleDevices,handleEstimatorPage,send});
+ const handle=createRequestDispatcher({origin,staticFiles,authentication,fail,checkRate,readBody,recovery,landingProspects,handlePublicSystem,handleState,mediaAccess,readMultipart,twoFactor,chat,planning,handleAdminUtility,appearance,closure,fieldwork,team,purchases,handleFeature,clientRequests,handleProfile,handleMediaUpload,handleQuoteWork,handleCommunity,notificationRoutes,handleDevices,handleEstimatorPage,send});
  const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount,recordPerformance:performance.record});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
 }

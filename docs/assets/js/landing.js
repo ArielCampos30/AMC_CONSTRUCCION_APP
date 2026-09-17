@@ -1,6 +1,7 @@
 // Mantener vacío hasta definir el WhatsApp Business comercial.
 // Formato futuro: código de país + característica + número, sin +, espacios ni guiones.
 const WHATSAPP_NUMBER = "";
+const PROSPECT_API = "https://amc-o0xb.onrender.com/api/public/prospects";
 
 const params = new URLSearchParams(window.location.search);
 const campaign = {
@@ -18,8 +19,7 @@ const campaignLabel = Object.entries(campaign)
 const baseMessage = [
   "Hola AMC, quisiera pedir un presupuesto.",
   "Mi localidad es: _____.",
-  "El trabajo que necesito es: _____.",
-  "Medidas aproximadas: _____."
+  "El trabajo que necesito es: _____."
 ];
 
 if (campaignLabel) {
@@ -41,8 +41,65 @@ for (const link of document.querySelectorAll(".js-wa")) {
   link.addEventListener("click", event => {
     event.preventDefault();
     notice.style.display = "block";
-    notice.scrollIntoView({ behavior: "smooth", block: "center" });
+    document.getElementById("contacto")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 }
+
+const form = document.getElementById("prospectForm");
+const status = document.getElementById("prospectStatus");
+const makeSubmissionId = () => {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+};
+let submissionId = makeSubmissionId();
+
+form?.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!form.reportValidity()) return;
+
+  const button = form.querySelector("button[type='submit']");
+  const data = new FormData(form);
+  const payload = {
+    submissionId,
+    name: String(data.get("name") || "").trim(),
+    phone: String(data.get("phone") || "").trim(),
+    town: String(data.get("town") || "").trim(),
+    service: String(data.get("service") || "").trim(),
+    description: String(data.get("description") || "").trim(),
+    website: String(data.get("website") || "").trim(),
+    utmSource: campaign.source,
+    utmMedium: campaign.medium,
+    utmCampaign: campaign.campaign,
+    utmContent: campaign.content,
+    referrer: document.referrer || "",
+    page: window.location.href
+  };
+
+  button.disabled = true;
+  status.className = "form-status is-loading";
+  status.textContent = "Enviando tu consulta…";
+
+  try {
+    const response = await fetch(PROSPECT_API, {
+      method: "POST",
+      mode: "cors",
+      credentials: "omit",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "No pudimos enviar la consulta.");
+
+    form.reset();
+    submissionId = makeSubmissionId();
+    status.className = "form-status is-success";
+    status.textContent = "Consulta enviada. Ya ingresó a AMC y la vamos a revisar para continuar el contacto.";
+  } catch (error) {
+    status.className = "form-status is-error";
+    status.textContent = error?.message || "No pudimos enviar la consulta. Intentá nuevamente en unos minutos.";
+  } finally {
+    button.disabled = false;
+  }
+});
 
 document.getElementById("year").textContent = new Date().getFullYear();

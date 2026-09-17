@@ -9,6 +9,7 @@ export function createRequestDispatcher({
  checkRate,
  readBody,
  recovery,
+ landingProspects,
  handlePublicSystem,
  handleState,
  mediaAccess,
@@ -33,12 +34,28 @@ export function createRequestDispatcher({
  handleEstimatorPage,
  send
 }){
+ const landingOrigin=String(process.env.AMC_LANDING_ORIGIN||'https://amc-construcciones.onrender.com').replace(/\/+$/,'');
  return async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method;
   applyHttpSecurity({res,origin,pathname:p});
   if(staticFiles.serveEarly({req,res,p,method}))return;
   const {session,user}=authentication.resolve(req);
   try{
+   if(p==='/api/public/prospects'){
+    const requestOrigin=String(req.headers.origin||'').replace(/\/+$/,'');
+    if(requestOrigin!==landingOrigin)fail(403,'Origen no permitido.');
+    res.setHeader('Access-Control-Allow-Origin',landingOrigin);
+    res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers','Content-Type');
+    res.setHeader('Access-Control-Max-Age','600');
+    res.setHeader('Vary','Origin');
+    if(method==='OPTIONS'){res.writeHead(204);res.end();return;}
+    if(method!=='POST')fail(405,'Método no permitido.');
+    checkRate('ip:'+clientIpFromRequest(req)+':landing-prospect',8);
+    const b=await readBody(req);
+    if(await landingProspects.route({p,method,b,res}))return;
+    fail(404,'Acción no encontrada.');
+   }
    if(!['GET','HEAD'].includes(method)){
     if(req.headers.origin!==origin)fail(403,'Origen no permitido.');
     if(!['/api/login','/api/register','/api/forgot-password','/api/reset-password'].includes(p)&&(!session||req.headers['x-csrf-token']!==session.csrf))fail(403,'Sesión vencida. Volvé a ingresar.');
