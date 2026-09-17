@@ -1,6 +1,7 @@
 body.employee-v4 .section-navigation{display:none}
 .employee-next{display:grid;gap:.75rem;padding:1.25rem;border-radius:24px;background:linear-gradient(145deg,#075f58,#0a766d);color:#fff;margin:1rem 0}
-.employee-next small{letter-spacing:.16em}.employee-next h2,.employee-next p{margin:0}.employee-next .primary{justify-self:start;background:#fff;color:#075f58}
+.employee-next small{letter-spacing:.16em;color:#ccebe6}.employee-next h2,.employee-next p{margin:0}.employee-next p{color:#e5f6f3}.employee-next .primary{justify-self:start;background:#fff;color:#075f58}
+body.employee-v4 a.primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:.72rem 1.05rem;border-radius:12px;font-weight:700;line-height:1.2}
 .employee-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin:1rem 0}
 .employee-summary a{display:grid;gap:.2rem;padding:1rem;text-align:center;border:1px solid #c8dfdc;border-radius:18px;background:#fff;color:#174d48;text-decoration:none}
 .employee-summary strong{font-size:1.75rem}.employee-summary span{font-size:.86rem}
@@ -20,4 +21,3 @@ body.employee-v4 .section-navigation{display:none}
 .employee-message-log p{margin:0}.employee-message-log small{display:block;margin-top:.3rem;text-align:right;color:#58726f}
 @media(max-width:800px){body.employee-v4{padding-bottom:calc(82px + env(safe-area-inset-bottom))}body.employee-v4 .bottom-nav{grid-template-columns:repeat(4,1fr)}.employee-detail{grid-template-columns:1fr}.employee-summary{gap:.45rem}.employee-summary a{padding:.75rem .35rem}.employee-summary strong{font-size:1.4rem}.employee-photo-actions label{flex:1;justify-content:center}.employee-staff-chat{padding:.65rem}}
 @media(max-width:390px){.employee-summary span{font-size:.75rem}.employee-job-card .title-row{align-items:flex-start}.employee-job-card .status{font-size:.72rem}.employee-photo-actions{display:grid;grid-template-columns:1fr 1fr}}
-

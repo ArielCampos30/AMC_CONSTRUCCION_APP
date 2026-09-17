@@ -24,6 +24,8 @@ test('employee v4 usa navegación sin Chat y conserva cámara de obra con Admini
  assert.match(team,/Sacar foto/);
  assert.match(team,/capture="environment"/);
  assert.match(team,/Antes','Durante','Después/);
+ assert.match(css,/\.employee-next p\{color:#e5f6f3\}/);
+ assert.match(css,/body\.employee-v4 a\.primary\{[^}]*min-height:44px[^}]*padding:/);
  assert.match(css,/@media\(max-width:390px\)/);
  assert.match(css,/grid-template-columns:repeat\(4,1fr\)/);
  assert.doesNotMatch(sw,/\/api\//);
