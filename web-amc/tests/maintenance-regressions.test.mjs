@@ -71,13 +71,14 @@ test('portada pública expone una sola entrada y gestión comprensible con histo
  assert.doesNotMatch(planning,/api\/appearance\/restore/);
 });
 
-test('avisos y presupuestos tienen limpieza y archivado seguro sin mantenimiento legacy',()=>{
+test('avisos, archivado y Papelera conservan mantenimiento seguro sin legacy',()=>{
  const notices=source('notifications.mjs');
  const noticeUI=source('public/notice-ui.js');
  const noticeController=source('public/app-shell-notice-click-controller.js');
  const quoteController=source('public/app-admin-quote-maintenance-controller.js');
  const quotes=source('quote-work-routes.mjs');
  const quoteUI=source('public/admin-quotes-ui.js');
+ const trashUI=source('public/admin-trash-ui.js');
  const shell=source('public/app-shell-click-controller.js');
  const index=source('public/index.html');
  assert.match(notices,/deleteNotices/);
@@ -93,10 +94,16 @@ test('avisos y presupuestos tienen limpieza y archivado seguro sin mantenimiento
  assert.match(quotes,/\/unarchive/);
  assert.match(quotes,/Archivá primero el presupuesto/);
  assert.match(quoteUI,/Archivados/);
- assert.match(quoteUI,/Eliminar definitivamente/);
+ assert.match(quoteUI,/Mover a Papelera/);
+ assert.doesNotMatch(quoteUI,/Eliminar definitivamente/);
+ assert.match(trashUI,/Eliminar definitivamente/);
  assert.match(quoteController,/archive-quote/);
  assert.match(quoteController,/unarchive-quote/);
  assert.match(quoteController,/delete-quote/);
+ assert.match(quoteController,/trash-request/);
+ assert.match(quoteController,/trash-quote/);
+ assert.match(quoteController,/restore-trash/);
+ assert.match(quoteController,/delete-trash/);
  assert.match(quoteController,/const detachCard=button=>/);
  assert.match(shell,/createAdminQuoteMaintenanceController/);
  assert.match(shell,/quoteMaintenanceController\.attach\(\)/);

@@ -1,6 +1,8 @@
 import {loadTariffCatalog,mutateTariffCatalog,tariffCatalogPayload} from './tariff-catalog.mjs';
+import {adminTrashRoutes} from './admin-trash-routes.mjs';
 
-export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now}){
+export function adminUtilityRoutes({db,all,get,put,transaction,requireAdmin,safeFile,send,fail,text,sha,now,id}){
+ const trash=adminTrashRoutes({db,get,put,transaction,requireAdmin,send,fail,now,id});
  const commercialFollowup=(user,requestId,b,res)=>{
   requireAdmin(user);
   const request=get('request',requestId),action=['save','contacted'].includes(b.action)?b.action:'save',nextAction=text(b.nextAction,200),nextActionDay=text(b.nextActionDay,20),note=text(b.note,2000);
@@ -14,6 +16,7 @@ export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,
  };
  return function route({p,method,b,user,res}){
   let match;
+  if(trash({p,method,user,res}))return true;
   if(method==='POST'&&(match=p.match(/^\/api\/admin\/commercial-followups\/([^/]+)$/)))return commercialFollowup(user,match[1],b,res);
   if(p==='/api/offline-notes'&&method==='POST'){
    requireAdmin(user);if(!/^[\w-]{8,100}$/.test(b.idempotencyKey||'')||!text(b.text,4000)||!Array.isArray(b.photos)||b.photos.length>4)fail(400,'Informe inválido.');
