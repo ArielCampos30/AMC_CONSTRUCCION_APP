@@ -81,7 +81,7 @@ export function createRequestDispatcher({
     const b=p==='/api/upload'&&String(req.headers['content-type']||'').startsWith('multipart/form-data')?await readMultipart(req):await readBody(req);
     if(chat.routeAfterBody({p,method,b,user,url,res}))return;
     if(user.role==='employee'&&/^\/api\/requests\/[^/]+\/messages(?:\/read)?$/.test(p))fail(404,'Conversación no encontrada.');
-    if(user.role==='employee'&&!['/api/logout','/api/profile','/api/upload','/api/devices','/api/notices/read','/api/notices/test'].includes(p)&&!/^\/api\/assignments\/[^/]+\/(report|visit-sheet|materials)$/.test(p))fail(403,'Tu acceso está limitado a tus asignaciones.');
+    if(user.role==='employee'&&!['/api/logout','/api/profile','/api/change-password','/api/upload','/api/devices','/api/notices/read','/api/notices/test'].includes(p)&&!/^\/api\/assignments\/[^/]+\/(report|visit-sheet|materials)$/.test(p))fail(403,'Tu acceso está limitado a tus asignaciones.');
     if(method==='POST'&&(p==='/api/assignments'||/^\/api\/assignments\/[^/]+\/edit$/.test(p)))planning.validateTime(b.day,b.time);
     if(method==='POST'&&/^\/api\/requests\/[^/]+\/appointment$/.test(p))planning.validateTime(b.day,b.time,Number(b.duration));
     if(handleAdminUtility({p,method,b,user,res}))return;

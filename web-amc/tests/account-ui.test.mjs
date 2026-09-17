@@ -22,10 +22,11 @@ function fixture(){
  return {ui,setState:v=>state=v,setConfig:v=>config=v,setSetup:v=>setup=v,setTwoFactor:v=>twoFactor=v,team};
 }
 
-test('login y registro conservan la validación y el segundo factor del administrador',()=>{
+test('login y registro conservan recuperación sólo para quien todavía no ingresó',()=>{
  const x=fixture();
  assert.match(x.ui.auth(),/two-factor-login/);
  assert.match(x.ui.auth(),/Código de seguridad/);
+ assert.match(x.ui.auth(),/Olvidé mi contraseña/);
  assert.match(x.ui.auth(true),/Confirmar contraseña/);
  assert.match(x.ui.auth(true),/passwordConfirm/);
 });
@@ -34,6 +35,8 @@ test('perfil administrador carga los estados completos de 2FA bajo demanda',asyn
  const x=fixture();
  x.setState({user:{id:'admin-1',role:'admin',name:'Admin',email:'admin@amc.local',sound:1}});
  assert.match(x.ui.profile(),/Cargando estado de seguridad/);
+ assert.match(x.ui.profile(),/Cambiar contraseña/);
+ assert.match(x.ui.profile(),/#cambiar-contrasena/);
  x.setTwoFactor({available:false});await x.ui.refreshTwoFactor();
  assert.match(x.ui.profile(),/falta la llave segura del servidor/);
  x.setTwoFactor({available:true,enabled:false,pending:false});await x.ui.refreshTwoFactor();
@@ -52,12 +55,25 @@ test('perfil administrador carga los estados completos de 2FA bajo demanda',asyn
  assert.match(source,/credentials:'same-origin'/);
 });
 
-test('perfil cliente conserva accesos y reseña según obra finalizada',()=>{
+test('perfil cliente y empleado ofrecen cambio de contraseña sin mezclar recuperación',()=>{
  const x=fixture();
  x.setState({user:{role:'client',name:'Cliente',email:'c@amc.local',sound:1},works:[]});
  assert.match(x.ui.profile(),/Notificaciones/);
- assert.match(x.ui.profile(),/Cambiar o recuperar contraseña/);
+ assert.match(x.ui.profile(),/Cambiar contraseña/);
+ assert.doesNotMatch(x.ui.profile(),/Cambiar o recuperar contraseña/);
  assert.match(x.ui.profile(),/Ver reseñas/);
  x.setState({user:{role:'client',name:'Cliente',email:'c@amc.local',sound:1},works:[{status:'Finalizado'}]});
  assert.match(x.ui.profile(),/Dejar o editar reseña/);
+ x.setState({user:{role:'employee',name:'Empleado',email:'e@amc.local',phone:'',town:''}});
+ assert.match(x.ui.profile(),/#cambiar-contrasena/);
+ assert.match(x.ui.profile(),/Cambiar contraseña/);
+});
+
+test('pantalla autenticada pide contraseña actual y no ofrece volver a ingresar',async()=>{
+ const source=await readFile(new URL('../public/accounts-closure-ui.js',import.meta.url),'utf8');
+ assert.match(source,/change-password/);
+ assert.match(source,/Contraseña actual/);
+ assert.match(source,/Repetir nueva contraseña/);
+ assert.match(source,/\/api\/change-password/);
+ assert.match(source,/'cambiar-contrasena':changePassword/);
 });

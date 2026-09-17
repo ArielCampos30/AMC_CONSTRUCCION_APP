@@ -24,20 +24,30 @@ test('solicitud y visita se renderizan desde request-ui sin mover el submit',asy
  assert.match(html,/Solicitar trabajo/);
  assert.match(html,/id="request"/);
  assert.match(html,/data-type="presupuesto"/);
+ assert.match(html,/data-request-mode="presupuesto"[^>]*is-active/);
+ assert.match(html,/data-request-mode="visita"/);
+ assert.doesNotMatch(html,/href="#visita"/);
  assert.match(html,/Living renovado/);
  assert.match(html,/value="Interior" checked/);
  assert.match(html,/name="photos"/);
  assert.match(html,/name="camera"/);
  assert.match(html,/Medidas aproximadas/);
+ assert.match(html,/data-request-visit hidden/);
 
  html=ui.render(true);
  assert.match(html,/Solicitar una visita/);
  assert.match(html,/data-type="visita"/);
- assert.match(html,/name="day" type="date" min="2026-09-09"/);
+ assert.match(html,/data-request-mode="visita"[^>]*is-active/);
+ assert.match(html,/name="day" type="date" min="2026-09-09" required/);
  assert.match(html,/Mañana · 9 a 12/);
  assert.match(html,/AMC debe confirmar la disponibilidad/);
+ assert.match(html,/data-request-budget hidden/);
 
- const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+ const [app,source,css]=await Promise.all([
+  readFile(new URL('../public/app.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/request-ui.js',import.meta.url),'utf8'),
+  readFile(new URL('../public/client-v5.css',import.meta.url),'utf8')
+ ]);
  assert.match(app,/from '.\/request-ui\.js'/);
  assert.match(app,/requestUI\.render\(visit\)/);
  assert.match(app,/if\(f\.id==='request'\)/);
@@ -46,4 +56,11 @@ test('solicitud y visita se renderizan desde request-ui sin mover el submit',asy
  assert.match(app,/api\('\/api\/requests',\{\.\.\.data,services,photos,type:f\.dataset\.type,postId:selectedPost\}\)/);
  assert.match(app,/selectedPost=''/);
  assert.doesNotMatch(app,/function requestForm\(/);
+ assert.match(source,/button\.dataset\.requestMode==='visita'/);
+ assert.match(source,/form\.dataset\.type=visit\?'visita':'presupuesto'/);
+ assert.match(source,/budget\.hidden=visit/);
+ assert.match(source,/visitPanel\.hidden=!visit/);
+ assert.doesNotMatch(source,/location\.hash=.*visita|history\.pushState/);
+ assert.match(css,/\.request-mode-option\.is-active/);
+ assert.match(css,/background:#087168/);
 });
