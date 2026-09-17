@@ -21,22 +21,23 @@ test('Papelera mueve la cadena de una solicitud, la restaura y permite borrado d
   await f.admin.call('/api/admin/commercial-followups/'+f.request.id,{nextAction:'Llamar',nextActionDay:'2030-01-11',note:'Prueba',action:'save'});
   await f.client.call('/api/admin/trash/requests/'+f.request.id,{},403);
   const moved=await f.admin.call('/api/admin/trash/requests/'+f.request.id,{});assert.equal(moved.rootType,'request');
-  let state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),false);assert.equal(state.quotes.some(item=>item.id==='quote-trash'),false);assert.equal(state.commercialFollowups.some(item=>item.requestId===f.request.id),false);assert.equal(state.trashEntries.length,1);assert.ok(state.trashEntries[0].count>=4);
+  let state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),false);assert.equal(state.quotes.some(item=>item.id==='quote-trash'),false);assert.equal(state.commercialFollowups.some(item=>item.requestId===f.request.id),false);
+  const entry=state.trashEntries.find(item=>item.rootType==='request'&&item.rootId===f.request.id);assert.ok(entry);assert.ok(entry.count>=4);
   const clientState=await f.client.call('/api/state');assert.equal(clientState.requests.some(item=>item.id===f.request.id),false);assert.deepEqual(clientState.trashEntries,[]);
-  const entry=state.trashEntries[0];await f.admin.call('/api/admin/trash/'+entry.id+'/restore',{});
-  state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),true);assert.equal(state.quotes.some(item=>item.id==='quote-trash'),true);assert.equal(state.commercialFollowups.some(item=>item.requestId===f.request.id),true);assert.equal(state.trashEntries.length,0);
-  await f.admin.call('/api/admin/trash/requests/'+f.request.id,{});state=await f.admin.call('/api/state');await f.admin.call('/api/admin/trash/'+state.trashEntries[0].id+'/delete',{});
-  state=await f.admin.call('/api/state');assert.equal(state.trashEntries.length,0);assert.equal(f.app.db.prepare('SELECT id FROM docs WHERE id=?').get(f.request.id),undefined);assert.equal(f.app.db.prepare('SELECT id FROM docs WHERE id=?').get('quote-trash'),undefined);assert.ok(f.app.db.prepare('SELECT id FROM users WHERE id=?').get(f.owner));
+  await f.admin.call('/api/admin/trash/'+entry.id+'/restore',{});
+  state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),true);assert.equal(state.quotes.some(item=>item.id==='quote-trash'),true);assert.equal(state.commercialFollowups.some(item=>item.requestId===f.request.id),true);assert.equal(state.trashEntries.some(item=>item.id===entry.id),false);
+  await f.admin.call('/api/admin/trash/requests/'+f.request.id,{});state=await f.admin.call('/api/state');const secondEntry=state.trashEntries.find(item=>item.rootType==='request'&&item.rootId===f.request.id);assert.ok(secondEntry);await f.admin.call('/api/admin/trash/'+secondEntry.id+'/delete',{});
+  state=await f.admin.call('/api/state');assert.equal(state.trashEntries.some(item=>item.id===secondEntry.id),false);assert.equal(f.app.db.prepare('SELECT id FROM docs WHERE id=?').get(f.request.id),undefined);assert.equal(f.app.db.prepare('SELECT id FROM docs WHERE id=?').get('quote-trash'),undefined);assert.ok(f.app.db.prepare('SELECT id FROM users WHERE id=?').get(f.owner));
  }finally{await f.close();}
 });
 
 test('Papelera de presupuesto conserva la solicitud y AMC bloquea cualquier eliminación si existe una obra',async()=>{
  const f=await fixture();try{
   doc(f.app.db,'quote-only-trash','quote',f.owner,{userId:f.owner,requestId:f.request.id,solicitudId:f.request.id,number:'P-2',status:'Guardado',items:[{description:'Prueba'}],total:500,date:new Date().toISOString()});
-  await f.admin.call('/api/admin/trash/quotes/quote-only-trash',{});let state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),true);assert.equal(state.quotes.some(item=>item.id==='quote-only-trash'),false);assert.equal(state.trashEntries[0].rootType,'quote');
-  await f.admin.call('/api/admin/trash/'+state.trashEntries[0].id+'/restore',{});
+  await f.admin.call('/api/admin/trash/quotes/quote-only-trash',{});let state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),true);assert.equal(state.quotes.some(item=>item.id==='quote-only-trash'),false);const quoteEntry=state.trashEntries.find(item=>item.rootType==='quote'&&item.rootId==='quote-only-trash');assert.ok(quoteEntry);
+  await f.admin.call('/api/admin/trash/'+quoteEntry.id+'/restore',{});
   doc(f.app.db,'work-protected','work',f.owner,{userId:f.owner,requestId:f.request.id,solicitudId:f.request.id,quoteId:'quote-only-trash',presupuestoId:'quote-only-trash',status:'En curso',title:'Obra real'});
   await f.admin.call('/api/admin/trash/requests/'+f.request.id,{},409);await f.admin.call('/api/admin/trash/quotes/quote-only-trash',{},409);
-  state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),true);assert.equal(state.quotes.some(item=>item.id==='quote-only-trash'),true);assert.equal(state.trashEntries.length,0);
+  state=await f.admin.call('/api/state');assert.equal(state.requests.some(item=>item.id===f.request.id),true);assert.equal(state.quotes.some(item=>item.id==='quote-only-trash'),true);assert.equal(state.trashEntries.some(item=>item.rootId===f.request.id||item.rootId==='quote-only-trash'),false);
  }finally{await f.close();}
 });
