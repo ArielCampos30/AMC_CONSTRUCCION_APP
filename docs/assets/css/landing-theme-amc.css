@@ -7,12 +7,12 @@
   --brand-logo: #d7ba63;
 }
 
-/* Mantener el logo AMC original y teñirlo de forma suave sin empastar todo el arte.
- * El negro del archivo se integra visualmente con el header oscuro mediante screen. */
+/* Mantener el logo AMC original, eliminar los verdes y llevarlo a una gama amarillo/dorado suave.
+ * Se conservan luces, sombras y volumen para evitar un resultado plano o invasivo. */
 .brand-logo {
-  filter: contrast(1.08) sepia(.42) saturate(1.18) hue-rotate(352deg) brightness(1.03);
+  filter: grayscale(1) sepia(.95) saturate(2.05) hue-rotate(354deg) brightness(1.07) contrast(1.05);
   mix-blend-mode: screen;
-  opacity: .94;
+  opacity: .96;
   background: transparent;
 }
 
