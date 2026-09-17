@@ -102,4 +102,22 @@ form?.addEventListener("submit", async event => {
   }
 });
 
+const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+const revealItems = [...document.querySelectorAll(".card, .step, .proof-box, .contact-form")];
+
+if (!reducedMotion && revealItems.length && "IntersectionObserver" in window) {
+  document.documentElement.classList.add("reveal-enabled");
+  for (const item of revealItems) item.classList.add("reveal-item");
+
+  const revealObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add("reveal-visible");
+      revealObserver.unobserve(entry.target);
+    }
+  }, { threshold: 0.12, rootMargin: "0px 0px -24px" });
+
+  for (const item of revealItems) revealObserver.observe(item);
+}
+
 document.getElementById("year").textContent = new Date().getFullYear();
