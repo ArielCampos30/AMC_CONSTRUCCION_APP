@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Albañilería, pintura, plomería, electricidad y reparaciones en Valle Hermoso, La Falda, Huerta Grande, Villa Giardino y Punilla. Pedí presupuesto por WhatsApp." />
+  <meta name="description" content="Albañilería, pintura, plomería, electricidad y reparaciones en Valle Hermoso, La Falda, Huerta Grande, Villa Giardino y Punilla. Pedí presupuesto online o por WhatsApp." />
   <meta name="theme-color" content="#121212" />
   <meta name="color-scheme" content="dark" />
   <title>AMC Construcciones | Valle Hermoso y Punilla</title>
@@ -31,13 +31,13 @@
       <div>
         <div class="eyebrow">Construcciones y arreglos en Punilla</div>
         <h1>Construimos.<br />Reparamos.<br />Resolvemos.</h1>
-        <p class="lead">Albañilería, pintura, plomería, electricidad y arreglos para tu casa. Mandanos fotos, localidad y medidas aproximadas para empezar a evaluar el trabajo.</p>
+        <p class="lead">Albañilería, pintura, plomería, electricidad y arreglos para tu casa. Contanos qué necesitás, en qué localidad y cómo es el trabajo para empezar a evaluarlo.</p>
         <div class="hero-actions">
-          <a class="btn js-wa" href="#contacto">📲 Pedir presupuesto por WhatsApp</a>
+          <a class="btn" href="#contacto">Solicitar presupuesto</a>
           <a class="btn secondary" href="#servicios">Ver servicios</a>
         </div>
         <div class="areas">📍 Valle Hermoso · La Falda · Huerta Grande · Villa Giardino y alrededores</div>
-        <div class="notice" id="waNotice" role="status" aria-live="polite">Modo demo: el WhatsApp comercial todavía no está cargado. La landing ya conserva la procedencia de campaña para que el contacto pueda atribuirse cuando se active el número.</div>
+        <div class="notice" id="waNotice" role="status" aria-live="polite">El WhatsApp comercial todavía no está cargado. Podés enviarnos tu consulta directamente desde el formulario de esta página.</div>
       </div>
 
       <div class="hero-card" aria-label="Presentación visual de trabajos de construcción y reparación">
@@ -72,7 +72,7 @@
       </div>
       <div class="steps">
         <div class="step"><strong>Contanos el trabajo</strong><p>Escribinos qué necesitás hacer y en qué localidad.</p></div>
-        <div class="step"><strong>Mandanos fotos y medidas</strong><p>Con esos datos hacemos una primera evaluación.</p></div>
+        <div class="step"><strong>Completamos la información</strong><p>Si hacen falta medidas, fotos u otros datos, los coordinamos después del primer contacto.</p></div>
         <div class="step"><strong>Preparamos el presupuesto</strong><p>Detallamos el alcance y las condiciones del trabajo.</p></div>
         <div class="step"><strong>Coordinamos</strong><p>Definimos visita o fecha de inicio según corresponda.</p></div>
       </div>
@@ -104,21 +104,54 @@
         <h2>Claridad desde el primer contacto.</h2>
       </div>
       <div class="proof">
-        <div class="proof-box"><strong>Alcance claro</strong><p>La consulta empieza con fotos, localidad, medidas y una descripción breve. Así podemos entender mejor el trabajo antes de cotizar.</p></div>
+        <div class="proof-box"><strong>Alcance claro</strong><p>La consulta empieza con localidad, tipo de trabajo y una descripción breve. Si necesitamos más información, te la pedimos antes de cotizar.</p></div>
         <div class="proof-box"><strong>Comunicación directa</strong><p>Coordinamos cada paso de forma simple para que sepas qué trabajo se va a realizar y cómo seguimos.</p></div>
       </div>
     </div>
   </section>
 
   <section id="contacto">
-    <div class="wrap">
-      <div class="cta">
-        <div>
-          <h2>¿Tenés un arreglo pendiente?</h2>
-          <p>Mandanos fotos, localidad y medidas aproximadas. Con esa información podemos empezar a evaluar tu trabajo y preparar el próximo paso.</p>
-        </div>
-        <a class="btn js-wa" href="#contacto">Enviar consulta</a>
+    <div class="wrap contact-grid">
+      <div class="contact-copy">
+        <div class="eyebrow">Consulta</div>
+        <h2>¿Tenés un arreglo pendiente?</h2>
+        <p>Completá estos datos y la consulta entra directamente a AMC para que podamos revisarla. No hace falta crear una cuenta.</p>
+        <p class="contact-note">Si después necesitamos fotos, medidas o una visita, te lo pedimos al continuar el contacto.</p>
       </div>
+      <form class="contact-form" id="prospectForm" novalidate>
+        <div class="form-row">
+          <label>Nombre
+            <input name="name" type="text" autocomplete="name" maxlength="120" required />
+          </label>
+          <label>Teléfono o WhatsApp
+            <input name="phone" type="tel" autocomplete="tel" maxlength="100" inputmode="tel" required />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Localidad
+            <input name="town" type="text" autocomplete="address-level2" maxlength="120" placeholder="Ej. Valle Hermoso" required />
+          </label>
+          <label>Tipo de trabajo
+            <select name="service" required>
+              <option value="">Elegí una opción</option>
+              <option>Albañilería</option>
+              <option>Pintura</option>
+              <option>Plomería</option>
+              <option>Electricidad</option>
+              <option>Reparaciones</option>
+              <option>Otro</option>
+            </select>
+          </label>
+        </div>
+        <label>¿Qué necesitás hacer?
+          <textarea name="description" rows="5" maxlength="3000" placeholder="Contanos brevemente el trabajo o arreglo que necesitás." required></textarea>
+        </label>
+        <label class="form-honeypot" aria-hidden="true">Sitio web
+          <input name="website" type="text" tabindex="-1" autocomplete="off" />
+        </label>
+        <button class="btn contact-submit" type="submit">Enviar consulta</button>
+        <p class="form-status" id="prospectStatus" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </section>
 </main>
