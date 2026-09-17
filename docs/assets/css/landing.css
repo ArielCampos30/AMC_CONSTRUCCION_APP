@@ -46,9 +46,8 @@ header {
   width: 54px;
   height: 54px;
   object-fit: contain;
-  filter: none;
-  mix-blend-mode: screen;
 }
+.brand-name { line-height: 1.05; }
 .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: .95rem; }
 .nav-links > a:not(.btn):hover { color: var(--text); }
 
@@ -73,7 +72,7 @@ header {
 .btn.secondary { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,.16); }
 .btn.secondary:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.28); }
 
-.hero { padding: 86px 0 58px; }
+.hero { padding: 62px 0 52px; }
 .hero-grid { display: grid; grid-template-columns: 1.13fr .87fr; gap: 42px; align-items: center; }
 .eyebrow { color: var(--accent); font-weight: 850; text-transform: uppercase; letter-spacing: .12em; font-size: .79rem; }
 h1 { margin: 14px 0 20px; font-size: clamp(2.7rem, 7vw, 5.8rem); line-height: .95; letter-spacing: -.055em; }
@@ -240,7 +239,7 @@ footer { padding: 38px 0 54px; color: var(--muted); font-size: .92rem; }
   .hero-grid, .visual-grid, .proof { grid-template-columns: 1fr; }
   .service-grid, .steps { grid-template-columns: 1fr 1fr; }
   .nav-links > a:not(.btn) { display: none; }
-  .hero { padding-top: 58px; }
+  .hero { padding-top: 44px; }
   .hero-card { min-height: 340px; }
   .cta { align-items: flex-start; flex-direction: column; }
 }
@@ -250,7 +249,7 @@ footer { padding: 38px 0 54px; color: var(--muted); font-size: .92rem; }
   .service-grid, .steps { grid-template-columns: 1fr; }
   .hero-actions { flex-direction: column; }
   .hero-actions .btn { width: 100%; }
-  .brand span:last-child { font-size: .9rem; }
+  .brand-name { max-width: 125px; font-size: .82rem; line-height: 1.05; }
   .brand-logo { width: 46px; height: 46px; }
   .nav .btn { padding-inline: 13px; font-size: .9rem; }
   .cta { padding: 30px 24px; }
