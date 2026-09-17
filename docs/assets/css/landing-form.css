@@ -91,6 +91,14 @@
 .form-status.is-loading { color: #ddd; }
 .form-status.is-success { color: #aee8c5; }
 .form-status.is-error { color: #ffb4b4; }
+.form-status-link {
+  display: inline-block;
+  margin-left: 6px;
+  color: #59df8c;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .form-honeypot {
   position: absolute !important;
   width: 1px !important;
@@ -110,4 +118,5 @@
   .contact-form { padding: 20px; border-radius: 20px; }
   .form-row { grid-template-columns: 1fr; }
   .contact-submit { width: 100%; }
+  .form-status-link { display: block; margin: 8px 0 0; width: max-content; }
 }
