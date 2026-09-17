@@ -1,5 +1,5 @@
 const LEGACY_ADMIN_ROUTES=new Set(['admin']);
-const PROTECTED_PAGES=new Set(['clientes','calendario','portada','pedir','visita','perfil','presupuestos','obra','avisos','favoritos','referidos','admin','mensajes','agenda','adicionales','comprobantes','cotizador','empleados','tareas','compras','estado-presupuestos','fichas','materiales','resumen','resumen-diario','cierre','recuperar-cuentas','cambiar-contrasena','inicio-empleado','mis-trabajos','chat-equipo','mis-trabajos-cliente','chat-cliente','solicitar','solicitudes','obras','chat-admin','mas-admin','respaldos','comercial']);
+const PROTECTED_PAGES=new Set(['clientes','calendario','portada','pedir','visita','perfil','presupuestos','obra','avisos','favoritos','referidos','admin','mensajes','agenda','adicionales','comprobantes','cotizador','empleados','tareas','compras','estado-presupuestos','fichas','materiales','resumen','resumen-diario','cierre','recuperar-cuentas','cambiar-contrasena','inicio-empleado','mis-trabajos','chat-equipo','mis-trabajos-cliente','chat-cliente','solicitar','solicitudes','obras','chat-admin','mas-admin','respaldos','comercial','papelera']);
 const PROTECTED_PREFIXES=['mi-trabajo/','solicitud/','presupuesto/','obra/','chat/','presupuesto-admin/','obra-admin/','chat-admin/','chat-equipo/','cliente/','trabajo/','comercial/'];
 const EMPLOYEE_PAGES=new Set(['perfil','avisos','mensajes','inicio-empleado','mis-trabajos','chat-equipo']);
 const TEAM_PAGES=new Set(['empleados','tareas','compras','estado-presupuestos']);
@@ -46,7 +46,7 @@ export function resolveAppPage(page,state={}){
  if(role==='admin'&&page==='chat-admin')return {view:'admin-chat'};
  if(role==='admin'&&page.startsWith('chat-admin/'))return {view:'messages',selectChat:true,chatRequestId:page.slice('chat-admin/'.length)};
  if(role==='admin'&&page.startsWith('chat-equipo/'))return {view:'admin-team-chat',employeeId:page.slice('chat-equipo/'.length)};
- if(role==='admin'&&(page==='comercial'||page.startsWith('comercial/')))return {view:'admin-more'};
+ if(role==='admin'&&(page==='comercial'||page.startsWith('comercial/')||page==='papelera'))return {view:'admin-more'};
  if(role==='admin'&&page==='mas-admin')return {view:'admin-more'};
  if(role==='admin'&&page==='respaldos')return {view:'admin-backups'};
  if(role==='admin'&&page.startsWith('cliente/'))return {view:'admin-client-detail',id:page.slice('cliente/'.length)};
