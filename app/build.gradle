@@ -11,12 +11,12 @@ def backendUrlValue = System.getenv('AMC_BACKEND_URL') ?: 'https://amc-o0xb.onre
 
 android {
     namespace 'com.amc.construcciones'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.amc.construcciones'
         minSdk 29
-        targetSdk 35
+        targetSdk 36
         versionCode 7
         versionName '1.0.0'
         buildConfigField 'String', 'AMC_BACKEND_URL', '"' + backendUrlValue.replace('"', '\\"') + '"'
