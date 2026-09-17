@@ -1,0 +1,61 @@
+/* AMC landing theme
+ * La identidad visual vive separada de la estructura para mantener el layout independiente.
+ */
+:root {
+  --accent: #0b675f;
+  --accent-2: #6fc5b8;
+}
+
+/* El logo conserva sus colores originales. Con screen, el negro del archivo se
+ * integra al header oscuro y deja de percibirse como un bloque cuadrado. */
+.brand-logo {
+  filter: none;
+  mix-blend-mode: screen;
+  background: transparent;
+}
+
+.btn {
+  color: #fff;
+}
+
+.btn:hover {
+  color: #071b18;
+}
+
+.btn:focus-visible,
+a:focus-visible {
+  outline-color: rgba(11,103,95,.5);
+}
+
+.eyebrow {
+  color: var(--accent-2);
+}
+
+.hero-chip {
+  border-color: rgba(111,197,184,.5);
+  color: #c5eee8;
+}
+
+.notice {
+  background: #102622;
+  border-color: rgba(111,197,184,.28);
+  color: #cbece7;
+}
+
+.step::before {
+  color: #fff;
+}
+
+.cta {
+  color: #fff;
+}
+
+.cta .btn {
+  background: #f5f7f6;
+  color: #102521;
+}
+
+.cta .btn:hover {
+  background: #dfe9e7;
+  color: #102521;
+}
