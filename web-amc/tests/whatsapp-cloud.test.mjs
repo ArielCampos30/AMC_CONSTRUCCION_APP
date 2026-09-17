@@ -33,12 +33,12 @@ test('webhook WhatsApp verifica Meta, guarda mensajes una vez y expone inbox só
   const raw=JSON.stringify(payload);
   const unsigned=await fetch(base+'/api/webhooks/whatsapp',{method:'POST',headers:{'Content-Type':'application/json'},body:raw});assert.equal(unsigned.status,403);
   for(let i=0;i<2;i++){const response=await fetch(base+'/api/webhooks/whatsapp',{method:'POST',headers:{'Content-Type':'application/json','X-Hub-Signature-256':sign(raw,'secret-d5a-test')},body:raw});assert.equal(response.status,200);}
-  assert.equal(Number(app.db.prepare('SELECT COUNT(*) AS count FROM whatsapp_messages').get().count),1);
+  assert.equal(Number(app.db.prepare("SELECT COUNT(*) AS count FROM docs WHERE kind='whatsappMessage'").get().count),1);
   const admin=actor(base);await admin.call('/api/login',{email:'owner-wa-cloud@amc.test',password:'Strong-Owner-2026!'});
   const inbox=await admin.call('/api/admin/whatsapp/inbox');
   assert.equal(inbox.whatsapp.configured,true);assert.ok(inbox.whatsapp.verifiedAt);assert.ok(inbox.whatsapp.lastEventAt);assert.equal(inbox.whatsapp.autoReplies,false);
   assert.equal(inbox.whatsapp.conversations.length,1);assert.equal(inbox.whatsapp.conversations[0].messages.length,1);assert.equal(inbox.whatsapp.conversations[0].requestId,'request-wa-cloud');assert.match(inbox.whatsapp.conversations[0].lastText,/pintura/);
-  const state=await admin.call('/api/state');assert.equal(Object.hasOwn(state,'whatsapp'),false);
+  const state=await admin.call('/api/state');assert.doesNotMatch(JSON.stringify(state),/wamid\.test-d5a/);assert.doesNotMatch(JSON.stringify(state),/whatsappMetaState/);
   const client=actor(base);await client.call('/api/login',{email:'client-wa-cloud@amc.test',password:'Strong-Client-2026!'});assert.equal((await client.call('/api/admin/whatsapp/inbox',undefined,403)).error,'Acceso restringido.');
  }finally{
   await new Promise(resolve=>app.server.close(resolve));
