@@ -19,7 +19,7 @@ const dashboard=createAdminDashboardUI({getState:()=>state,heading:(tag,title,bo
 
 test('Admin reúne pendientes operativos en Inicio',()=>{
  const html=dashboard();
- for(const label of ['Solicitudes nuevas','Cambios de visita','Relevamientos por revisar','Materiales por resolver','Mensajes de clientes','Mensajes del equipo','Solicitudes de eliminación'])assert.match(html,new RegExp(label));
+ for(const label of ['Solicitudes nuevas','Cambios de visita','Relevamientos por revisar','Materiales por resolver','Mensajes sin leer','Mensajes del equipo','Solicitudes de eliminación'])assert.match(html,new RegExp(label));
  assert.match(html,/admin-global-search-input/);
  assert.match(html,/Actividad reciente/);
  assert.doesNotMatch(html,/<Prueba>/,'los nombres deben salir escapados');
