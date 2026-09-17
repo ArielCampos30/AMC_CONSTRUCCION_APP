@@ -19,7 +19,7 @@ export function createAppShellClickController({
   createDataTransfer=()=>new globalThis.DataTransfer(),
   createEvent=(type,options)=>new globalThis.Event(type,options),
 }={}){
-  const quoteMaintenanceController=createAdminQuoteMaintenanceController({documentRef,api,onSuccess:onMessage,onError});
+  const quoteMaintenanceController=createAdminQuoteMaintenanceController({documentRef,api,reload,render,navigate,onSuccess:onMessage,onError});
 
   async function handleClick(e){
     const removePhoto=e.target.closest('[data-remove-request-photo]');
