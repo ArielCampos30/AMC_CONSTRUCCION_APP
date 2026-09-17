@@ -21,7 +21,8 @@ Cada pedido nuevo debe tratarse sobre el frente que corresponda. No se deben mez
 - Formulario conectado con AMC: cada consulta válida crea o reutiliza un prospecto y genera una solicitud nueva para Administración.
 - Captura de `utm_source`, `utm_medium`, `utm_campaign` y `utm_content` para atribución comercial.
 - Persistencia de campaña durante la sesión para no perder la atribución si la URL deja de mostrar las UTM.
-- WhatsApp preparado pero todavía sin número comercial real.
+- WhatsApp Business comercial activo mediante `wa.me` con el número AMC en formato internacional.
+- Después de enviar el formulario, la persona puede continuar por WhatsApp sin crear una segunda alta en AMC.
 - Fotos adjuntas al formulario deliberadamente fuera del alcance actual.
 
 ## SEO técnico
@@ -52,12 +53,18 @@ Eventos actuales:
 - `amc_form_start`;
 - `amc_form_submit_attempt`;
 - `amc_form_submit_success`;
-- `amc_form_submit_error`.
+- `amc_form_submit_error`;
+- `amc_whatsapp_after_form`.
 
 Los eventos no incluyen nombre, teléfono ni descripción del prospecto. Sólo conservan contexto de campaña y datos técnicos de conversión.
 
 ## WhatsApp
 
-En `docs/assets/js/landing.js` existe `WHATSAPP_NUMBER` vacío. Mientras siga así, el botón flotante deriva al formulario y muestra el aviso correspondiente.
+El WhatsApp Business comercial se define en `docs/assets/js/landing.js` con el formato internacional requerido por `wa.me`: código de país + prefijo móvil + característica + número, sin `+`, espacios ni guiones.
 
-Cuando se defina el WhatsApp Business comercial, debe cargarse el número completo con código de país, sin `+`, espacios ni guiones. Ese trabajo corresponde al bloque 15.2C pendiente.
+La landing ofrece dos recorridos complementarios:
+
+1. El botón flotante abre WhatsApp con un mensaje inicial y conserva el contexto de campaña UTM en el texto.
+2. El formulario sigue siendo el alta canónica dentro de AMC. Después de guardarse correctamente, se ofrece **Continuar por WhatsApp** con nombre, localidad y tipo de trabajo ya completados, sin volver a crear otro prospecto ni otra solicitud.
+
+Dentro de Administración, el panel Comercial puede abrir la conversación del prospecto y registra internamente **WhatsApp iniciado**. Ese evento sólo confirma que AMC abrió el enlace de conversación; no implica mensaje enviado, entregado ni leído. Para esos estados sería necesaria una integración futura con la API oficial de Meta.
