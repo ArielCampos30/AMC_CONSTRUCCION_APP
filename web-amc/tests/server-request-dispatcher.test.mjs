@@ -37,6 +37,7 @@ function makeDeps(overrides={}){
   checkRate(key,limit){events.push(`rate:${key}:${limit}`);},
   async readBody(){events.push('read-body');return {day:'2026-09-15',time:'10:00'};},
   recovery:{async route(){return false;}},
+  whatsappCloud:{async publicRoute(){return false;},adminRoute(){return false;}},
   handlePublicSystem(){return false;},
   handleState(){return false;},
   mediaAccess:{async serve(){return false;}},
