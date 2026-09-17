@@ -39,7 +39,7 @@ test('webhook WhatsApp verifica Meta, guarda mensajes una vez y expone inbox só
   assert.equal(inbox.whatsapp.configured,true);assert.ok(inbox.whatsapp.verifiedAt);assert.ok(inbox.whatsapp.lastEventAt);assert.equal(inbox.whatsapp.autoReplies,false);
   assert.equal(inbox.whatsapp.conversations.length,1);assert.equal(inbox.whatsapp.conversations[0].messages.length,1);assert.equal(inbox.whatsapp.conversations[0].requestId,'request-wa-cloud');assert.match(inbox.whatsapp.conversations[0].lastText,/pintura/);
   const state=await admin.call('/api/state');assert.doesNotMatch(JSON.stringify(state),/wamid\.test-d5a/);assert.doesNotMatch(JSON.stringify(state),/whatsappMetaState/);
-  const client=actor(base);await client.call('/api/login',{email:'client-wa-cloud@amc.test',password:'Strong-Client-2026!'});assert.equal((await client.call('/api/admin/whatsapp/inbox',undefined,403)).error,'Acceso restringido.');
+  const client=actor(base);await client.call('/api/login',{email:'client-wa-cloud@amc.test',password:'Strong-Client-2026!'});assert.equal((await client.call('/api/admin/whatsapp/inbox',undefined,403)).error,'Este acceso es exclusivo de AMC.');
  }finally{
   await new Promise(resolve=>app.server.close(resolve));
   for(const [key,value] of Object.entries(previous)){const envKey={verify:'AMC_WHATSAPP_VERIFY_TOKEN',secret:'AMC_WHATSAPP_APP_SECRET',phone:'AMC_WHATSAPP_PHONE_NUMBER_ID',business:'AMC_WHATSAPP_BUSINESS_ACCOUNT_ID'}[key];if(value===undefined)delete process.env[envKey];else process.env[envKey]=value;}
