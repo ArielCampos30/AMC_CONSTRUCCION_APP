@@ -2,12 +2,14 @@ import {createChatFeatures} from './chat-features.js';
 import {createProjectActionsFeatures} from './project-actions-features.js';
 import {createQuoteViewTracker} from './quote-view-tracker.js';
 import {createOperationalUX} from './operational-ux.js';
+import {createCommercialFollowupRuntime} from './commercial-followup-runtime.js';
 import {prepareQuoteToolsPage,getLoadedQuoteToolsModule,isQuoteToolsPage} from './quote-tools-loader.js';
 
 export function createFeatures(deps){
  const chat=createChatFeatures(deps);
  const projects=createProjectActionsFeatures(deps);
  const operational=createOperationalUX(deps);
+ const commercialFollowup=createCommercialFollowupRuntime({api:deps.api});
  const quoteViews=createQuoteViewTracker({getState:deps.getState,isAdmin:deps.isAdmin,api:deps.api,onNoticesRead:deps.onNoticesRead});
  let quoteTools=null,quoteToolsPending=null,pendingClient=null,rerenderPending=false;
  let pdfController=null,pdfControllerPromise=null;
@@ -58,7 +60,7 @@ export function createFeatures(deps){
    }
    const chatView=chat.render(name);return chatView===undefined?projects.render(name):chatView;
   },
-  async submit(form,data,submitter){const chatResult=await chat.submit(form,data,submitter);if(chatResult)return chatResult;const operationalResult=await operational.submit(form,data,submitter);return operationalResult||projects.submit(form,data,submitter);},
+  async submit(form,data,submitter){const chatResult=await chat.submit(form,data,submitter);if(chatResult)return chatResult;const commercialResult=await commercialFollowup.submit(form,data,submitter);if(commercialResult)return commercialResult;const operationalResult=await operational.submit(form,data,submitter);return operationalResult||projects.submit(form,data,submitter);},
   change(target){return chat.change(target);},
   afterRender(page){
    chat.afterRender(page);quoteViews.afterRender(page);operational.afterRender(page);
