@@ -38,4 +38,5 @@ export function adminUtilityRoutes({db,all,get,put,transaction,requireAdmin,safe
    return true;
   }
   return false;
+ };
 }
