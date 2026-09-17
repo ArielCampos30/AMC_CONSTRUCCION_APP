@@ -46,7 +46,7 @@ header {
   width: 54px;
   height: 54px;
   object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(75%) sepia(93%) saturate(1634%) hue-rotate(5deg) brightness(101%) contrast(99%);
+  filter: grayscale(1) sepia(1) saturate(12) hue-rotate(354deg) brightness(1.08) contrast(1.18);
 }
 .nav-links { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: .95rem; }
 .nav-links > a:not(.btn):hover { color: var(--text); }
@@ -92,7 +92,7 @@ h1 { margin: 14px 0 20px; font-size: clamp(2.7rem, 7vw, 5.8rem); line-height: .9
   border-radius: 28px;
   background:
     linear-gradient(180deg, rgba(12,12,12,.10) 0%, rgba(12,12,12,.30) 44%, rgba(12,12,12,.92) 100%),
-    url("../img/hero-work.webp") center/cover no-repeat;
+    url("../img/hero-work.jpg") center/cover no-repeat;
   box-shadow: var(--shadow);
 }
 .hero-card > * { position: relative; z-index: 1; }
@@ -167,13 +167,13 @@ section { padding: 72px 0; }
 .visual--repair {
   background-image:
     linear-gradient(180deg, rgba(0,0,0,.02) 15%, rgba(0,0,0,.78) 100%),
-    url("../img/work-exterior.webp");
+    url("../img/work-repair.jpg");
   background-position: center;
 }
 .visual--finish {
   background-image:
     linear-gradient(180deg, rgba(0,0,0,.02) 15%, rgba(0,0,0,.78) 100%),
-    url("../img/work-interior.webp");
+    url("../img/work-finish.jpg");
   background-position: center;
 }
 .visual-copy { position: relative; z-index: 1; max-width: 470px; }
