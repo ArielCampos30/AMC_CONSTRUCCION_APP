@@ -1,8 +1,10 @@
 import {createAdminCommercialUI} from './admin-commercial-ui.js';
+import {createAdminTrashUI} from './admin-trash-ui.js';
 
 export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  let system=null,loading=false,loadedAt=0;
  const commercial=createAdminCommercialUI({getState,heading,esc,date});
+ const trash=createAdminTrashUI({getState,heading,esc,date,empty:(title,body)=>`<section class="panel empty"><h2>${title}</h2><p>${body}</p></section>`});
  const currentPage=()=>String(globalThis.location?.hash||'').replace(/^#/,'').split('?')[0];
  const current=()=>system||{};
  const integrityText=sys=>{const integrity=sys.databaseIntegrity||{},status=integrity.status||'unknown';if(status==='ok')return 'Correcta';if(status==='failed')return 'Atención · '+Number(integrity.issues?.length||0)+' problema'+(Number(integrity.issues?.length||0)===1?'':'s');return 'Sin datos';};
@@ -12,14 +14,14 @@ export function createAdminSystemUI({getState,getConfig,heading,esc,date}){
  const load=async()=>{if(getState().user?.role!=='admin'||loading||Date.now()-loadedAt<30000)return;loading=true;try{const response=await fetch('/api/state/system',{credentials:'same-origin'});if(!response.ok)return;const data=await response.json();if(getState().user?.role!=='admin')return;system=data.system||{};loadedAt=Date.now();paint();}catch{}finally{loading=false;}};
  const scheduleLoad=()=>queueMicrotask(load);
  const moreSections=[
-  ['Gestión',[['comercial','Comercial'],['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
+  ['Gestión',[['comercial','Comercial'],['papelera','Papelera'],['clientes','Clientes'],['empleados','Empleados'],['calendario','Calendario'],['resenas','Reseñas']]],
   ['Sitio público',[['portada','Portada pública']]],
   ['Herramientas',[['tarifario','Tarifario'],['cotizador','Cotizador'],['resumen-diario','Resumen diario']]],
   ['Sistema',[['perfil','Configuración'],['respaldos','Respaldos']]]
  ];
  const uniqueMoreSections=()=>{const routes=new Set();return moreSections.map(([title,items])=>[title,items.filter(([route])=>{if(routes.has(route))return false;routes.add(route);return true;})]);};
  // Compatibilidad de cobertura histórica: ['Gestión' 'Chat' 'Clientes' 'Empleados']. Chat ahora se usa sólo desde el botón flotante.
- const more=()=>{const route=currentPage();if(route==='comercial'||route.startsWith('comercial/'))return commercial.render(route);scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
+ const more=()=>{const route=currentPage();if(route==='comercial'||route.startsWith('comercial/'))return commercial.render(route);if(route==='papelera')return trash.render();scheduleLoad();return heading('ADMINISTRACIÓN','Más','Gestión, herramientas y sistema.')+
    uniqueMoreSections().map(([title,items])=>`<section class="admin-v3-more"><h2>${title}</h2>${items.map(([p,t])=>`<a href="#${p}"><span>${t}</span><b>›</b></a>`).join('')}</section>`).join('')+
    `<section id="amc-system-status" class="panel">${statusContent()}</section>`;};
  const backups=()=>{scheduleLoad();return heading('SISTEMA','Respaldos','Protección y recuperación de los datos de AMC.')+`<div id="amc-backup-content">${backupContent()}</div><a class="inline-action" href="#mas-admin">← Volver a Más</a>`;};
