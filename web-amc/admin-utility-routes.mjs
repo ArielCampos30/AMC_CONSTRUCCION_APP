@@ -1,7 +1,7 @@
 import {loadTariffCatalog,mutateTariffCatalog,tariffCatalogPayload} from './tariff-catalog.mjs';
 
 export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,text,sha,now}){
- const commercialFollowup=(user,requestId,b)=>{
+ const commercialFollowup=(user,requestId,b,res)=>{
   requireAdmin(user);
   const request=get('request',requestId),action=['save','contacted'].includes(b.action)?b.action:'save',nextAction=text(b.nextAction,200),nextActionDay=text(b.nextActionDay,20),note=text(b.note,2000);
   if(nextActionDay&&!/^\d{4}-\d{2}-\d{2}$/.test(nextActionDay))fail(400,'Elegí una fecha válida para el próximo seguimiento.');
@@ -14,7 +14,7 @@ export function adminUtilityRoutes({all,get,put,requireAdmin,safeFile,send,fail,
  };
  return function route({p,method,b,user,res}){
   let match;
-  if(method==='POST'&&(match=p.match(/^\/api\/admin\/commercial-followups\/([^/]+)$/)))return commercialFollowup(user,match[1],b);
+  if(method==='POST'&&(match=p.match(/^\/api\/admin\/commercial-followups\/([^/]+)$/)))return commercialFollowup(user,match[1],b,res);
   if(p==='/api/offline-notes'&&method==='POST'){
    requireAdmin(user);if(!/^[\w-]{8,100}$/.test(b.idempotencyKey||'')||!text(b.text,4000)||!Array.isArray(b.photos)||b.photos.length>4)fail(400,'Informe inválido.');
    const key='offline-note-'+sha(user.id+':'+b.idempotencyKey),old=all('offlineNote',user.id).find(x=>x.id===key);if(old){send(res,200,old);return true;}
