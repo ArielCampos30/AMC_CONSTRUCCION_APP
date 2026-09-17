@@ -54,7 +54,7 @@ export function createAdminDashboardUI({getState,heading,closureNeedsAction}){
     ['Obras en curso',inProgress,'obras'],
     ['Cierres pendientes de AMC',toClose,'obras'],
     ['Cierres esperando cliente',waitingClient,'cierre'],
-    ['Mensajes de clientes',clientUnread,'chat-admin'],
+    ['Mensajes sin leer',clientUnread,'chat-admin'],
     ['Mensajes del equipo',teamUnread,'chat-admin'],
     ['Solicitudes de eliminación',deletionRequests,'clientes']
    ],activities=activityRows(state);
