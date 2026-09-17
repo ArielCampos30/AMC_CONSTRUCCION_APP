@@ -7,12 +7,12 @@
   --brand-logo: #d7ba63;
 }
 
-/* Mantener el logo AMC original, eliminar los verdes y llevarlo a una gama amarillo/dorado suave.
- * Se conservan luces, sombras y volumen para evitar un resultado plano o invasivo. */
+/* Mantener el logo AMC original, eliminar el verde y recuperar los blancos.
+ * El amarillo queda como acento cálido, sin convertir todo el arte en dorado. */
 .brand-logo {
-  filter: grayscale(1) sepia(.95) saturate(2.05) hue-rotate(354deg) brightness(1.07) contrast(1.05);
+  filter: grayscale(1) sepia(.28) saturate(1.55) hue-rotate(352deg) brightness(1.08) contrast(1.12);
   mix-blend-mode: screen;
-  opacity: .96;
+  opacity: .97;
   background: transparent;
 }
 
