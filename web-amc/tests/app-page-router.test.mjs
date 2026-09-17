@@ -22,7 +22,7 @@ test('normalización pura conserva hashes, recuperación e alias Admin',()=>{
 
 test('contrato de protección cubre rutas estáticas y deep links de cada rol',()=>{
  const protectedRoutes=[
-  'clientes','calendario','perfil','presupuestos','avisos','cotizador','solicitudes','obras','chat-admin','mas-admin','respaldos','resumen','inicio-empleado','mis-trabajos','mis-trabajos-cliente','chat-cliente',
+  'clientes','calendario','perfil','presupuestos','avisos','cotizador','solicitudes','obras','chat-admin','mas-admin','respaldos','resumen','comercial','comercial/30','inicio-empleado','mis-trabajos','mis-trabajos-cliente','chat-cliente',
   'mi-trabajo/request-1','solicitud/request-1','presupuesto/quote-1','obra/work-1','chat/request-1','presupuesto-admin/quote-1','obra-admin/work-1','chat-admin/request-1','chat-equipo/employee-1','cliente/client-1','trabajo/task-1'
  ];
  for(const page of protectedRoutes){
@@ -38,7 +38,7 @@ test('matriz pública conserva páginas abiertas, autenticación y fallbacks',()
   ['inicio','home'],['servicios','services'],['ideas','ideas'],['ingresar','auth'],['registro','auth-register'],
   ['recuperar','accounts'],['restablecer','accounts'],['clientes','auth'],['pedir','auth'],['visita','auth'],
   ['perfil','auth'],['presupuestos','auth'],['obra','auth'],['avisos','auth'],['favoritos','auth'],['referidos','auth'],
-  ['mensajes','auth'],['cotizador','auth'],['solicitud/request-1','auth'],['presupuesto/quote-1','auth'],
+  ['mensajes','auth'],['cotizador','auth'],['comercial','auth'],['comercial/90','auth'],['solicitud/request-1','auth'],['presupuesto/quote-1','auth'],
   ['obra/work-1','auth'],['trabajo/task-1','auth'],['presupuesto-admin/quote-1','auth'],['obra-admin/work-1','auth'],['cliente/client-1','auth'],['ruta-inexistente','home']
  ];
  for(const [page,view] of matrix)assert.equal(resolveAppPage(page,state).view,view,page);
@@ -62,7 +62,7 @@ test('matriz Admin conserva paneles, detalles, chats e IDs dinámicos',()=>{
  const matrix=[
   ['inicio',{view:'admin-dashboard'}],['solicitudes',{view:'admin-requests'}],['presupuestos',{view:'admin-quotes'}],['presupuesto-admin/quote-1',{view:'admin-quote-detail',id:'quote-1'}],['obras',{view:'admin-works'}],['obra-admin/work-1',{view:'admin-work-detail',id:'work-1'}],
   ['chat-admin',{view:'admin-chat'}],['chat-admin/request-1',{view:'messages',selectChat:true,chatRequestId:'request-1'}],['chat-equipo/employee-1',{view:'admin-team-chat',employeeId:'employee-1'}],
-  ['mas-admin',{view:'admin-more'}],['respaldos',{view:'admin-backups'}],['cliente/client-1',{view:'admin-client-detail',id:'client-1'}],['clientes',{view:'client-directory'}],['resumen',{view:'hub-dashboard'}],['solicitud/request-1',{view:'request-detail',id:'request-1'}],['cotizador',{view:'features',page:'cotizador'}],['ruta-inexistente',{view:'home'}]
+  ['comercial',{view:'admin-more'}],['comercial/7',{view:'admin-more'}],['mas-admin',{view:'admin-more'}],['respaldos',{view:'admin-backups'}],['cliente/client-1',{view:'admin-client-detail',id:'client-1'}],['clientes',{view:'client-directory'}],['resumen',{view:'hub-dashboard'}],['solicitud/request-1',{view:'request-detail',id:'request-1'}],['cotizador',{view:'features',page:'cotizador'}],['ruta-inexistente',{view:'home'}]
  ];
  for(const [page,expected] of matrix)assert.deepEqual(resolveAppPage(page,state),expected,page);
 });
