@@ -3,10 +3,68 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Albañilería, pintura, plomería, electricidad y reparaciones en Valle Hermoso, La Falda, Huerta Grande, Villa Giardino y Punilla. Pedí presupuesto online o por WhatsApp." />
+  <meta name="description" content="Albañilería, pintura, plomería, electricidad y reparaciones en Valle Hermoso y Punilla. Consultá tu trabajo online con AMC Construcciones." />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
   <meta name="theme-color" content="#121212" />
   <meta name="color-scheme" content="dark" />
-  <title>AMC Construcciones | Valle Hermoso y Punilla</title>
+  <meta name="application-name" content="AMC Construcciones" />
+
+  <title>AMC Construcciones | Albañilería y arreglos en Punilla</title>
+  <link rel="canonical" href="https://amc-construcciones.onrender.com/" />
+  <link rel="icon" href="assets/img/amc-logo.webp" type="image/webp" />
+  <link rel="preload" as="image" href="assets/img/hero-work.jpg" fetchpriority="high" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_AR" />
+  <meta property="og:site_name" content="AMC Construcciones" />
+  <meta property="og:title" content="AMC Construcciones | Albañilería y arreglos en Punilla" />
+  <meta property="og:description" content="Construcción, reparaciones, pintura, plomería y electricidad en Valle Hermoso y localidades de Punilla." />
+  <meta property="og:url" content="https://amc-construcciones.onrender.com/" />
+  <meta property="og:image" content="https://amc-construcciones.onrender.com/assets/img/hero-work.jpg" />
+  <meta property="og:image:alt" content="Trabajo de construcción y reparación representativo de los servicios de AMC Construcciones" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AMC Construcciones | Albañilería y arreglos en Punilla" />
+  <meta name="twitter:description" content="Construcción, reparaciones y arreglos para viviendas en Valle Hermoso y Punilla." />
+  <meta name="twitter:image" content="https://amc-construcciones.onrender.com/assets/img/hero-work.jpg" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "GeneralContractor",
+    "name": "AMC Construcciones",
+    "url": "https://amc-construcciones.onrender.com/",
+    "logo": "https://amc-construcciones.onrender.com/assets/img/amc-logo.webp",
+    "image": [
+      "https://amc-construcciones.onrender.com/assets/img/hero-work.jpg",
+      "https://amc-construcciones.onrender.com/assets/img/work-repair.jpg",
+      "https://amc-construcciones.onrender.com/assets/img/work-finish.jpg"
+    ],
+    "description": "Servicios de albañilería, pintura, plomería, electricidad, reparaciones y arreglos en Valle Hermoso y Punilla.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Valle Hermoso",
+      "addressRegion": "Córdoba",
+      "addressCountry": "AR"
+    },
+    "areaServed": [
+      {"@type": "Place", "name": "Valle Hermoso, Córdoba"},
+      {"@type": "Place", "name": "La Falda, Córdoba"},
+      {"@type": "Place", "name": "Huerta Grande, Córdoba"},
+      {"@type": "Place", "name": "Villa Giardino, Córdoba"},
+      {"@type": "Place", "name": "Punilla, Córdoba"}
+    ],
+    "knowsAbout": [
+      "Albañilería",
+      "Pintura",
+      "Plomería",
+      "Electricidad",
+      "Reparaciones",
+      "Reformas"
+    ]
+  }
+  </script>
+
   <link rel="stylesheet" href="assets/css/landing.css" />
   <link rel="stylesheet" href="assets/css/landing-theme-amc.css" />
 </head>
@@ -18,9 +76,9 @@
       <span class="brand-name">Construcciones y arreglos</span>
     </a>
     <nav class="nav-links" aria-label="Navegación principal">
-      <a href="#servicios">Servicios</a>
-      <a href="#como-trabajamos">Cómo trabajamos</a>
-      <a class="btn" href="https://amc-o0xb.onrender.com/" target="_blank" rel="noopener noreferrer">Acceso clientes</a>
+      <a href="#servicios" data-measure="nav_services">Servicios</a>
+      <a href="#como-trabajamos" data-measure="nav_process">Cómo trabajamos</a>
+      <a class="btn" href="https://amc-o0xb.onrender.com/" target="_blank" rel="noopener noreferrer" data-measure="client_access">Acceso clientes</a>
     </nav>
   </div>
 </header>
@@ -33,8 +91,8 @@
         <h1>Construimos.<br />Reparamos.<br />Resolvemos.</h1>
         <p class="lead">Albañilería, pintura, plomería, electricidad y arreglos para tu casa. Contanos qué necesitás, en qué localidad y cómo es el trabajo para empezar a evaluarlo.</p>
         <div class="hero-actions">
-          <a class="btn" href="#contacto">Solicitar presupuesto</a>
-          <a class="btn secondary" href="#servicios">Ver servicios</a>
+          <a class="btn" href="#contacto" data-measure="hero_quote">Solicitar presupuesto</a>
+          <a class="btn secondary" href="#servicios" data-measure="hero_services">Ver servicios</a>
         </div>
         <div class="areas">📍 Valle Hermoso · La Falda · Huerta Grande · Villa Giardino y alrededores</div>
         <div class="notice" id="waNotice" role="status" aria-live="polite">El WhatsApp comercial todavía no está cargado. Podés enviarnos tu consulta directamente desde el formulario de esta página.</div>
@@ -163,7 +221,7 @@
   </div>
 </footer>
 
-<a class="floating js-wa" href="#contacto" aria-label="Contactar a AMC por WhatsApp">
+<a class="floating js-wa" href="#contacto" aria-label="Contactar a AMC por WhatsApp" data-measure="whatsapp_floating">
   <img src="assets/icons/whatsapp.svg" alt="" width="31" height="31" />
 </a>
 
