@@ -31,6 +31,7 @@ test('landing usa el WhatsApp Business real y mantiene el formulario como alta c
  assert.match(landing,/Continuar por WhatsApp/);
  assert.match(landing,/fetch\(PROSPECT_API/);
  assert.match(landing,/measure\("whatsapp_after_form"\)/);
- assert.doesNotMatch(landing,/measure\([^\n]*(name|phone|description)/);
+ assert.match(landing,/const measurementContext = \{[\s\S]*utm_source:[\s\S]*landing_path:/);
+ assert.doesNotMatch(landing,/measurementContext[\s\S]{0,220}(name|phone|description):/);
  assert.match(html,/class="floating js-wa"/);
 });
