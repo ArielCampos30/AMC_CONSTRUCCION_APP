@@ -10,7 +10,6 @@ export function createRequestDispatcher({
  readBody,
  recovery,
  landingProspects,
- publicAccountDeletion,
  handlePublicSystem,
  handleState,
  mediaAccess,
@@ -36,15 +35,6 @@ export function createRequestDispatcher({
  send
 }){
  const landingOrigin=String(process.env.AMC_LANDING_ORIGIN||'https://amc-construcciones.onrender.com').replace(/\/+$/,'');
- const prepareLandingCors=()=>{
-  const requestOrigin=String(req.headers.origin||'').replace(/\/+$/,'');
-  if(requestOrigin!==landingOrigin)fail(403,'Origen no permitido.');
-  res.setHeader('Access-Control-Allow-Origin',landingOrigin);
-  res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers','Content-Type');
-  res.setHeader('Access-Control-Max-Age','600');
-  res.setHeader('Vary','Origin');
- };
  return async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method;
   applyHttpSecurity({res,origin,pathname:p});
@@ -78,7 +68,7 @@ export function createRequestDispatcher({
     if(method!=='POST')fail(405,'Método no permitido.');
     checkRate('ip:'+clientIpFromRequest(req)+':landing-account-deletion',5);
     const b=await readBody(req);
-    if(await publicAccountDeletion.route({p,method,b,res}))return;
+    if(await recovery.route({p,method,b,user:null,res}))return;
     fail(404,'Acción no encontrada.');
    }
    if(!['GET','HEAD'].includes(method)){
