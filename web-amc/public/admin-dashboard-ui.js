@@ -1,4 +1,6 @@
-export function createAdminDashboardUI({getState,heading,closureNeedsAction,esc=String,date=value=>value||''}){
+export function createAdminDashboardUI({getState,heading,closureNeedsAction}){
+ const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+ const formatDate=value=>{if(!value)return '';const parsed=new Date(value);return Number.isNaN(parsed.getTime())?String(value):parsed.toLocaleString('es-AR',{timeZone:'America/Buenos_Aires',dateStyle:'short',timeStyle:'short'});};
  const normalize=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const latestDate=(...values)=>values.filter(Boolean).sort().at(-1)||'';
  const requestLabel=request=>(request.services||[request.service]).filter(Boolean).join(' · ')||'Trabajo';
@@ -60,7 +62,7 @@ export function createAdminDashboardUI({getState,heading,closureNeedsAction,esc=
    `<section class="admin-v3-attention">${attention.map(([title,count,page])=>`<a href="#${page}" class="${count?'has-pending':''}"><strong>${count}</strong><span>${title}</span><small>${count?'Revisar →':'Sin pendientes'}</small></a>`).join('')}</section>`+
    `<section class="admin-global-search panel"><div><h2>Buscar en AMC</h2><p class="muted">Cliente, teléfono, solicitud, número de presupuesto u obra.</p></div><label class="admin-global-search-field"><span>Buscar</span><input id="admin-global-search-input" type="search" autocomplete="off" placeholder="Ej.: Gómez, 3548, AMC-2026…"></label><div id="admin-global-search-results" class="admin-global-search-results" aria-live="polite">${searchIndexMarkup(state)}</div></section>`+
    `<h2 class="admin-v3-title">Acciones rápidas</h2><nav class="admin-v3-quick"><button data-action="manual-admin">＋ Nuevo presupuesto</button><button data-action="register-request-admin">＋ Registrar solicitud</button></nav>`+
-   `<section class="admin-recent-activity"><div class="title-row"><h2 class="admin-v3-title">Actividad reciente</h2><small>Últimos movimientos operativos</small></div>${activities.length?`<div class="admin-activity-list">${activities.map(item=>`<a href="${item.href}"><span class="admin-activity-kind">${esc(item.kind)}</span><div><strong>${esc(item.title)}</strong><small>${esc(item.meta||'')}</small></div><time>${esc(date(item.when))}</time></a>`).join('')}</div>`:'<p class="muted">Todavía no hay movimientos recientes para mostrar.</p>'}</section>`;
+   `<section class="admin-recent-activity"><div class="title-row"><h2 class="admin-v3-title">Actividad reciente</h2><small>Últimos movimientos operativos</small></div>${activities.length?`<div class="admin-activity-list">${activities.map(item=>`<a href="${item.href}"><span class="admin-activity-kind">${esc(item.kind)}</span><div><strong>${esc(item.title)}</strong><small>${esc(item.meta||'')}</small></div><time>${esc(formatDate(item.when))}</time></a>`).join('')}</div>`:'<p class="muted">Todavía no hay movimientos recientes para mostrar.</p>'}</section>`;
  }
  dashboard.searchRows=query=>searchRows(getState(),query);
  dashboard.activityRows=()=>activityRows(getState());
