@@ -16,6 +16,7 @@ export function createRequestDispatcher({
  mediaAccess,
  readMultipart,
  twoFactor,
+ ugc,
  chat,
  planning,
  handleAdminUtility,
@@ -96,7 +97,10 @@ export function createRequestDispatcher({
      if(await twoFactor.route({p,method,b:twoFactorBody,user,res,session}))return;
     }
     if(chat.routeBeforeBody({p,method,user,url,res}))return;
+    if(ugc.needsAcceptanceForPath({p,method,user}))ugc.requireAccepted(user);
     const b=p==='/api/upload'&&String(req.headers['content-type']||'').startsWith('multipart/form-data')?await readMultipart(req):await readBody(req);
+    ugc.guardMessage({p,method,b,user});
+    if(ugc.route({p,method,b,user,res}))return;
     if(chat.routeAfterBody({p,method,b,user,url,res}))return;
     if(user.role==='employee'&&/^\/api\/requests\/[^/]+\/messages(?:\/read)?$/.test(p))fail(404,'Conversación no encontrada.');
     if(user.role==='employee'&&!['/api/logout','/api/profile','/api/change-password','/api/upload','/api/devices','/api/notices/read','/api/notices/test'].includes(p)&&!/^\/api\/assignments\/[^/]+\/(report|visit-sheet|materials)$/.test(p))fail(403,'Tu acceso está limitado a tus asignaciones.');
