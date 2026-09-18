@@ -97,7 +97,7 @@ jobs:
           AMC_STORE_PASSWORD: ${{ secrets.AMC_STORE_PASSWORD }}
           AMC_KEY_ALIAS: ${{ secrets.AMC_KEY_ALIAS }}
           AMC_KEY_PASSWORD: ${{ secrets.AMC_KEY_PASSWORD }}
-          AMC_BACKEND_URL: https://amc-o0xb.onrender.com/
+          AMC_BACKEND_URL: https://app.amcconstrucciones.com.ar/
         run: ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease
 
       - name: Verificar firma release
