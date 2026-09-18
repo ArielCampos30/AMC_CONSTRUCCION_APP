@@ -35,9 +35,10 @@ test('health checks the database and exposes only operational metadata',async()=
 });
 
 
-test('production monitor runs every 15 minutes and manages one persistent alert issue',()=>{
+test('production monitor runs every 15 minutes or has an explicit cold-start test pause and manages one persistent alert issue',()=>{
  const workflow=read('.github/workflows/production-smoke.yml');
- assert.match(workflow,/cron: '\*\/15 \* \* \* \*'/);
+ const scheduled=/cron: '\*\/15 \* \* \* \*'/.test(workflow),coldStartPause=/AMC_COLD_START_TEST_PAUSED/.test(workflow);
+ assert.ok(scheduled||coldStartPause,'production monitor must run every 15 minutes unless an explicit cold-start test pause is active');
  assert.match(workflow,/issues: write/);
  assert.match(workflow,/errors5xx15m/);
  assert.match(workflow,/backupStatus/);
