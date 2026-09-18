@@ -1,10 +1,12 @@
 # AMC Construcciones — Play Store Readiness
 
-Fecha de auditoría: 2026-09-17
+Fecha de auditoría: 2026-09-18
 
 ## Estado técnico
 
 - Paquete: `com.amc.construcciones`.
+- Versión Android: `1.0.2`.
+- `versionCode`: `9`.
 - Android mínimo: API 29.
 - Android objetivo: API 36.
 - Compilación: API 36.
@@ -12,7 +14,7 @@ Fecha de auditoría: 2026-09-17
 - Firebase Cloud Messaging integrado.
 - Tráfico HTTP no cifrado deshabilitado.
 - Backup Android de la app deshabilitado.
-- La app usa un WebView seguro como shell Android y carga la aplicación AMC por HTTPS.
+- La app usa un WebView seguro como shell Android y carga la aplicación AMC por HTTPS desde `https://app.amcconstrucciones.com.ar/`.
 
 ## Requisitos de Google Play cubiertos en código
 
@@ -21,7 +23,9 @@ Fecha de auditoría: 2026-09-17
 - Recurso web de eliminación de cuenta: `https://amcconstrucciones.com.ar/eliminar-cuenta.html`.
 - Ruta autenticada dentro de AMC para solicitar eliminación de cuenta.
 - La solicitud web no borra cuentas sin verificar identidad y no revela si un correo tiene una cuenta registrada.
-- Política de privacidad accesible desde el perfil dentro de la app.
+- Política de privacidad accesible desde el perfil dentro de la app mediante el dominio público oficial.
+- La landing informa el tratamiento de datos antes de enviar una consulta y enlaza la política de privacidad.
+- La landing enlaza públicamente la política de privacidad y el recurso de eliminación de cuenta.
 
 ## Pendientes de Play Console
 
@@ -29,7 +33,7 @@ Estos puntos no se resuelven únicamente con código y deben completarse en Play
 
 1. Crear/confirmar la cuenta de desarrollador y completar la verificación requerida por Google.
 2. Crear la aplicación con el paquete `com.amc.construcciones`.
-3. Confirmar que `versionCode 7` no haya sido utilizado antes en ningún track de esa aplicación. Si ya fue utilizado, incrementarlo antes de subir el AAB.
+3. Confirmar que `versionCode 9` no haya sido utilizado antes en ningún track de esa aplicación. Si ya fue utilizado, incrementarlo antes de subir el AAB.
 4. Completar la ficha de Play Store: nombre, descripción corta, descripción completa, icono, gráfico destacado y capturas reales.
 5. Cargar la URL pública de política de privacidad.
 6. Declarar la URL pública de eliminación de cuenta.
@@ -39,6 +43,15 @@ Estos puntos no se resuelven únicamente con código y deben completarse en Play
 10. Completar Clasificación de contenido.
 11. Proporcionar credenciales reutilizables de revisión para que Google pueda recorrer las funciones que requieren acceso. Deben mantenerse activas durante la revisión.
 12. Si la cuenta de desarrollador es una cuenta personal creada después del 13 de noviembre de 2023, completar la prueba cerrada exigida por Google antes de solicitar acceso a producción.
+
+## Acceso para revisión
+
+Antes de enviar a revisión se deben preparar cuentas exclusivas, con información ficticia y sin datos comerciales reales, para los roles que Google necesite recorrer. Como mínimo debe existir un acceso Cliente y, si se pretende que Google revise las funciones internas, accesos de Administrador y Empleado.
+
+- Las credenciales deben permanecer válidas durante toda la revisión.
+- El Administrador de revisión no debe depender de un segundo factor que Google no pueda completar.
+- Las instrucciones de App Access deben explicar brevemente cómo entrar y qué rol corresponde a cada credencial.
+- Las cuentas de revisión no deben exponer información real de clientes, empleados, obras ni comprobantes.
 
 ## Borrador de Seguridad de los datos
 
@@ -79,5 +92,6 @@ No debe marcarse una solicitud como resuelta si el procedimiento anterior no fue
 - SDK Android 16: https://developer.android.com/about/versions/16/setup-sdk
 - Eliminación de cuentas: https://support.google.com/googleplay/android-developer/answer/13327111
 - Datos de usuario / privacidad: https://support.google.com/googleplay/android-developer/answer/10144311
+- Seguridad de los datos: https://support.google.com/googleplay/android-developer/answer/10787469
 - Acceso para revisión: https://support.google.com/googleplay/android-developer/answer/9859455
 - Pruebas para nuevas cuentas personales: https://support.google.com/googleplay/android-developer/answer/14151465
