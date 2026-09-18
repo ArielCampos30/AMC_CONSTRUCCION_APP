@@ -5,6 +5,9 @@
   "compatibility_date": "2026-09-18",
   "workers_dev": true,
   "preview_urls": true,
+  "assets": {
+    "directory": "./public"
+  },
   "vars": {
     "ORIGIN_URL": "https://amc-o0xb.onrender.com",
     "PROBE_TIMEOUT_MS": "900",
