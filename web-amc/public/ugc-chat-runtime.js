@@ -23,11 +23,12 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
    for(const control of controls.filter(item=>item.dataset.ugcDisabled==='1')){delete control.dataset.ugcDisabled;control.disabled=false;}
   }
  };
+ const ownsBlockSide=item=>state().user?.role==='admin'?item.blockedByRole==='admin':item.blockedByUserId===state().user?.id;
  const decorateForm=form=>{
   const {scope,participantId}=contextForForm(form);if(!participantId)return;
   const log=form.closest('.conversation,.compact-thread')?.querySelector('.message-log')||form.parentElement?.querySelector('.message-log');if(!log)return;
   let controls=log.querySelector(':scope > .ugc-chat-controls');if(!controls){controls=document.createElement('div');controls.className='ugc-chat-controls';log.prepend(controls);}
-  const blocks=activeBlocks(scope,participantId),self=blocks.find(item=>item.blockedByUserId===state().user?.id),other=blocks.find(item=>item.blockedByUserId!==state().user?.id),mode=self?'self':other?'other':'open';
+  const blocks=activeBlocks(scope,participantId),self=blocks.find(ownsBlockSide),other=blocks.find(item=>!ownsBlockSide(item)),mode=self?'self':other?'other':'open';
   if(controls.dataset.mode!==mode||controls.dataset.participantId!==participantId){
    controls.dataset.mode=mode;controls.dataset.participantId=participantId;controls.replaceChildren();
    const label=document.createElement('small');label.textContent='Seguridad de la conversación';controls.append(label);
