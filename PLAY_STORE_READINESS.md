@@ -20,12 +20,35 @@ Fecha de auditoría: 2026-09-18
 
 - Target Android 16 / API 36 para envíos posteriores al 31 de agosto de 2026.
 - Política de privacidad pública: `https://amcconstrucciones.com.ar/privacidad.html`.
+- Términos de uso públicos: `https://amcconstrucciones.com.ar/terminos.html`.
 - Recurso web de eliminación de cuenta: `https://amcconstrucciones.com.ar/eliminar-cuenta.html`.
 - Ruta autenticada dentro de AMC para solicitar eliminación de cuenta.
 - La solicitud web no borra cuentas sin verificar identidad y no revela si un correo tiene una cuenta registrada.
-- Política de privacidad accesible desde el perfil dentro de la app mediante el dominio público oficial.
+- Política de privacidad y Términos accesibles desde el perfil dentro de la app mediante el dominio público oficial.
+- Las cuentas nuevas aceptan expresamente Términos de uso y Política de privacidad durante el registro.
+- Las cuentas Cliente/Empleado creadas antes de la versión vigente deben aceptar la versión actual antes de volver a enviar contenido generado por el usuario.
+- La aceptación se registra con usuario, versión y fecha.
+- Chat Cliente ↔ Administración y Empleado ↔ Administración incluyen reporte de mensajes y bloqueo/desbloqueo de la conversación.
+- El bloqueo afecta sólo el envío de mensajes de chat; no bloquea presupuestos, pagos, estados de obra ni avisos operativos.
+- Los reportes llegan a una bandeja de moderación de Administración y pueden marcarse como revisados.
+- Las reseñas de clientes no se publican automáticamente: requieren aprobación previa de Administración.
+- Las reseñas publicadas pueden reportarse para moderación.
 - La landing informa el tratamiento de datos antes de enviar una consulta y enlaza la política de privacidad.
 - La landing enlaza públicamente la política de privacidad y el recurso de eliminación de cuenta.
+
+## Contenido generado por usuarios (UGC)
+
+AMC contiene UGC limitado al contexto del servicio: mensajes, imágenes, reseñas, informes y documentación aportada por personas usuarias. La implementación vigente aplica estas medidas:
+
+- términos que prohíben contenido ilegal, amenazas, acoso, discriminación, contenido sexual/explotativo, exposición indebida de datos personales, suplantación, spam/fraude/malware e infracciones de derechos de terceros;
+- aceptación explícita y versionada antes de nuevos aportes en producción;
+- reporte in-app de mensajes y reseñas;
+- bloqueo/desbloqueo para chats 1 a 1;
+- revisión administrativa de reportes;
+- moderación previa de reseñas antes de publicación pública;
+- conservación del funcionamiento operativo de presupuestos/obras aunque una conversación se encuentre bloqueada.
+
+Al completar Play Console, la sección de políticas y cualquier pregunta sobre UGC debe describir estas funciones tal como están implementadas, sin declarar mecanismos adicionales que no existan.
 
 ## Pendientes de Play Console
 
@@ -58,10 +81,11 @@ Antes de enviar a revisión se deben preparar cuentas exclusivas, con informaci�
 Debe verificarse nuevamente al completar Play Console. AMC trata actualmente, según la función utilizada:
 
 - Información personal: nombre, correo, teléfono, localidad y dirección ingresada por el usuario.
-- Contenido del usuario: solicitudes, mensajes, fotos, archivos y documentación de obra.
+- Contenido del usuario: solicitudes, mensajes, fotos, archivos, reseñas, informes y documentación de obra.
 - Información comercial: presupuestos, obras, materiales, comprobantes y registros relacionados con el servicio.
 - Identificadores técnicos: sesión, dispositivo y token de notificaciones.
 - Datos técnicos de seguridad/diagnóstico necesarios para funcionamiento y prevención de abuso.
+- Datos de seguridad y moderación: aceptación de términos, reportes de contenido y bloqueos de conversación.
 
 AMC no solicita permisos Android para contactos, SMS, llamadas ni ubicación precisa del dispositivo.
 
@@ -93,5 +117,6 @@ No debe marcarse una solicitud como resuelta si el procedimiento anterior no fue
 - Eliminación de cuentas: https://support.google.com/googleplay/android-developer/answer/13327111
 - Datos de usuario / privacidad: https://support.google.com/googleplay/android-developer/answer/10144311
 - Seguridad de los datos: https://support.google.com/googleplay/android-developer/answer/10787469
+- Contenido generado por usuarios: https://support.google.com/googleplay/android-developer/answer/9876937
 - Acceso para revisión: https://support.google.com/googleplay/android-developer/answer/9859455
 - Pruebas para nuevas cuentas personales: https://support.google.com/googleplay/android-developer/answer/14151465

@@ -1,7 +1,7 @@
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {clientIpFromRequest,createPersistentRateLimiter} from './request-runtime.mjs';
 
-export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,text,sha,send,fail,origin,readBody}){
+export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,text,sha,send,fail,origin,readBody,ugc}){
  const persistentRate=createPersistentRateLimiter({db,fail});
  const resolve=req=>{
   const cookie=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('amc_session='))?.slice(12);
@@ -25,7 +25,9 @@ export function authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate
   if(p.endsWith('register')){
    checkRate('ip:'+ip+':register',8);
    if(typeof b.passwordConfirm==='string'&&b.passwordConfirm!==password)fail(400,'Las contraseñas no coinciden.');
+   ugc.requireRegistrationAcceptance(b);
    u=addUser(email,password,text(b.name));
+   if(ugc.enforced||b.acceptTerms===true||['true','1','on','yes'].includes(String(b.acceptTerms||'').toLowerCase()))ugc.accept(u);
   }else{
    u=db.prepare('SELECT * FROM users WHERE email=?').get(email);
    const [salt,expected]=(u?.password||passwordHash('dummy-password')).split(':');

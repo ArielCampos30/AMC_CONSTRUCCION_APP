@@ -26,6 +26,7 @@ import {estimatorPageRoutes} from './estimator-page-routes.mjs';
 import {twoFactorFeatures} from './twofactor.mjs';
 import {authRoutes} from './auth-routes.mjs';
 import {createAuthCore} from './auth-core.mjs';
+import {ugcComplianceFeatures} from './ugc-compliance.mjs';
 import {chatFeatures} from './chat-core.mjs';
 import {clientRequestFeatures} from './client-requests.mjs';
 import {landingProspectFeatures} from './landing-prospects.mjs';
@@ -66,6 +67,7 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const {flushPush}=background;
  const notifications=notificationFeatures({db,all,put,origin,now,id,schedulePush:()=>queueMicrotask(()=>flushPush()),send,requireAdmin,text,fail});
  const {notify,notifyAdmins,markNoticeRead,markNoticesForRoute,route:notificationRoutes}=notifications;
+ const ugc=ugcComplianceFeatures({db,all,get,put,notifyAdmins,send,fail,text,now,sha,origin});
  const readMultipart=createMediaUploadParser({readRaw,text,fail});
  const verifyAdmin=createAdminVerifier(checkRate);
  const mediaStorage=mediaStorageFeatures({db,all,put,transaction,objectStore,text,fail,id,now});
@@ -74,7 +76,7 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const planning=planningFeatures({db,all,get,put,transaction,requireAdmin,notify,notifyAdmins,send,fail,text,validDate,now,sha});
  const lifecycle=quoteLifecycle({all,put,transaction,notify,notifyAdmins,clock});
  const twoFactor=twoFactorFeatures({db,all,put,transaction,requireAdmin,verifyAdmin,send,fail,now,keyValue:twoFactorKey});
- const authentication=authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,rate,text,sha,send,fail,origin,readBody});
+ const authentication=authRoutes({db,addUser,userView,passwordHash,twoFactor,checkRate,rate,text,sha,send,fail,origin,readBody,ugc});
  const recovery=recoveryFeatures({db,all,put,transaction,requireAdmin,verifyAdmin,notifyAdmins,send,fail,text,sha,passwordHash,origin,clock,sendRecovery});
  const closure=closureFeatures({db,all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,now,id,sha});
  const fieldwork=fieldworkFeatures({all,get,put,transaction,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,validDate,now,id,sha});
@@ -89,15 +91,15 @@ export function composeApp({services,serviceCatalog,dbPath=path.join(ROOT,'data/
  const whatsappCloud=whatsappCloudFeatures({db,all,put,transaction,requireAdmin,readRaw,send,fail,now,sha,config:{verifyToken:process.env.AMC_WHATSAPP_VERIFY_TOKEN,appSecret:process.env.AMC_WHATSAPP_APP_SECRET,phoneNumberId:process.env.AMC_WHATSAPP_PHONE_NUMBER_ID,businessAccountId:process.env.AMC_WHATSAPP_BUSINESS_ACCOUNT_ID}});
  const handleQuoteWork=quoteWorkRoutes({db,all,get,put,transaction,own,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,optionalAmount,validDate,now,id,sha,lifecycle});
  const handleFeature=featureRoutes({db,all,get,put,transaction,own,chatOwn,requireAdmin,safeFile,notify,notifyAdmins,send,fail,text,amount,validDate,now,id,sha,planning,markNoticesForRoute});
- const handleState=stateRoutes({all,activeUsers,userView,chatSummary,appearance,planning,services,serviceCatalog,team,purchases,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,beginStateSnapshot,endStateSnapshot,send});
+ const handleState=stateRoutes({all,activeUsers,userView,chatSummary,appearance,planning,services,serviceCatalog,team,purchases,fieldwork,recovery,closure,staffMessages,staffUnread,staffReadByAdmin,staffReadByEmployee,canAccessWork,employeeWork,clientChatIds,publicQuote,publicWork,systemStatus,twoFactor,lifecycle,ugc,beginStateSnapshot,endStateSnapshot,send});
  const handleCommunity=communityRoutes({db,all,get,put,requireAdmin,safeFile,notifyAdmins,send,fail,text,services,now,id});
  const handleAdminUtility=adminUtilityRoutes({db,all,get,put,transaction,requireAdmin,safeFile,send,fail,text,sha,now,id});
- const handleProfile=profileRoutes({db,put,send,fail,text});
+ const handleProfile=profileRoutes({db,put,send,fail,text,ugc});
  const handleMediaUpload=mediaUploadRoutes({mediaStorage,send});
  const handleDevices=deviceRoutes({db,transaction,sha,fail,validSubscription,send});
  const handlePublicSystem=publicSystemRoutes({db,remoteUrl,version,recentErrorCount,backupHealth,performanceHealth:performance.health,startedAt,demo,keys,services,send});
  const handleEstimatorPage=estimatorPageRoutes({ROOT,all,requireAdmin,readFileSync,path});
  const staticFiles=staticFileRoutes({ROOT,path,readFileSync,staticResponse,send,fail,version});
- const handle=createRequestDispatcher({origin,staticFiles,authentication,fail,checkRate,readBody,recovery,landingProspects,whatsappCloud,handlePublicSystem,handleState,mediaAccess,readMultipart,twoFactor,chat,planning,handleAdminUtility,appearance,closure,fieldwork,team,purchases,handleFeature,clientRequests,handleProfile,handleMediaUpload,handleQuoteWork,handleCommunity,notificationRoutes,handleDevices,handleEstimatorPage,send});
+ const handle=createRequestDispatcher({origin,staticFiles,authentication,fail,checkRate,readBody,recovery,landingProspects,whatsappCloud,handlePublicSystem,handleState,mediaAccess,readMultipart,twoFactor,ugc,chat,planning,handleAdminUtility,appearance,closure,fieldwork,team,purchases,handleFeature,clientRequests,handleProfile,handleMediaUpload,handleQuoteWork,handleCommunity,notificationRoutes,handleDevices,handleEstimatorPage,send});
  const server=createHttpServer({handle,send,recentServerErrors,recentErrorCount,recordPerformance:performance.record});background.attach({server,lifecycle,cleanupOrphanFiles});return {server,db,addUser,flushPush,processQuotes:lifecycle.run,cleanupOrphanFiles};
 }

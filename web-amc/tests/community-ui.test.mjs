@@ -25,9 +25,10 @@ test('reseñas y referidos se renderizan desde el módulo sin mover sus acciones
  assert.match(html,/Enviar reseña/);
  assert.match(html,/La reseña se publica después de revisión/);
 
- state={user:{id:'admin-1',role:'admin'},works:[],reviews:[{id:'r1',name:'Ana',rating:5,text:'Excelente trabajo',date:'2026-09-09'}],referrals:[]};
+ state={user:{id:'admin-1',role:'admin'},works:[],reviews:[{id:'r1',name:'Ana',rating:5,text:'Excelente trabajo',date:'2026-09-09'}],referrals:[],ugc:{reports:[],blocks:[]}};
  html=ui.reviews();
- assert.match(html,/Pendientes de revisión/);
+ assert.match(html,/Pendientes de publicación/);
+ assert.match(html,/Reportes de contenido/);
  assert.match(html,/id="pending-reviews-admin"/);
  assert.match(html,/Excelente trabajo/);
 
