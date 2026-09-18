@@ -42,9 +42,9 @@ export function ugcComplianceFeatures({db,all,get,put,notifyAdmins,send,fail,tex
   return {blocked:rows.length>0,blockedBySelf:rows.some(item=>item.blockedByUserId===user.id),blockedByOther:rows.some(item=>item.blockedByUserId!==user.id),rows};
  };
  const setBlock=(user,body)=>{
-  const access=conversationAccess(user,text(body.scope,20),body.participantId),id='ugc-block-'+sha(user.id+':'+access.scope+':'+access.participantId),previous=all('ugcBlock',user.id).find(item=>item.id===id),active=body.blocked!==false;
+  const access=conversationAccess(user,text(body.scope,20),body.participantId),id='ugc-block-'+sha(user.id+':'+access.scope+':'+access.participantId),previous=all('ugcBlock').find(item=>item.id===id),active=body.blocked!==false;
   const record={id,scope:access.scope,participantId:access.participantId,blockedByUserId:user.id,blockedByName:user.name,blockedByRole:user.role,targetLabel:access.targetLabel,active,createdAt:previous?.createdAt||now(),updatedAt:now()};
-  put('ugcBlock',user.id,record);
+  put('ugcBlock',access.participantId,record);
   return record;
  };
  const requireConversationOpen=(user,scope,participantId)=>{
