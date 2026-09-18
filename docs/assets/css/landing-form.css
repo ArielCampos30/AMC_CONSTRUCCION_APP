@@ -73,6 +73,18 @@
   box-shadow: 0 0 0 3px rgba(242,183,5,.11);
   background: #141414;
 }
+.contact-privacy {
+  margin: 0;
+  color: var(--muted);
+  font-size: .84rem;
+  line-height: 1.5;
+}
+.contact-privacy a {
+  color: #f4d96f;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .contact-submit {
   justify-self: start;
   min-width: 170px;
