@@ -43,6 +43,12 @@ function makeDeps(overrides={}){
   mediaAccess:{async serve(){return false;}},
   async readMultipart(){events.push('read-multipart');return {file:true};},
   twoFactor:{async route(){return false;}},
+  ugc:{
+   needsAcceptanceForPath(){return false;},
+   requireAccepted(){events.push('ugc-accepted');},
+   guardMessage(){},
+   route(){return false;}
+  },
   chat:{routeBeforeBody(){events.push('chat-before');return false;},routeAfterBody(){events.push('chat-after');return false;}},
   planning:{validateTime(){events.push('validate-time');},async route(){return false;}},
   handleAdminUtility(){events.push('admin-utility');return false;},
@@ -93,7 +99,21 @@ test('dispatcher keeps authenticated API order around body parsing and route cha
  assert.deepEqual(events,['resolve','rate:u1:api:400','chat-before','read-body','chat-after','admin-utility']);
 });
 
-test('dispatcher keeps employee chat restriction after chat parsing and before business routes',async()=>{
+test('dispatcher runs UGC acceptance before body and UGC message guard after body',async()=>{
+ const {events,deps}=makeDeps();
+ deps.ugc={
+  needsAcceptanceForPath(){events.push('ugc-check');return true;},
+  requireAccepted(){events.push('ugc-accepted');},
+  guardMessage(){events.push('ugc-message-guard');},
+  route(){events.push('ugc-route');return false;}
+ };
+ deps.handleAdminUtility=()=>{events.push('admin-utility');return true;};
+ const res=response();
+ await createRequestDispatcher(deps)(request({url:'/api/example',method:'POST'}),res);
+ assert.deepEqual(events,['resolve','rate:u1:api:400','chat-before','ugc-check','ugc-accepted','read-body','ugc-message-guard','ugc-route','chat-after','admin-utility']);
+});
+
+test('dispatcher keeps employee chat restriction after UGC and chat parsing and before business routes',async()=>{
  const {events,deps}=makeDeps();
  deps.authentication={...deps.authentication,resolve(){events.push('resolve');return {session:{csrf:'csrf'},user:{id:'employee-1',role:'employee'}};}};
  const res=response();
