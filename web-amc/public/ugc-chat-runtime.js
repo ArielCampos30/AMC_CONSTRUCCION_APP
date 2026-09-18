@@ -16,7 +16,7 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
   const controls=[...form.querySelectorAll('textarea,input[type=file],button[type=submit]')];
   if(message){
    if(!gate){gate=document.createElement('p');gate.className='ugc-chat-gate';gate.setAttribute('role','status');form.prepend(gate);}
-   gate.innerHTML=message;
+   if(gate.innerHTML!==message)gate.innerHTML=message;
    for(const control of controls)if(!control.disabled){control.dataset.ugcDisabled='1';control.disabled=true;}
   }else{
    gate?.remove();
@@ -27,12 +27,14 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
   const {scope,participantId}=contextForForm(form);if(!participantId)return;
   const log=form.closest('.conversation,.compact-thread')?.querySelector('.message-log')||form.parentElement?.querySelector('.message-log');if(!log)return;
   let controls=log.querySelector(':scope > .ugc-chat-controls');if(!controls){controls=document.createElement('div');controls.className='ugc-chat-controls';log.prepend(controls);}
-  const blocks=activeBlocks(scope,participantId),self=blocks.find(item=>item.blockedByUserId===state().user?.id),other=blocks.find(item=>item.blockedByUserId!==state().user?.id);
-  controls.replaceChildren();
-  const label=document.createElement('small');label.textContent='Seguridad de la conversación';controls.append(label);
-  if(self){const button=document.createElement('button');button.type='button';button.className='outline ugc-chat-block';button.dataset.ugcBlock='1';button.dataset.scope=scope;button.dataset.participantId=participantId;button.dataset.blocked='false';button.textContent='Desbloquear chat';controls.append(button);}
-  else if(!other){const button=document.createElement('button');button.type='button';button.className='outline ugc-chat-block';button.dataset.ugcBlock='1';button.dataset.scope=scope;button.dataset.participantId=participantId;button.dataset.blocked='true';button.textContent='Bloquear chat';controls.append(button);}
-  else{const blocked=document.createElement('span');blocked.className='ugc-chat-blocked';blocked.textContent='Chat bloqueado por la otra parte.';controls.append(blocked);}
+  const blocks=activeBlocks(scope,participantId),self=blocks.find(item=>item.blockedByUserId===state().user?.id),other=blocks.find(item=>item.blockedByUserId!==state().user?.id),mode=self?'self':other?'other':'open';
+  if(controls.dataset.mode!==mode||controls.dataset.participantId!==participantId){
+   controls.dataset.mode=mode;controls.dataset.participantId=participantId;controls.replaceChildren();
+   const label=document.createElement('small');label.textContent='Seguridad de la conversación';controls.append(label);
+   if(self){const button=document.createElement('button');button.type='button';button.className='outline ugc-chat-block';button.dataset.ugcBlock='1';button.dataset.scope=scope;button.dataset.participantId=participantId;button.dataset.blocked='false';button.textContent='Desbloquear chat';controls.append(button);}
+   else if(!other){const button=document.createElement('button');button.type='button';button.className='outline ugc-chat-block';button.dataset.ugcBlock='1';button.dataset.scope=scope;button.dataset.participantId=participantId;button.dataset.blocked='true';button.textContent='Bloquear chat';controls.append(button);}
+   else{const blocked=document.createElement('span');blocked.className='ugc-chat-blocked';blocked.textContent='Chat bloqueado por la otra parte.';controls.append(blocked);}
+  }
   if(state().ugc?.termsRequired)setComposerGate(form,'Antes de enviar contenido, aceptá los <a href="#perfil">Términos de uso desde Mi perfil</a>.');
   else if(blocks.length)setComposerGate(form,'Este chat está bloqueado. Los avisos operativos, presupuestos y novedades de obra siguen funcionando normalmente.');
   else setComposerGate(form,'');
@@ -43,9 +45,14 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
    (article.querySelector('.message-meta')||article).append(button);
   }
  };
- const decorate=root=>{if(!root?.querySelectorAll)return;for(const form of root.querySelectorAll('.message-form'))decorateForm(form);};
+ const observe=()=>{if(observer&&typeof document!=='undefined'&&document.body)observer.observe(document.body,{childList:true,subtree:true});};
+ const decorate=root=>{
+  if(!root?.querySelectorAll)return;
+  observer?.disconnect();
+  try{for(const form of root.querySelectorAll('.message-form'))decorateForm(form);}finally{observe();}
+ };
  const schedule=()=>{if(queued||typeof document==='undefined')return;queued=true;queueMicrotask(()=>{queued=false;decorate(document);});};
- const confirmAction=async(message,options)=>typeof window?.AMCConfirm==='function'?window.AMCConfirm(message,options):globalThis.confirm?.(message)!==false;
+ const confirmAction=async(message,options)=>typeof globalThis.window?.AMCConfirm==='function'?globalThis.window.AMCConfirm(message,options):globalThis.confirm?.(message)!==false;
  const click=async event=>{
   const report=event.target.closest?.('[data-ugc-report]');
   if(report){
@@ -67,7 +74,7 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
  const attach=()=>{
   if(attached||typeof document==='undefined')return;attached=true;
   document.addEventListener('click',click);
-  if(typeof MutationObserver!=='undefined'&&document.body){observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true});}
+  if(typeof MutationObserver!=='undefined'&&document.body){observer=new MutationObserver(schedule);observe();}
   decorate(document);
  };
  return {afterRender(){if(typeof document==='undefined')return;attach();decorate(document);},decorate};
