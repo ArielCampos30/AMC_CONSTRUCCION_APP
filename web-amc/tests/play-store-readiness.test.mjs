@@ -70,6 +70,10 @@ test('landing informa privacidad, publica enlaces legales y la app usa la polít
   readFile(new URL('../../docs/assets/css/landing-form.css',import.meta.url),'utf8')
  ]);
  assert.match(privacy,/Política de privacidad/);
+ assert.match(privacy,/Ariel Maximiliano Campos/);
+ assert.match(privacy,/Ataliva Herrera 468, La Falda, Córdoba, Argentina/);
+ assert.match(privacy,/camposariel313@gmail\.com/);
+ assert.match(privacy,/18 de septiembre de 2026/);
  assert.match(privacy,/eliminar-cuenta\.html/);
  assert.match(deletion,/accountDeletionForm/);
  assert.match(script,/api\/public\/account-deletion/);
