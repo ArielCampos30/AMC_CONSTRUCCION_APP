@@ -11,6 +11,14 @@ export function shouldOfferNotificationOnboarding({role='',deviceId='',nativeEna
  return Number(snoozeUntil||0)<=Number(now||0);
 }
 
+export function holdFloatingChatOpen(documentRef=document){
+ const chat=documentRef?.getElementById?.('amc-chat-dialog');
+ if(!chat?.open||typeof chat.close!=='function')return ()=>{};
+ const hadOwnClose=Object.prototype.hasOwnProperty.call(chat,'close'),originalClose=chat.close;
+ chat.close=()=>{};
+ return ()=>{if(hadOwnClose)chat.close=originalClose;else delete chat.close;};
+}
+
 const stopStream=stream=>stream?.getTracks?.().forEach(track=>track.stop());
 const cameraErrorMessage=error=>{
  if(error?.name==='NotAllowedError'||error?.name==='SecurityError')return 'No se habilitó la cámara. Podés permitirla desde los permisos del navegador o usar Adjuntar foto.';
@@ -31,6 +39,7 @@ export async function capturePhotoFromWebCamera({documentRef=document,navigatorR
  if(!media?.getUserMedia)throw Error('Este navegador no permite usar la cámara directamente.');
  installStyles();
  if(cameraDialog){try{cameraDialog.close();}catch{}cameraDialog.remove();cameraDialog=null;}
+ const restoreFloatingChat=holdFloatingChatOpen(documentRef);
  const dialog=documentRef.createElement('dialog');dialog.className='amc-device-dialog amc-camera-dialog';dialog.setAttribute('aria-label','Cámara AMC');
  const shell=documentRef.createElement('div');shell.className='amc-camera-shell';
  const stage=documentRef.createElement('div');stage.className='amc-camera-stage';
@@ -46,7 +55,7 @@ export async function capturePhotoFromWebCamera({documentRef=document,navigatorR
  const use=documentRef.createElement('button');use.type='button';use.className='primary amc-camera-hidden';use.textContent='Usar foto';
  toolbar.append(cancel,switchCamera,capture,retry,use);shell.append(stage,toolbar);dialog.append(shell);documentRef.body.append(dialog);cameraDialog=dialog;
  let stream=null,devices=[],deviceIndex=-1,photoFile=null,previewUrl='';
- const cleanup=()=>{stopStream(stream);stream=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';dialog.remove();if(cameraDialog===dialog)cameraDialog=null;};
+ const cleanup=()=>{stopStream(stream);stream=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl='';dialog.remove();restoreFloatingChat();if(cameraDialog===dialog)cameraDialog=null;};
  const constraintsFor=deviceId=>({audio:false,video:deviceId?{deviceId:{exact:deviceId}}:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
  const start=async deviceId=>{
   stopStream(stream);stream=null;errorText.classList.add('amc-camera-hidden');video.classList.remove('amc-camera-hidden');preview.classList.add('amc-camera-hidden');
