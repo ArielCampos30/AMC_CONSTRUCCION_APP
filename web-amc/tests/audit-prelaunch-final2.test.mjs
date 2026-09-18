@@ -49,6 +49,7 @@ test('rutas sensibles requieren sesión y deep links cruzados no exponen vistas 
   assert.ok(!resolveAppPage(route,client).view.startsWith('admin-'),`client ${route}`);
   assert.ok(!resolveAppPage(route,employee).view.startsWith('admin-'),`employee ${route}`);
  }
+ assert.notEqual(resolveAppPage('mensajes',employee).view,'features','Empleado no debe tener una sección separada de chat de clientes; usa únicamente el chat flotante con Administración.');
 });
 
 test('acciones literales renderizadas tienen referencia de manejo adicional',async()=>{
