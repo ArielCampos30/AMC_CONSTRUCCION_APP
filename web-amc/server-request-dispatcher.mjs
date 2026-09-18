@@ -35,7 +35,7 @@ export function createRequestDispatcher({
  handleEstimatorPage,
  send
 }){
- const landingOrigin=String(process.env.AMC_LANDING_ORIGIN||'https://amc-construcciones.onrender.com').replace(/\/+$/,'');
+ const landingOrigin=String(process.env.AMC_LANDING_ORIGIN||'https://amcconstrucciones.com.ar').replace(/\/+$/,'');
  return async function handle(req,res){
   const url=new URL(req.url,origin),p=url.pathname,method=req.method;
   applyHttpSecurity({res,origin,pathname:p});

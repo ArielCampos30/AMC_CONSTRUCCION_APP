@@ -17,8 +17,8 @@ Fecha de auditoría: 2026-09-17
 ## Requisitos de Google Play cubiertos en código
 
 - Target Android 16 / API 36 para envíos posteriores al 31 de agosto de 2026.
-- Política de privacidad pública: `https://amc-construcciones.onrender.com/privacidad.html`.
-- Recurso web de eliminación de cuenta: `https://amc-construcciones.onrender.com/eliminar-cuenta.html`.
+- Política de privacidad pública: `https://amcconstrucciones.com.ar/privacidad.html`.
+- Recurso web de eliminación de cuenta: `https://amcconstrucciones.com.ar/eliminar-cuenta.html`.
 - Ruta autenticada dentro de AMC para solicitar eliminación de cuenta.
 - La solicitud web no borra cuentas sin verificar identidad y no revela si un correo tiene una cuenta registrada.
 - Política de privacidad accesible desde el perfil dentro de la app.

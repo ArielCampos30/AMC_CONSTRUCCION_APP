@@ -1,5 +1,5 @@
 const WHATSAPP_NUMBER = "5493548633464";
-const PROSPECT_API = "https://amc-o0xb.onrender.com/api/public/prospects";
+const PROSPECT_API = "https://app.amcconstrucciones.com.ar/api/public/prospects";
 const CAMPAIGN_STORAGE_KEY = "amc_landing_campaign_v1";
 
 const params = new URLSearchParams(window.location.search);

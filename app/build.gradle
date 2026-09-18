@@ -7,7 +7,7 @@ def keystorePath = System.getenv('AMC_KEYSTORE_PATH')
 def storePasswordValue = System.getenv('AMC_STORE_PASSWORD')
 def keyAliasValue = System.getenv('AMC_KEY_ALIAS')
 def keyPasswordValue = System.getenv('AMC_KEY_PASSWORD')
-def backendUrlValue = System.getenv('AMC_BACKEND_URL') ?: 'https://amc-o0xb.onrender.com/'
+def backendUrlValue = System.getenv('AMC_BACKEND_URL') ?: 'https://app.amcconstrucciones.com.ar/'
 
 android {
     namespace 'com.amc.construcciones'

@@ -2,7 +2,7 @@
  const form=document.getElementById('accountDeletionForm');
  const status=document.getElementById('accountDeletionStatus');
  if(!form||!status)return;
- const endpoint='https://amc-o0xb.onrender.com/api/public/account-deletion';
+ const endpoint='https://app.amcconstrucciones.com.ar/api/public/account-deletion';
  const submissionId=()=>{
   if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID().replace(/[^\w-]/g,'');
   return 'web-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12);
