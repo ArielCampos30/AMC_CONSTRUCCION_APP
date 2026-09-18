@@ -108,15 +108,15 @@ jobs:
 
       - name: Renombrar APK
         run: |
-          cp app/build/outputs/apk/release/app-release.apk AMC_Construcciones_v1.0.0.apk
-          cp app/build/outputs/bundle/release/app-release.aab AMC_Construcciones_v1.0.0.aab
+          cp app/build/outputs/apk/release/app-release.apk AMC_Construcciones_v1.0.1.apk
+          cp app/build/outputs/bundle/release/app-release.aab AMC_Construcciones_v1.0.1.aab
 
       - name: Guardar APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: AMC-Construcciones-v1.0.0-release
+          name: AMC-Construcciones-v1.0.1-release
           path: |
-            AMC_Construcciones_v1.0.0.apk
-            AMC_Construcciones_v1.0.0.aab
+            AMC_Construcciones_v1.0.1.apk
+            AMC_Construcciones_v1.0.1.aab
           if-no-files-found: error
           retention-days: 30

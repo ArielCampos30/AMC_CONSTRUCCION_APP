@@ -41,7 +41,10 @@ test('app, Android y monitor usan el origen público app.amcconstrucciones.com.a
  assert.match(blueprint,/AMC_ORIGIN[\s\S]*https:\/\/app\.amcconstrucciones\.com\.ar/);
  assert.match(blueprint,/AMC_LANDING_ORIGIN[\s\S]*https:\/\/amcconstrucciones\.com\.ar/);
  assert.match(gradle,/https:\/\/app\.amcconstrucciones\.com\.ar\//);
+ assert.match(gradle,/versionCode\s+8/);
+ assert.match(gradle,/versionName\s+'1\.0\.1'/);
  assert.match(androidWorkflow,/AMC_BACKEND_URL: https:\/\/app\.amcconstrucciones\.com\.ar\//);
+ assert.match(androidWorkflow,/AMC-Construcciones-v1\.0\.1-release/);
  assert.match(monitor,/https:\/\/app\.amcconstrucciones\.com\.ar\/healthz/);
  for(const content of [dispatcher,blueprint,gradle,androidWorkflow,monitor]) assert.doesNotMatch(content,/amc-o0xb\.onrender\.com/);
 });
