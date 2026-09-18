@@ -4,7 +4,7 @@ D.5A deja AMC preparado para recibir webhooks oficiales de Meta y mostrarlos en 
 
 ## Callback de producción
 
-`https://amc-o0xb.onrender.com/api/webhooks/whatsapp`
+`https://app.amcconstrucciones.com.ar/api/webhooks/whatsapp`
 
 ## Variables privadas de Render
 
