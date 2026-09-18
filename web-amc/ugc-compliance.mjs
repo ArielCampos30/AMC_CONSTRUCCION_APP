@@ -37,12 +37,13 @@ export function ugcComplianceFeatures({db,all,get,put,notifyAdmins,send,fail,tex
   return {scope,participantId,targetLabel:user.role==='admin'?employee.name:'AMC / Administración'};
  };
  const activeBlocks=(scope,participantId)=>all('ugcBlock').filter(item=>item.active&&item.scope===scope&&item.participantId===participantId);
+ const ownsBlockSide=(user,item)=>user.role==='admin'?item.blockedByRole==='admin':item.blockedByUserId===user.id;
  const blockState=(user,scope,participantId)=>{
   const rows=activeBlocks(scope,participantId);
-  return {blocked:rows.length>0,blockedBySelf:rows.some(item=>item.blockedByUserId===user.id),blockedByOther:rows.some(item=>item.blockedByUserId!==user.id),rows};
+  return {blocked:rows.length>0,blockedBySelf:rows.some(item=>ownsBlockSide(user,item)),blockedByOther:rows.some(item=>!ownsBlockSide(user,item)),rows};
  };
  const setBlock=(user,body)=>{
-  const access=conversationAccess(user,text(body.scope,20),body.participantId),id='ugc-block-'+sha(user.id+':'+access.scope+':'+access.participantId),previous=all('ugcBlock').find(item=>item.id===id),active=body.blocked!==false;
+  const access=conversationAccess(user,text(body.scope,20),body.participantId),side=user.role==='admin'?'admin':user.id,id='ugc-block-'+sha(side+':'+access.scope+':'+access.participantId),previous=all('ugcBlock').find(item=>item.id===id),active=body.blocked!==false;
   const record={id,scope:access.scope,participantId:access.participantId,blockedByUserId:user.id,blockedByName:user.name,blockedByRole:user.role,targetLabel:access.targetLabel,active,createdAt:previous?.createdAt||now(),updatedAt:now()};
   put('ugcBlock',access.participantId,record);
   return record;
