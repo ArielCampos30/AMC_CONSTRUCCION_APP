@@ -25,4 +25,6 @@ services:
       - key: AMC_FIREBASE_CREDENTIALS_JSON
         sync: false
       - key: AMC_ORIGIN
-        value: https://amc-o0xb.onrender.com
+        value: https://app.amcconstrucciones.com.ar
+      - key: AMC_LANDING_ORIGIN
+        value: https://amcconstrucciones.com.ar
