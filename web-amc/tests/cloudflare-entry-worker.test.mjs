@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
 import {createHandler} from '../../cloudflare/amc-entry-worker/src/index.mjs';
 
+const root=new URL('../../',import.meta.url);
 const htmlRequest=(url='https://app.amcconstrucciones.com.ar/')=>new Request(url,{headers:{accept:'text/html,application/xhtml+xml','sec-fetch-mode':'navigate','sec-fetch-dest':'document'}});
 const env={ORIGIN_URL:'https://amc-o0xb.onrender.com',PROBE_TIMEOUT_MS:'500',WAKE_MAX_WAIT_MS:'60000'};
 
-test('muestra loader AMC si healthz todavía no está listo',async()=>{
+test('muestra loader AMC con el logo verde actual si healthz todavía no está listo',async()=>{
   const calls=[];
   const handle=createHandler({fetchImpl:async req=>{calls.push(req);return new Response('sleeping',{status:503});}});
   const response=await handle(htmlRequest(),env);
@@ -13,8 +15,14 @@ test('muestra loader AMC si healthz todavía no está listo',async()=>{
   assert.equal(response.status,200);
   assert.match(response.headers.get('cache-control'),/no-store/);
   assert.match(body,/Preparando tu espacio AMC/);
+  assert.match(body,/\/amc-logo-brand\.webp/);
+  assert.doesNotMatch(body,/#D7BA63/i);
   assert.doesNotMatch(body,/onrender\.com/);
   assert.equal(new URL(calls[0].url).pathname,'/healthz');
+
+  const config=JSON.parse(readFileSync(new URL('../../cloudflare/amc-entry-worker/wrangler.jsonc',import.meta.url),'utf8'));
+  assert.equal(config.assets.directory,'./public');
+  assert.ok(existsSync(new URL('../../cloudflare/amc-entry-worker/public/amc-logo-brand.webp',import.meta.url)));
 });
 
 test('wakeup-status informa ready sin reenviar cookies del usuario',async()=>{
