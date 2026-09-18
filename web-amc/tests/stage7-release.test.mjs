@@ -8,8 +8,9 @@ const read=path=>readFileSync(new URL(path,root),'utf8');
 
 test('release contracts keep production Android identity, signing and artifacts',()=>{
  const gradle=read('app/build.gradle'),activity=read('app/src/main/java/com/amc/construcciones/MainActivity.java'),manifest=read('app/src/main/AndroidManifest.xml'),workflow=read('.github/workflows/build-apk.yml');
- assert.match(gradle,/applicationId 'com\.amc\.construcciones'/);assert.match(gradle,/versionCode 8/);assert.match(gradle,/versionName '1\.0\.1'/);assert.match(gradle,/signingConfig signingConfigs\.release/);
+ assert.match(gradle,/applicationId 'com\.amc\.construcciones'/);assert.match(gradle,/versionCode 9/);assert.match(gradle,/versionName '1\.0\.2'/);assert.match(gradle,/signingConfig signingConfigs\.release/);
  assert.match(activity,/BuildConfig\.AMC_BACKEND_URL/);assert.doesNotMatch(activity,/file:\/\/\/android_asset/);assert.match(activity,/onShowFileChooser/);assert.match(activity,/ACTION_IMAGE_CAPTURE/);
+ assert.match(activity,/CookieManager\.getInstance\(\)/);assert.match(activity,/setAcceptCookie\(true\)/);assert.match(activity,/setAcceptThirdPartyCookies\(webView, false\)/);assert.match(activity,/CookieManager\.getInstance\(\)\.flush\(\)/);assert.match(activity,/@Override protected void onPause\(\)[\s\S]*persistCookies\(\)/);assert.match(activity,/@Override protected void onStop\(\)[\s\S]*persistCookies\(\)/);
  assert.match(activity,/params\.isCaptureEnabled\(\)/);assert.match(activity,/clearUnusedCameraFile/);assert.match(manifest,/@mipmap\/ic_launcher/);assert.match(read('app/src/main/res/values/strings.xml'),/AMC Construcciones/);
  const push=read('app/src/main/java/com/amc/construcciones/PushService.java');
  assert.match(activity,/requestNotifications/);assert.match(activity,/FirebaseMessaging/);assert.match(push,/amc_url/);
@@ -18,7 +19,7 @@ test('release contracts keep production Android identity, signing and artifacts'
  assert.match(manifest,/android:allowBackup="false"/);assert.match(manifest,/android:fullBackupContent="false"/);
  assert.match(push,/setData\(Uri\.parse\("amc:\/\/notice\//);assert.match(push,/PendingIntent\.getActivity\(this,notificationId/);assert.match(push,/amc_silent_v2/);assert.match(push,/setSilent\(true\)/);
  const webApp=read('web-amc/public/app.js');assert.match(webApp,/amc-native-registration/);assert.match(webApp,/if\(manual\)toast\('Notificaciones habilitadas/);assert.doesNotMatch(webApp,/toast\('Dispositivo registrado para notificaciones/);
- assert.match(workflow,/assembleRelease :app:bundleRelease/);assert.match(workflow,/apksigner verify/);assert.match(workflow,/AMC_KEYSTORE_B64/);assert.match(workflow,/AMC_GOOGLE_SERVICES_B64/);assert.match(workflow,/AMC-Construcciones-v1\.0\.1-release/);assert.doesNotMatch(workflow,/storePassword\s+['"][^'"]+['"]/);
+ assert.match(workflow,/assembleRelease :app:bundleRelease/);assert.match(workflow,/apksigner verify/);assert.match(workflow,/AMC_KEYSTORE_B64/);assert.match(workflow,/AMC_GOOGLE_SERVICES_B64/);assert.match(workflow,/AMC-Construcciones-v1\.0\.2-release/);assert.doesNotMatch(workflow,/storePassword\s+['"][^'"]+['"]/);
 });
 
 test('PWA release metadata, safe cache and iPhone install help are present',()=>{
