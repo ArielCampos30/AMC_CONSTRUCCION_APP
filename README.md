@@ -28,8 +28,9 @@ Cada bloque nuevo debe ejecutarse sobre **Landing** o **App** según el pedido. 
 - Repositorio: `ArielCampos30/AMC_CONSTRUCCION_APP`
 - Rama: `main`
 - Backend/Web: `web-amc`
-- Producción: `https://amc-o0xb.onrender.com`
-- Render mantiene el auto-deploy desactivado; sólo se despliega manualmente después de que CI queda verde.
+- Landing pública: `https://amcconstrucciones.com.ar`
+- App/API pública: `https://app.amcconstrucciones.com.ar`
+- Render mantiene el auto-deploy desactivado para la app; sólo se despliega manualmente después de que CI queda verde.
 
 La base canónica de producción es PostgreSQL en Supabase Virginia y se configura directamente mediante `AMC_DATABASE_URL`. El arranque normal de `server.mjs` no ejecuta migraciones regionales ni cambia la URL de base en memoria. Render no debe usar SQLite local para producción.
 
