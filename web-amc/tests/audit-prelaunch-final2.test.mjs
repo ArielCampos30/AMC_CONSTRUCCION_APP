@@ -1,24 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readdir,readFile} from 'node:fs/promises';
-import {join,relative} from 'node:path';
+import {access,readdir,readFile} from 'node:fs/promises';
+import {dirname,join,relative,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createApp} from '../server.mjs';
 import {getShellNavigation} from '../public/app-shell-navigation.js';
 import {resolveAppPage,isProtectedPage} from '../public/app-page-router.js';
 
-const here=fileURLToPath(new URL('.',import.meta.url));
 const publicDir=fileURLToPath(new URL('../public/',import.meta.url));
+const docsDir=fileURLToPath(new URL('../../docs/',import.meta.url));
 
-async function jsFiles(dir){
+async function filesMatching(dir,predicate){
  const out=[];
  for(const entry of await readdir(dir,{withFileTypes:true})){
   const path=join(dir,entry.name);
-  if(entry.isDirectory())out.push(...await jsFiles(path));
-  else if(entry.isFile()&&entry.name.endsWith('.js'))out.push(path);
+  if(entry.isDirectory())out.push(...await filesMatching(path,predicate));
+  else if(entry.isFile()&&predicate(entry.name,path))out.push(path);
  }
  return out;
 }
+const jsFiles=dir=>filesMatching(dir,name=>name.endsWith('.js'));
 
 test('navegación visible de cada rol resuelve sólo vistas permitidas',()=>{
  const stateFor=role=>({user:{id:role+'-1',role},requests:[],quotes:[],works:[]});
@@ -64,6 +65,34 @@ test('acciones literales renderizadas tienen referencia de manejo adicional',asy
   if(occurrences<2)suspicious.push(`${action} (${[...new Set(paths)].join(', ')})`);
  }
  assert.deepEqual(suspicious,[],'Posibles botones sin controlador: '+suspicious.join('; '));
+});
+
+test('landing y páginas legales no tienen assets locales rotos',async()=>{
+ const pages=['index.html','privacidad.html','eliminar-cuenta.html'];
+ for(const page of pages){
+  const path=join(docsDir,page),html=await readFile(path,'utf8');
+  const refs=[...html.matchAll(/(?:href|src)=["']([^"']+)["']/g)].map(m=>m[1]);
+  for(const ref of refs){
+   if(/^(?:https?:|mailto:|tel:|#|\/)/i.test(ref))continue;
+   const clean=ref.split(/[?#]/)[0];if(!clean)continue;
+   await assert.doesNotReject(access(resolve(dirname(path),clean)),`${page} -> ${ref}`);
+  }
+ }
+});
+
+test('runtime público no conserva el dominio legacy de privacidad',async()=>{
+ const paths=[...await filesMatching(publicDir,name=>/\.(?:js|html|css)$/.test(name)),...await filesMatching(docsDir,name=>/\.(?:js|html|css)$/.test(name))];
+ for(const path of paths){
+  const text=await readFile(path,'utf8');
+  assert.doesNotMatch(text,/amc-construcciones\.onrender\.com\/privacidad\.html/,relative(resolve(publicDir,'..','..'),path));
+ }
+ const privacy=await readFile(join(docsDir,'privacidad.html'),'utf8');
+ assert.match(privacy,/Ariel Maximiliano Campos/);
+ assert.match(privacy,/Ataliva Herrera 468, La Falda, Córdoba, Argentina/);
+ assert.match(privacy,/camposariel313@gmail\.com/);
+ const landing=await readFile(join(docsDir,'index.html'),'utf8');
+ assert.match(landing,/Política de privacidad/);
+ assert.match(landing,/Eliminación de cuenta/);
 });
 
 async function fixture(){
