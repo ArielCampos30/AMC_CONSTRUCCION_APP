@@ -5,15 +5,23 @@ import {createApp} from '../server.mjs';
 
 const parseDocs=(db,kind)=>db.prepare('SELECT owner,body FROM docs WHERE kind=?').all(kind).map(row=>({owner:row.owner,value:JSON.parse(row.body)}));
 
-test('Android apunta a API 36 y CI instala/verifica API 36',async()=>{
- const [gradle,workflow]=await Promise.all([
+test('Android apunta a API 36 y la documentación coincide con la release actual',async()=>{
+ const [gradle,workflow,readiness]=await Promise.all([
   readFile(new URL('../../app/build.gradle',import.meta.url),'utf8'),
-  readFile(new URL('../../.github/workflows/build-apk.yml',import.meta.url),'utf8')
+  readFile(new URL('../../.github/workflows/build-apk.yml',import.meta.url),'utf8'),
+  readFile(new URL('../../PLAY_STORE_READINESS.md',import.meta.url),'utf8')
  ]);
+ assert.match(gradle,/minSdk 29/);
  assert.match(gradle,/compileSdk 36/);
  assert.match(gradle,/targetSdk 36/);
+ assert.match(gradle,/versionCode 9/);
+ assert.match(gradle,/versionName '1\.0\.2'/);
  assert.match(workflow,/platforms;android-36/);
  assert.match(workflow,/build-tools;36\.0\.0/);
+ assert.match(readiness,/Versión Android: `1\.0\.2`/);
+ assert.match(readiness,/`versionCode`: `9`/);
+ assert.match(readiness,/Android mínimo: API 29/);
+ assert.doesNotMatch(readiness,/versionCode 7/);
 });
 
 test('recurso web de eliminación publica una solicitud sin exponer si la cuenta existe',async()=>{
@@ -52,16 +60,24 @@ test('recurso web de eliminación publica una solicitud sin exponer si la cuenta
  }
 });
 
-test('landing publica privacidad y eliminación de cuenta y la app enlaza la política',async()=>{
- const [privacy,deletion,script,accountUi]=await Promise.all([
+test('landing informa privacidad, publica enlaces legales y la app usa la política canónica',async()=>{
+ const [landing,privacy,deletion,script,accountUi,formCss]=await Promise.all([
+  readFile(new URL('../../docs/index.html',import.meta.url),'utf8'),
   readFile(new URL('../../docs/privacidad.html',import.meta.url),'utf8'),
   readFile(new URL('../../docs/eliminar-cuenta.html',import.meta.url),'utf8'),
   readFile(new URL('../../docs/assets/js/account-deletion.js',import.meta.url),'utf8'),
-  readFile(new URL('../public/account-ui.js',import.meta.url),'utf8')
+  readFile(new URL('../public/account-ui.js',import.meta.url),'utf8'),
+  readFile(new URL('../../docs/assets/css/landing-form.css',import.meta.url),'utf8')
  ]);
  assert.match(privacy,/Política de privacidad/);
  assert.match(privacy,/eliminar-cuenta\.html/);
  assert.match(deletion,/accountDeletionForm/);
  assert.match(script,/api\/public\/account-deletion/);
- assert.match(accountUi,/amc-construcciones\.onrender\.com\/privacidad\.html/);
+ assert.match(accountUi,/https:\/\/amcconstrucciones\.com\.ar\/privacidad\.html/);
+ assert.doesNotMatch(accountUi,/amc-construcciones\.onrender\.com\/privacidad\.html/);
+ assert.match(landing,/Al enviar esta consulta, AMC Construcciones utilizará los datos ingresados/);
+ assert.match(landing,/class="contact-privacy"/);
+ assert.match(landing,/href="privacidad\.html"/);
+ assert.match(landing,/href="eliminar-cuenta\.html"/);
+ assert.match(formCss,/\.contact-privacy/);
 });
