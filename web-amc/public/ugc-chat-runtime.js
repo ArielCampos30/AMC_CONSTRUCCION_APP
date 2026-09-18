@@ -1,5 +1,5 @@
 export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=>{}}){
- let observer=null,queued=false;
+ let observer=null,attached=false,queued=false;
  const state=()=>getState()||{};
  const activeBlocks=(scope,participantId)=>(state().ugc?.blocks||[]).filter(item=>item.active&&item.scope===scope&&item.participantId===participantId);
  const contextForForm=form=>{
@@ -43,9 +43,9 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
    (article.querySelector('.message-meta')||article).append(button);
   }
  };
- const decorate=root=>{for(const form of root.querySelectorAll?.('.message-form')||[])decorateForm(form);};
- const schedule=()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorate(document);});};
- const confirmAction=async(message,options)=>typeof window.AMCConfirm==='function'?window.AMCConfirm(message,options):window.confirm(message);
+ const decorate=root=>{if(!root?.querySelectorAll)return;for(const form of root.querySelectorAll('.message-form'))decorateForm(form);};
+ const schedule=()=>{if(queued||typeof document==='undefined')return;queued=true;queueMicrotask(()=>{queued=false;decorate(document);});};
+ const confirmAction=async(message,options)=>typeof window?.AMCConfirm==='function'?window.AMCConfirm(message,options):globalThis.confirm?.(message)!==false;
  const click=async event=>{
   const report=event.target.closest?.('[data-ugc-report]');
   if(report){
@@ -62,14 +62,15 @@ export function createUgcChatRuntime({getState,api,refresh=async()=>{},toast=()=
   const question=next?'¿Bloquear este chat? No podrán enviarse nuevos mensajes hasta que se desbloquee. Los avisos operativos de AMC seguirán funcionando.':'¿Desbloquear este chat para permitir nuevos mensajes?';
   if(!await confirmAction(question,{title:next?'Bloquear chat':'Desbloquear chat',confirmLabel:next?'Bloquear':'Desbloquear'}))return;
   block.disabled=true;
-  try{await api('/api/ugc/blocks',{scope:block.dataset.scope,participantId:block.dataset.participantId,blocked:next});await refresh();decorate(document);toast(next?'Chat bloqueado.':'Chat desbloqueado.');}catch(error){block.disabled=false;toast(error?.message||'No se pudo cambiar el bloqueo.');}
+  try{await api('/api/ugc/blocks',{scope:block.dataset.scope,participantId:block.dataset.participantId,blocked:next});await refresh();if(typeof document!=='undefined')decorate(document);toast(next?'Chat bloqueado.':'Chat desbloqueado.');}catch(error){block.disabled=false;toast(error?.message||'No se pudo cambiar el bloqueo.');}
  };
  const attach=()=>{
-  if(observer||typeof document==='undefined')return;
+  if(attached||typeof document==='undefined')return;attached=true;
   document.addEventListener('click',click);
-  observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true});decorate(document);
+  if(typeof MutationObserver!=='undefined'&&document.body){observer=new MutationObserver(schedule);observer.observe(document.body,{childList:true,subtree:true});}
+  decorate(document);
  };
- return {afterRender(){attach();decorate(document);},decorate};
+ return {afterRender(){if(typeof document==='undefined')return;attach();decorate(document);},decorate};
 }
 
 if(typeof document!=='undefined'&&!document.getElementById('ugc-chat-runtime-style')){
@@ -78,5 +79,5 @@ if(typeof document!=='undefined'&&!document.getElementById('ugc-chat-runtime-sty
  .ugc-chat-controls small{margin-right:auto}.ugc-chat-block{min-height:30px!important;padding:4px 9px!important;font-size:12px!important}.ugc-chat-blocked{font-size:12px;font-weight:700;color:#8a3f32}
  .ugc-chat-gate{grid-column:1/-1;margin:0;padding:8px 10px;border-radius:9px;background:#fff4d8;color:#5f4916;font-size:12px}.ugc-chat-gate a{font-weight:800;color:inherit;text-decoration:underline}
  .ugc-report-action{border:0;background:transparent;color:#667c77;padding:0 0 0 8px;min-height:auto;font-size:10px;text-decoration:underline}.ugc-report-action:disabled{opacity:.65}
- `;document.head.append(style);
+ `;document.head?.append(style);
 }
