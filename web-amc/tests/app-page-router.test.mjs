@@ -67,7 +67,7 @@ test('matriz Admin conserva paneles, detalles, chats e IDs dinámicos',()=>{
  for(const [page,expected] of matrix)assert.deepEqual(resolveAppPage(page,state),expected,page);
 });
 
-test('Empleado no tiene página propia de chat; la ruta histórica vuelve a Inicio para abrir el flotante',()=>{
+test('Empleado usa únicamente el chat flotante con Administración y no accede a mensajes generales',()=>{
  const state=stateFor('employee');
  const matrix=[
   ['inicio',{view:'team',page:'tareas'}],
@@ -75,7 +75,7 @@ test('Empleado no tiene página propia de chat; la ruta histórica vuelve a Inic
   ['mis-trabajos',{view:'team',page:'mis-trabajos'}],
   ['chat-equipo',{view:'team',page:'inicio-empleado',legacyEmployeeChat:true}],
   ['trabajo/task-1',{view:'employee-work-detail',id:'task-1'}],
-  ['perfil',{view:'profile'}],['avisos',{view:'notices'}],['mensajes',{view:'features',page:'mensajes'}],['tareas',{view:'team',page:'tareas'}],['estado-presupuestos',{view:'team',page:'estado-presupuestos'}],
+  ['perfil',{view:'profile'}],['avisos',{view:'notices'}],['mensajes',{view:'employee-restricted'}],['tareas',{view:'team',page:'tareas'}],['estado-presupuestos',{view:'team',page:'estado-presupuestos'}],
   ['cotizador',{view:'employee-restricted'}],['solicitudes',{view:'employee-restricted'}],['obras',{view:'employee-restricted'}],['presupuesto-admin/quote-1',{view:'employee-restricted'}],['obra-admin/work-1',{view:'employee-restricted'}],['admin',{view:'employee-restricted'}],['ruta-inexistente',{view:'employee-restricted'}]
  ];
  for(const [page,expected] of matrix)assert.deepEqual(resolveAppPage(page,state),expected,page);
