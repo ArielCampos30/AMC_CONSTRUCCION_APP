@@ -23,6 +23,20 @@ test('la cámara del chat usa captura web real sin reemplazar Android nativo',()
  assert.match(runtime,/getTracks\?\.\(\)\.forEach\(track=>track\.stop\(\)\)/);
 });
 
+test('la cámara web conserva abierto el chat flotante y restaura su cierre al terminar',async()=>{
+ const source=runtime.replace(/document\.addEventListener\('click',[\s\S]*$/,'');
+ const moduleUrl='data:text/javascript;base64,'+Buffer.from(source).toString('base64');
+ const {holdFloatingChatOpen}=await import(moduleUrl);
+ let closed=0;
+ const chat={open:true,close(){closed+=1;}};
+ const restore=holdFloatingChatOpen({getElementById:id=>id==='amc-chat-dialog'?chat:null});
+ chat.close();
+ assert.equal(closed,0);
+ restore();
+ chat.close();
+ assert.equal(closed,1);
+});
+
 test('el primer ingreso ofrece activar notificaciones por dispositivo y conserva el botón manual',()=>{
  assert.match(runtime,/shouldOfferNotificationOnboarding/);
  assert.match(runtime,/amc-device-id/);
