@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.service.notification.StatusBarNotification;
 import android.util.Base64;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -44,6 +45,9 @@ public class MainActivity extends Activity {
         super.onCreate(state);
         backendUri = Uri.parse(BuildConfig.AMC_BACKEND_URL);
         webView = new WebView(this);
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptThirdPartyCookies(webView, false);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         setContentView(webView);
         WebSettings settings = webView.getSettings();
@@ -93,8 +97,16 @@ public class MainActivity extends Activity {
 
     @Override protected void onPause(){
         getSharedPreferences("amc",MODE_PRIVATE).edit().putBoolean("foreground",false).apply();
+        persistCookies();
         super.onPause();
     }
+
+    @Override protected void onStop(){
+        persistCookies();
+        super.onStop();
+    }
+
+    private void persistCookies(){CookieManager.getInstance().flush();}
 
     private boolean isTrusted(Uri uri){
         if(uri==null||backendUri==null)return false;
