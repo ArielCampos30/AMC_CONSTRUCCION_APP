@@ -91,8 +91,8 @@ AMC no solicita permisos Android para contactos, SMS, llamadas ni ubicación pre
 
 Proveedores técnicos utilizados actualmente:
 
-- Render: infraestructura de aplicación y base de datos según la configuración de producción.
-- Supabase: almacenamiento de archivos cuando corresponde.
+- Render: infraestructura de ejecución de la aplicación web/API.
+- Supabase Virginia: base de datos PostgreSQL canónica de producción y almacenamiento de archivos cuando corresponde.
 - Google Firebase: notificaciones push.
 - Resend: correo transaccional de recuperación de acceso cuando está configurado.
 
