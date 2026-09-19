@@ -31,10 +31,6 @@ if (hasCampaign(currentCampaign)) {
 }
 
 const campaign = hasCampaign(currentCampaign) ? currentCampaign : (loadStoredCampaign() || currentCampaign);
-const campaignLabel = Object.entries(campaign)
-  .filter(([, value]) => value)
-  .map(([key, value]) => `${key}=${value}`)
-  .join(" | ");
 
 const measurementContext = {
   utm_source: campaign.source,
@@ -63,14 +59,8 @@ const buildWhatsAppUrl = lines => {
 };
 
 const baseMessage = [
-  "Hola AMC Construcciones, quisiera pedir un presupuesto.",
-  "Mi localidad es: _____.",
-  "El trabajo que necesito es: _____."
+  "Hola AMC Construcciones 👋 Vengo desde su página web y quisiera solicitar un presupuesto."
 ];
-
-if (campaignLabel) {
-  baseMessage.push(`Vengo desde la web (${campaignLabel}).`);
-}
 
 const genericWhatsAppUrl = buildWhatsAppUrl(baseMessage);
 const notice = document.getElementById("waNotice");
