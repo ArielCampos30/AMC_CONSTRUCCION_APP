@@ -63,7 +63,7 @@ El comando exige origen y destino separados, verifica tablas, conteos y hashes a
 
 - `applicationId`: `com.amc.construcciones`
 - Android mínimo: API 29
-- Target: API 35
+- Target: API 36
 - La WebView de release sólo confía en el origen AMC y los enlaces externos se abren fuera de la app.
 - Los datos de WebView no entran en el backup automático de Android.
 - La firma release y `google-services.json` se reconstruyen únicamente en CI mediante GitHub Secrets.
