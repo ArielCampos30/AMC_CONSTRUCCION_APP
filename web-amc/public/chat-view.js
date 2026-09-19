@@ -33,7 +33,9 @@ const ensureBadge=(host,className,count,label)=>{
  let badge=host?.querySelector?.(':scope > .'+className);
  if(!host||!count){badge?.remove();return;}
  if(!badge){badge=document.createElement('span');badge.className=className;host.append(badge);}
- badge.textContent=count>99?'99+':String(count);badge.setAttribute('aria-label',count+' '+label+' sin leer');
+ const text=count>99?'99+':String(count),aria=count+' '+label+' sin leer';
+ if(badge.textContent!==text)badge.textContent=text;
+ if(badge.getAttribute('aria-label')!==aria)badge.setAttribute('aria-label',aria);
 };
 async function refreshUnreadIndicators(dialog){
  if(!dialog?.open||!document.body.classList.contains('admin-v3'))return;
@@ -66,7 +68,9 @@ function decorateThreadKind(dialog){
  let badge=heading.querySelector('.chat-kind-badge');
  if(!kind){badge?.remove();return;}
  if(!badge){badge=document.createElement('span');badge.className='chat-kind-badge';heading.append(badge);}
- badge.textContent=kind;badge.setAttribute('aria-label','Tipo de conversación: '+kind.toLocaleLowerCase('es-AR'));
+ const aria='Tipo de conversación: '+kind.toLocaleLowerCase('es-AR');
+ if(badge.textContent!==kind)badge.textContent=kind;
+ if(badge.getAttribute('aria-label')!==aria)badge.setAttribute('aria-label',aria);
 }
 function animateOutgoing(node){
  if(!(node instanceof Element))return;
