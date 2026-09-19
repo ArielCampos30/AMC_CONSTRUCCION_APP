@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
@@ -45,7 +47,16 @@ public class PushService extends FirebaseMessagingService {
         int notificationId=id.hashCode();
         PendingIntent pending=PendingIntent.getActivity(this,notificationId,open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         Bundle extras=new Bundle();extras.putString("amc_notice_id",id);
-        NotificationCompat.Builder builder=new NotificationCompat.Builder(this,channel).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setContentText(body).setAutoCancel(true).setContentIntent(pending).addExtras(extras);
+        NotificationCompat.Builder builder=new NotificationCompat.Builder(this,channel)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(BitmapFactory.decodeResource(getResources(),R.drawable.amc_logo))
+            .setColor(Color.rgb(13,102,97))
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+            .setAutoCancel(true)
+            .setContentIntent(pending)
+            .addExtras(extras);
         if(sound)builder.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));else builder.setSilent(true);
         manager.notify(notificationId,builder.build());
     }
